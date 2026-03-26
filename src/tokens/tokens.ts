@@ -1,0 +1,51 @@
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+export const ColorPrimary = "#7d52f7";
+export const ColorPrimaryDark = "#5d1dd6";
+export const ColorTextPrimary = "#161616";
+export const ColorTextMuted = "#94a0b8";
+export const ColorWhite = "#ffffff";
+export const ColorSurfaceSubtle = "#f7f9fb";
+export const ColorSurfaceMuted = "#f0f2f8";
+export const ColorBorder = "#e1e5ef";
+export const ColorError = "#e02c3b";
+export const ColorErrorLight = "#fee1e3";
+export const ColorSuccess = "#08875c";
+export const ColorSuccessLight = "#e4f5e8";
+export const ColorSuccessBright = "#17d797";
+export const ColorWarning = "#b25d09";
+export const ColorWarningLight = "#fff1d6";
+export const ColorWarningSubtle = "#fff8eb";
+export const ColorWarningIcon = "#db7612";
+export const ColorPrimaryLight = "#f5f0ff";
+export const ColorInfoLight = "#eaf1ff";
+export const ColorErrorSubtle = "#fdf0f1";
+export const ColorColor1 = "#f1f3f9"; // New color found in Figma — give it a name!
+export const ColorColor2 = "#e1e6ef"; // New color found in Figma — give it a name!
+export const ColorColor3 = "#7d52f8"; // New color found in Figma — give it a name!
+export const ColorColor4 = "#f8f9fc"; // New color found in Figma — give it a name!
+export const ColorColor5 = "#f4f0ff"; // New color found in Figma — give it a name!
+export const ColorColor6 = "#fef1f2"; // New color found in Figma — give it a name!
+export const ColorColor7 = "#e02d3c"; // New color found in Figma — give it a name!
+export const ColorColor8 = "#08875d"; // New color found in Figma — give it a name!
+export const FontSizeSm = "12px";
+export const FontSizeBase = "14px";
+export const FontSizeMd = "15px";
+export const FontWeightRegular = 400;
+export const FontWeightMedium = 500;
+export const FontWeightSemibold = 600;
+export const FontWeightBold = 700;
+export const FontFamilyBody = "Inter";
+export const BorderRadiusSm = "4px";
+export const BorderRadiusMd = "6px";
+export const BorderRadiusLg = "8px";
+export const BorderRadiusFull = "999px";
+export const Spacing1 = "4px";
+export const Spacing2 = "8px";
+export const Spacing3 = "12px";
+export const Spacing4 = "16px";
+export const Spacing5 = "20px";
+export const Spacing6 = "24px";
+export const Spacing8 = "32px";

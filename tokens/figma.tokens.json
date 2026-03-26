@@ -1,0 +1,210 @@
+{
+  "color": {
+    "primary": {
+      "value": "#7d52f7",
+      "type": "color"
+    },
+    "primary-dark": {
+      "value": "#5d1dd6",
+      "type": "color"
+    },
+    "text-primary": {
+      "value": "#161616",
+      "type": "color"
+    },
+    "text-muted": {
+      "value": "#94a0b8",
+      "type": "color"
+    },
+    "white": {
+      "value": "#ffffff",
+      "type": "color"
+    },
+    "surface-subtle": {
+      "value": "#f7f9fb",
+      "type": "color"
+    },
+    "surface-muted": {
+      "value": "#f0f2f8",
+      "type": "color"
+    },
+    "border": {
+      "value": "#e1e5ef",
+      "type": "color"
+    },
+    "error": {
+      "value": "#e02c3b",
+      "type": "color"
+    },
+    "error-light": {
+      "value": "#fee1e3",
+      "type": "color"
+    },
+    "success": {
+      "value": "#08875c",
+      "type": "color"
+    },
+    "success-light": {
+      "value": "#e4f5e8",
+      "type": "color"
+    },
+    "success-bright": {
+      "value": "#17d797",
+      "type": "color"
+    },
+    "warning": {
+      "value": "#b25d09",
+      "type": "color"
+    },
+    "warning-light": {
+      "value": "#fff1d6",
+      "type": "color"
+    },
+    "warning-subtle": {
+      "value": "#fff8eb",
+      "type": "color"
+    },
+    "warning-icon": {
+      "value": "#db7612",
+      "type": "color"
+    },
+    "primary-light": {
+      "value": "#f5f0ff",
+      "type": "color"
+    },
+    "info-light": {
+      "value": "#eaf1ff",
+      "type": "color"
+    },
+    "error-subtle": {
+      "value": "#fdf0f1",
+      "type": "color"
+    },
+    "color-1": {
+      "value": "#f1f3f9",
+      "type": "color",
+      "comment": "New color found in Figma — give it a name!"
+    },
+    "color-2": {
+      "value": "#e1e6ef",
+      "type": "color",
+      "comment": "New color found in Figma — give it a name!"
+    },
+    "color-3": {
+      "value": "#7d52f8",
+      "type": "color",
+      "comment": "New color found in Figma — give it a name!"
+    },
+    "color-4": {
+      "value": "#f8f9fc",
+      "type": "color",
+      "comment": "New color found in Figma — give it a name!"
+    },
+    "color-5": {
+      "value": "#f4f0ff",
+      "type": "color",
+      "comment": "New color found in Figma — give it a name!"
+    },
+    "color-6": {
+      "value": "#fef1f2",
+      "type": "color",
+      "comment": "New color found in Figma — give it a name!"
+    },
+    "color-7": {
+      "value": "#e02d3c",
+      "type": "color",
+      "comment": "New color found in Figma — give it a name!"
+    },
+    "color-8": {
+      "value": "#08875d",
+      "type": "color",
+      "comment": "New color found in Figma — give it a name!"
+    }
+  },
+  "fontSize": {
+    "sm": {
+      "value": "12px",
+      "type": "dimension"
+    },
+    "base": {
+      "value": "14px",
+      "type": "dimension"
+    },
+    "md": {
+      "value": "15px",
+      "type": "dimension"
+    }
+  },
+  "fontWeight": {
+    "regular": {
+      "value": 400,
+      "type": "fontWeight"
+    },
+    "medium": {
+      "value": 500,
+      "type": "fontWeight"
+    },
+    "semibold": {
+      "value": 600,
+      "type": "fontWeight"
+    },
+    "bold": {
+      "value": 700,
+      "type": "fontWeight"
+    }
+  },
+  "fontFamily": {
+    "body": {
+      "value": "Inter",
+      "type": "fontFamily"
+    }
+  },
+  "borderRadius": {
+    "sm": {
+      "value": "4px",
+      "type": "dimension"
+    },
+    "md": {
+      "value": "6px",
+      "type": "dimension"
+    },
+    "lg": {
+      "value": "8px",
+      "type": "dimension"
+    },
+    "full": {
+      "value": "999px",
+      "type": "dimension"
+    }
+  },
+  "spacing": {
+    "1": {
+      "value": "4px",
+      "type": "dimension"
+    },
+    "2": {
+      "value": "8px",
+      "type": "dimension"
+    },
+    "3": {
+      "value": "12px",
+      "type": "dimension"
+    },
+    "4": {
+      "value": "16px",
+      "type": "dimension"
+    },
+    "5": {
+      "value": "20px",
+      "type": "dimension"
+    },
+    "6": {
+      "value": "24px",
+      "type": "dimension"
+    },
+    "8": {
+      "value": "32px",
+      "type": "dimension"
+    }
+  }
+}
