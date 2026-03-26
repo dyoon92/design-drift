@@ -348,6 +348,18 @@ const ScanIcon = ({ size = 13, color }: { size?: number; color: string }) => (
   </svg>
 )
 
+// Lucide-style Palette icon
+const PaletteIcon = ({ size = 16, color }: { size?: number; color: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+    <path d="M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.04 10 9c0 3.31-2.69 6-6 6h-1.77c-.28 0-.5.22-.5.5 0 .12.05.23.13.33.41.47.64 1.06.64 1.67A2.5 2.5 0 0112 22z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="6.5" cy="11.5" r="1.5" fill={color}/>
+    <circle cx="8.5" cy="7.5" r="1.5" fill={color}/>
+    <circle cx="12" cy="5.5" r="1.5" fill={color}/>
+    <circle cx="15.5" cy="7.5" r="1.5" fill={color}/>
+    <circle cx="17.5" cy="11.5" r="1.5" fill={color}/>
+  </svg>
+)
+
 // ─── Individual overlay box ───────────────────────────────────────────────────
 
 const OverlayBox = React.memo(({ c, yOffset, inspectMode, isInspected, isHighlighted, onInspect }: {
@@ -466,9 +478,7 @@ const PropsPanel = ({ component, onClose }: { component: ScannedComponent; onClo
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: `1px solid ${C.orange}20` }}>
                 {v.type === 'color' ? (
                   <div style={{ width: 14, height: 14, borderRadius: 3, flexShrink: 0, background: v.value, border: `1px solid rgba(0,0,0,0.2)` }} />
-                ) : (
-                  <div style={{ width: 14, height: 14, flexShrink: 0, background: C.muted, borderRadius: v.value, border: `1px solid rgba(0,0,0,0.2)`, opacity: 0.5 }} />
-                )}
+                ) : null}
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <span style={{ fontSize: 10, color: C.muted, fontFamily: 'monospace' }}>{v.prop}: </span>
                   <span style={{ fontSize: 10, fontFamily: 'monospace', color: C.orange, fontWeight: 600 }}>{v.value}</span>
@@ -548,7 +558,7 @@ const TabBar = ({ active, onChange, tokenCount, promoteCount, driftCount }: {
       fontSize: 10, fontWeight: active === id ? 700 : 500, fontFamily: 'Inter, sans-serif',
       cursor: 'pointer', transition: 'color 0.15s, border-color 0.15s',
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-      letterSpacing: 0.2,
+      letterSpacing: 0.2, whiteSpace: 'nowrap',
     }}>
       {label}
       {!!badge && badge > 0 && (
@@ -561,10 +571,10 @@ const TabBar = ({ active, onChange, tokenCount, promoteCount, driftCount }: {
   )
 
   return (
-    <div style={{ display: 'flex', borderBottom: `1px solid ${C.panelBorder}`, marginBottom: 12 }}>
-      {tab('overview', 'Overview', promoteCount, promoteCount > 0 ? '#a855f7' : undefined)}
-      {tab('drift',    'Drift',    driftCount,   driftCount > 0 ? '#f97316' : undefined)}
-      {tab('tokens',   'Tokens',   tokenCount,   tokenCount > 0 ? '#ef4444' : undefined)}
+    <div style={{ display: 'flex', marginBottom: 0 }}>
+      {tab('overview', 'Overview',      promoteCount, promoteCount > 0 ? '#a855f7' : undefined)}
+      {tab('drift',    'Modifications', driftCount,   driftCount > 0 ? '#f97316' : undefined)}
+      {tab('tokens',   'Style issues',  tokenCount,   tokenCount > 0 ? '#ef4444' : undefined)}
       {tab('history',  'History')}
     </div>
   )
@@ -604,8 +614,9 @@ const SummaryPanel = (p: PanelProps) => {
   const [exported,   setExported]  = useState(false)
   const [keyDraft,   setKeyDraft]  = useState('')
   const [showKeyBox, setShowKeyBox]= useState(false)
-  const [hoveredRow, setHoveredRow]= useState<string | null>(null)
-  const [copiedFix,  setCopiedFix] = useState<string | null>(null)
+  const [hoveredRow,       setHoveredRow]       = useState<string | null>(null)
+  const [copiedFix,        setCopiedFix]        = useState<string | null>(null)
+  const [hoveredViolation, setHoveredViolation] = useState<string | null>(null)
 
   const dsCount      = p.components.filter(c => c.inDS).length
   const driftedCount = p.components.filter(c => c.drifted).length
@@ -640,53 +651,80 @@ const SummaryPanel = (p: PanelProps) => {
       fontFamily: 'Inter, sans-serif', color: C.text,
     }}>
 
-      {/* ── Header: title + close (own bordered zone) ────────────────── */}
+      {/* ── Header row: title + icon buttons ────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 16px',
+        padding: '10px 14px',
         borderBottom: `1px solid ${C.panelBorder}`,
         flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ScanIcon size={14} color={C.blue} />
-          <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: -0.2, color: C.text }}>DesignDrift</span>
+          <ScanIcon size={13} color={C.blue} />
+          <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: -0.2, color: C.text }}>DesignDrift</span>
         </div>
-        <button onClick={p.onClose} title="Close panel" style={{
-          background: C.btnBg, border: `1px solid ${C.panelBorder}`,
-          borderRadius: 7, padding: '4px 9px',
-          cursor: 'pointer', color: C.muted, fontSize: 16, lineHeight: 1,
-        }}>×</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {/* Theme toggle */}
+          <button onClick={p.onToggleTheme} title="Toggle light/dark mode" style={{
+            width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: C.btnBg, border: `1px solid ${C.panelBorder}`, borderRadius: 7,
+            cursor: 'pointer', color: C.textSub,
+          }}>
+            {p.theme === 'dark' ? (
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.3"/>
+                <path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.06 1.06M11.54 11.54l1.06 1.06M3.4 12.6l1.06-1.06M11.54 4.46l1.06-1.06" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              </svg>
+            ) : (
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <path d="M14 8.53A6 6 0 117.47 2 4.5 4.5 0 0014 8.53z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </button>
+          {/* Identify — crosshair icon button */}
+          <button
+            onClick={p.onToggleInspect}
+            title="Click any element on screen to inspect its props and see which DS component it maps to (Ctrl+Shift+I)"
+            style={{
+              width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: p.inspectMode ? C.inspectBg : C.btnBg,
+              border: `1px solid ${p.inspectMode ? C.blue : C.panelBorder}`,
+              borderRadius: 7, cursor: 'pointer', color: p.inspectMode ? C.blue : C.textSub,
+            }}>
+            {/* Crosshair icon */}
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="4" stroke="currentColor" strokeWidth="1.3"/>
+              <circle cx="8" cy="8" r="1.2" fill="currentColor"/>
+              <line x1="8" y1="1" x2="8" y2="4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="8" y1="12" x2="8" y2="15" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="1" y1="8" x2="4" y2="8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="12" y1="8" x2="15" y2="8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+          </button>
+          {/* Close */}
+          <button onClick={p.onClose} title="Close panel" style={{
+            width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: C.btnBg, border: `1px solid ${C.panelBorder}`,
+            borderRadius: 7, cursor: 'pointer', color: C.muted, fontSize: 15, lineHeight: 1,
+          }}>×</button>
+        </div>
       </div>
 
-      {/* ── Action bar: theme toggle + rescan ───────────────────────── */}
+      {/* ── Scan controls row: Quick/Full scan pills + Rescan ────────── */}
       <div style={{
         display: 'flex', gap: 6, alignItems: 'center',
-        padding: '8px 16px',
+        padding: '7px 14px',
         borderBottom: `1px solid ${C.panelBorder}`,
         flexShrink: 0,
       }}>
-        <button onClick={p.onToggleTheme} title="Toggle light/dark" style={{
-          background: C.btnBg, border: `1px solid ${C.panelBorder}`,
-          borderRadius: 7, padding: '3px 7px', cursor: 'pointer',
-          color: C.textSub, fontSize: 12, lineHeight: '18px',
-        }}>
-          {p.theme === 'dark' ? '☀️' : '🌙'}
-        </button>
-        <button onClick={p.onToggleInspect} title="Click components to inspect props (Ctrl+Shift+I)" style={{
-          padding: '3px 10px', borderRadius: 7,
-          border: `1px solid ${p.inspectMode ? C.blue : C.panelBorder}`,
-          cursor: 'pointer', fontSize: 11, fontWeight: 600, fontFamily: 'Inter, sans-serif',
-          background: p.inspectMode ? C.inspectBg : C.btnBg,
-          color: p.inspectMode ? C.blue : C.textSub,
-        }}>
-          {p.inspectMode ? '● Inspect on' : 'Inspect'}
-        </button>
+        {pill(p.surfaceMode,  'Quick scan', p.onToggleSurface, C.muted)}
+        {pill(!p.surfaceMode, 'Full scan',  p.onToggleSurface, C.muted)}
         <div style={{ flex: 1 }} />
         <button onClick={p.onRescan} disabled={p.scanning} style={{
           background: p.scanning ? C.pillBg : C.blue,
           border: 'none', borderRadius: 7, padding: '4px 12px',
           cursor: p.scanning ? 'default' : 'pointer',
           color: p.scanning ? C.muted : '#fff', fontSize: 11, fontFamily: 'Inter, sans-serif', fontWeight: 700,
+          whiteSpace: 'nowrap',
         }}>
           {p.scanning ? 'Scanning…' : 'Rescan'}
         </button>
@@ -694,14 +732,22 @@ const SummaryPanel = (p: PanelProps) => {
 
       {/* ── Not yet scanned ─────────────────────────────────────────── */}
       {!p.scanned && !p.scanning && (
-        <div style={{ textAlign: 'center', padding: '32px 16px', fontSize: 12, color: C.muted, lineHeight: 1.6 }}>
-          Click <strong style={{ color: C.text }}>Rescan</strong> to analyse<br />the components on this page
+        <div style={{ textAlign: 'center', padding: '32px 16px', lineHeight: 1.7 }}>
+          <div style={{ fontSize: 28, marginBottom: 10 }}>🔍</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 6 }}>Check this screen</div>
+          <div style={{ fontSize: 12, color: C.muted, marginBottom: 16 }}>
+            See which elements were built from<br />your design system and which weren't.
+          </div>
+          <button onClick={p.onRescan} style={{
+            background: C.blue, border: 'none', borderRadius: 8, padding: '8px 20px',
+            color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          }}>Analyse this screen</button>
         </div>
       )}
 
       {p.scanning && (
         <div style={{ textAlign: 'center', padding: '32px 16px', fontSize: 12, color: C.muted }}>
-          Walking fiber tree…
+          Analysing screen…
         </div>
       )}
 
@@ -716,67 +762,62 @@ const SummaryPanel = (p: PanelProps) => {
           boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
           flexShrink: 0,
         }}>
-          {/* Stat row: big % + legend */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-            <div>
-              <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: -2, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{pct}%</div>
-              <div style={{ fontSize: 10, color: C.muted, marginTop: 3, letterSpacing: 0.1 }}>Design system coverage</div>
-            </div>
-            <div style={{ flex: 1 }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.green, flexShrink: 0 }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{dsCount}</span>
-                <span style={{ fontSize: 10, color: C.muted }}>matched</span>
-              </div>
-              {driftedCount > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.orange, flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{driftedCount}</span>
-                  <span style={{ fontSize: 10, color: C.muted }}>drifted</span>
-                </div>
-              )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.red, flexShrink: 0 }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{gapCount}</span>
-                <span style={{ fontSize: 10, color: C.muted }}>gaps</span>
-              </div>
-            </div>
+          {/* % + label */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: -1.5, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
+            <span style={{ fontSize: 10, color: C.muted }}>from your designs</span>
           </div>
           {/* Bar */}
           <CoverageBar pct={pct} />
-          {/* Footer: total + export */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-            <span style={{ fontSize: 10, color: C.muted }}>{total} components total</span>
+          {/* Inline stat row — no pills */}
+          <div style={{ display: 'flex', gap: 14, marginTop: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 11, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontWeight: 700, color: C.green }}>{dsCount}</span>
+              <span style={{ color: C.muted }}> designed</span>
+            </span>
+            {driftedCount > 0 && (
+              <span style={{ fontSize: 11, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontWeight: 700, color: C.orange }}>{driftedCount}</span>
+                <span style={{ color: C.muted }}> modified</span>
+              </span>
+            )}
+            <span style={{ fontSize: 11, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontWeight: 700, color: C.red }}>{gapCount}</span>
+              <span style={{ color: C.muted }}> custom</span>
+            </span>
+          </div>
+          {/* Footer */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.panelBorder}` }}>
+            <span style={{ fontSize: 10, color: C.muted }}>{total} elements</span>
             <button onClick={handleExport} title="Copy a markdown coverage report to clipboard" style={{
               background: 'none', border: 'none', cursor: 'pointer', padding: 0,
               display: 'flex', alignItems: 'center', gap: 4,
               fontSize: 10, color: exported ? C.green : C.muted, fontFamily: 'Inter, sans-serif',
             }}>
               <span>{exported ? '✓' : '⎘'}</span>
-              <span>{exported ? 'Copied' : 'Export report'}</span>
+              <span>{exported ? 'Copied' : 'Share'}</span>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ── Tab bar — top level, full width ──────────────────────────── */}
+      {p.scanned && !p.scanning && (
+        <div style={{ borderBottom: `1px solid ${C.panelBorder}`, flexShrink: 0 }}>
+          <TabBar active={tab} onChange={setTab} tokenCount={p.tokenViolations.length} promoteCount={promoteCount} driftCount={driftedCount} />
         </div>
       )}
 
       {/* ── Scanned content ────────────────────────────────────────────── */}
       {p.scanned && !p.scanning && (
         <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column', padding: '12px 16px 0' }}>
-          <TabBar active={tab} onChange={setTab} tokenCount={p.tokenViolations.length} promoteCount={promoteCount} driftCount={driftedCount} />
 
           {/* Overview */}
           {tab === 'overview' && (
             <>
-              {/* Scan mode + filter controls */}
-              <div style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
-                {pill(p.surfaceMode,  'Surface', p.onToggleSurface, C.muted)}
-                {pill(!p.surfaceMode, 'Deep',    p.onToggleSurface, C.muted)}
-              </div>
-
               <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-                {pill(p.filter === 'all',  'All',       () => p.onFilterChange('all'))}
-                {pill(p.filter === 'gaps', 'Gaps only', () => p.onFilterChange('gaps'))}
+                {pill(p.filter === 'all',  'All',          () => p.onFilterChange('all'))}
+                {pill(p.filter === 'gaps', 'Custom-built', () => p.onFilterChange('gaps'))}
               </div>
 
               {/* Compact AI hint when no key set */}
@@ -788,7 +829,7 @@ const SummaryPanel = (p: PanelProps) => {
                   cursor: 'pointer', textAlign: 'left',
                 }}>
                   <span style={{ fontSize: 11, color: C.muted }}>✦</span>
-                  <span style={{ fontSize: 11, color: C.muted, fontFamily: 'Inter, sans-serif' }}>Add API key to enable AI suggestions per gap</span>
+                  <span style={{ fontSize: 11, color: C.muted, fontFamily: 'Inter, sans-serif' }}>Add API key for AI replacement suggestions</span>
                 </button>
               )}
 
@@ -797,14 +838,14 @@ const SummaryPanel = (p: PanelProps) => {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                      Custom gaps
+                      Custom-built elements
                     </span>
                     <span style={{ fontSize: 10, color: C.muted }}>{gaps.length} unique</span>
                   </div>
                   {/* Filter input */}
                   <input
                     type="text"
-                    placeholder="Filter components…"
+                    placeholder="Search elements…"
                     value={p.gapFilter}
                     onChange={e => p.onGapFilterChange(e.target.value)}
                     style={{
@@ -837,29 +878,31 @@ const SummaryPanel = (p: PanelProps) => {
                             <span style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: 'Inter, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
                             {isFrequent && (
                               <span
-                                title={`Appears ${count} times — high frequency components are good candidates for the design system`}
+                                title={`Used ${count} times — appears frequently enough to be worth designing and adding to your system`}
                                 style={{ fontSize: 9, color: C.purple, cursor: 'help', flexShrink: 0 }}>
-                                DS candidate
+                                Worth designing
                               </span>
                             )}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginLeft: 8 }}>
-                            {/* AI button — icon only, tooltip explains */}
+                            {/* AI button — icon only, tooltip explains; only visible on hover */}
                             {p.apiKey ? (
                               <button
                                 onClick={() => p.onSuggest(name, count, gapProps)}
                                 disabled={suggestion?.status === 'loading' || suggestion?.status === 'done'}
-                                title={suggestion?.status === 'done' ? 'AI suggestion ready — see below' : 'Ask Claude for a DS replacement suggestion'}
+                                title={suggestion?.status === 'done' ? 'Suggestion ready — see below' : 'Ask AI whether a designed component could replace this'}
                                 style={{
                                   background: 'none', border: 'none', padding: '2px 4px',
                                   cursor: suggestion?.status === 'loading' || suggestion?.status === 'done' ? 'default' : 'pointer',
                                   fontSize: 12, color: suggestion?.status === 'done' ? C.blue : C.muted,
-                                  opacity: suggestion?.status === 'loading' ? 0.5 : 1,
+                                  opacity: isHovered ? (suggestion?.status === 'loading' ? 0.5 : 1) : 0,
+                                  pointerEvents: isHovered ? 'auto' : 'none',
+                                  transition: 'opacity 0.15s',
                                 }}
                               >✦</button>
                             ) : (
                               <button onClick={() => setShowKeyBox(true)} title="Add API key to enable AI suggestions"
-                                style={{ background: 'none', border: 'none', padding: '2px 4px', cursor: 'pointer', fontSize: 12, color: C.muted, opacity: 0.4 }}>
+                                style={{ background: 'none', border: 'none', padding: '2px 4px', cursor: 'pointer', fontSize: 12, color: C.muted, opacity: isHovered ? 0.4 : 0, pointerEvents: isHovered ? 'auto' : 'none', transition: 'opacity 0.15s' }}>
                                 ✦
                               </button>
                             )}
@@ -878,7 +921,7 @@ const SummaryPanel = (p: PanelProps) => {
                             background: C.pillBg, border: `1px solid ${C.panelBorder}`,
                             borderRadius: 8, fontSize: 11, color: C.text, lineHeight: 1.6,
                           }}>
-                            <span style={{ fontWeight: 700, color: C.blue, fontSize: 10, display: 'block', marginBottom: 5 }}>✦ AI suggestion</span>
+                            <span style={{ fontWeight: 700, color: C.blue, fontSize: 10, display: 'block', marginBottom: 5 }}>✦ Replacement suggestion</span>
                             {suggestion.text}
                           </div>
                         )}
@@ -892,16 +935,18 @@ const SummaryPanel = (p: PanelProps) => {
                   })}
                 </div>
               ) : (
-                <div style={{ fontSize: 12, color: C.green, textAlign: 'center', padding: '8px 0' }}>
-                  ✓ All components are in the design system
+                <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                  <div style={{ fontSize: 20, marginBottom: 6 }}>✓</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: C.green }}>Everything on this screen was designed</div>
+                  <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>No custom-built elements found</div>
                 </div>
               )}
 
               {/* API key setup box */}
               {showKeyBox && (
                 <div style={{ marginTop: 10, padding: '10px', background: C.pillBg, borderRadius: 8, border: `1px solid ${C.panelBorder}` }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: C.text, marginBottom: 2 }}>Anthropic API key</div>
-                  <div style={{ fontSize: 9, color: C.muted, marginBottom: 8 }}>Powers ✦ Ask AI suggestions per gap. Stored locally, only sent to api.anthropic.com.</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: C.text, marginBottom: 2 }}>Enable AI suggestions</div>
+                  <div style={{ fontSize: 9, color: C.muted, marginBottom: 8 }}>Add an Anthropic API key to get suggestions for replacing custom-built elements with designed components. Stored in your browser only.</div>
                   <input
                     type="password"
                     placeholder="sk-ant-..."
@@ -932,7 +977,7 @@ const SummaryPanel = (p: PanelProps) => {
               {/* API key status */}
               {p.apiKey && !showKeyBox && (
                 <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', background: `${C.blue}10`, borderRadius: 6 }}>
-                  <span style={{ fontSize: 9, color: C.blue, fontWeight: 600 }}>✦ AI suggestions enabled</span>
+                  <span style={{ fontSize: 9, color: C.blue, fontWeight: 600 }}>✦ AI suggestions active</span>
                   <button onClick={() => { p.onSaveApiKey(''); setShowKeyBox(false) }} style={{
                     background: 'none', border: 'none', fontSize: 9, color: C.muted,
                     cursor: 'pointer', padding: 0, textDecoration: 'underline',
@@ -947,9 +992,9 @@ const SummaryPanel = (p: PanelProps) => {
             driftedCount === 0 ? (
               <div style={{ textAlign: 'center', padding: '28px 0' }}>
                 <div style={{ fontSize: 26, marginBottom: 8 }}>✓</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>No token drift</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>No modifications found</div>
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.6 }}>
-                  DS components are using<br />CSS tokens correctly
+                  All design system components look<br />exactly as they were designed
                 </div>
               </div>
             ) : (
@@ -957,8 +1002,8 @@ const SummaryPanel = (p: PanelProps) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                   <span style={{ fontSize: 32, fontWeight: 800, color: C.orange, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{driftedCount}</span>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>drifted DS components</div>
-                    <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>hardcoded values override tokens</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>designed components modified</div>
+                    <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>custom styles were applied on top of the design</div>
                   </div>
                 </div>
                 <div>
@@ -979,10 +1024,15 @@ const SummaryPanel = (p: PanelProps) => {
                     }
                     const copyKey = `fix-${c.name}`
                     return (
-                      <div key={`${c.name}-${i}`} style={{
-                        marginBottom: 10, padding: '12px', borderRadius: 10,
-                        background: `${C.orange}0d`, border: `1px solid ${C.orange}30`,
-                      }}>
+                      <div key={`${c.name}-${i}`}
+                        onMouseEnter={() => p.onHoverGap(c.name)}
+                        onMouseLeave={() => p.onHoverGap(null)}
+                        style={{
+                          marginBottom: 10, padding: '12px', borderRadius: 10,
+                          background: C.panel, border: `1px solid ${C.panelBorder}`,
+                          boxShadow: p.hoveredGap === c.name ? `inset 3px 0 0 ${C.orange}` : '0 1px 4px rgba(0,0,0,0.08)',
+                          transition: 'box-shadow 0.15s',
+                        }}>
                         {/* Component header */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                           <span style={{ fontSize: 13, fontWeight: 700, color: C.orange, fontFamily: 'Inter, sans-serif' }}>{c.name}</span>
@@ -991,7 +1041,7 @@ const SummaryPanel = (p: PanelProps) => {
                               <button
                                 onClick={() => p.onDriftFix(c.name, c.driftViolations)}
                                 disabled={fix?.status === 'loading' || fix?.status === 'done'}
-                                title="Ask Claude to generate the exact token replacements"
+                                title="Ask AI to suggest how to restore this to its designed state"
                                 style={{
                                   display: 'flex', alignItems: 'center', gap: 3,
                                   background: fix?.status === 'done' ? `${C.blue}20` : `${C.blue}10`,
@@ -1001,11 +1051,11 @@ const SummaryPanel = (p: PanelProps) => {
                                   fontFamily: 'Inter, sans-serif',
                                 }}>
                                 <span>✦</span>
-                                <span>{fix?.status === 'loading' ? 'Fixing…' : fix?.status === 'done' ? 'Fixed' : 'Fix with Claude'}</span>
+                                <span>{fix?.status === 'loading' ? 'Thinking…' : fix?.status === 'done' ? 'Suggestion ready' : 'Suggest fix'}</span>
                               </button>
                             )}
                             <span style={{ fontSize: 10, color: C.muted, background: `${C.orange}20`, padding: '2px 7px', borderRadius: 6 }}>
-                              {c.driftViolations.length} override{c.driftViolations.length > 1 ? 's' : ''}
+                              {c.driftViolations.length} change{c.driftViolations.length > 1 ? 's' : ''}
                             </span>
                           </div>
                         </div>
@@ -1021,15 +1071,26 @@ const SummaryPanel = (p: PanelProps) => {
                         ).map((v, j) => {
                           const suggestion = suggestToken(v.type, v.value)
                           const propLabel = v.type === 'radius' ? 'border-radius' : v.props[0].replace(/([A-Z])/g, '-$1').toLowerCase()
+                          const violKey = `${i}-${j}`
+                          const isViolHovered = hoveredViolation === violKey
                           return (
-                            <div key={j} style={{
-                              display: 'flex', alignItems: 'center', gap: 8,
-                              padding: '5px 0', borderBottom: `1px solid ${C.orange}15`,
-                            }}>
-                              {v.type === 'color' ? (
+                            <div key={j}
+                              onMouseEnter={() => { p.onHoverGap(c.name); setHoveredViolation(violKey) }}
+                              onMouseLeave={() => { p.onHoverGap(null); setHoveredViolation(null) }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: isViolHovered ? '5px 6px' : '5px 0',
+                                margin: isViolHovered ? '0 -6px' : '0',
+                                borderBottom: `1px solid ${C.orange}15`,
+                                cursor: 'default',
+                                borderRadius: isViolHovered ? 6 : 0,
+                                background: isViolHovered
+                                  ? (v.type === 'color' ? `${v.value}18` : `${C.orange}10`)
+                                  : 'transparent',
+                                transition: 'background 0.15s',
+                              }}>
+                              {v.type === 'color' && (
                                 <div style={{ width: 14, height: 14, borderRadius: 3, flexShrink: 0, background: v.value, border: '1px solid rgba(0,0,0,0.18)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} />
-                              ) : (
-                                <div style={{ width: 14, height: 14, flexShrink: 0, background: C.textSub, borderRadius: v.value, border: '1px solid rgba(0,0,0,0.18)', opacity: 0.5 }} />
                               )}
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 11, color: C.text, fontFamily: 'Inter, sans-serif' }}>
@@ -1054,7 +1115,7 @@ const SummaryPanel = (p: PanelProps) => {
                         {fix?.status === 'done' && fixSnippet && (
                           <div style={{ marginTop: 10, background: C.panel, border: `1px solid ${C.blue}30`, borderRadius: 7, overflow: 'hidden' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: `1px solid ${C.blue}20` }}>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: C.blue }}>✦ Suggested fix</span>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: C.blue }}>✦ How to restore it</span>
                               <button
                                 onClick={async () => {
                                   const code = `// ${c.name} — replace hardcoded styles with DS tokens:\n${fixSnippet}`
@@ -1075,7 +1136,7 @@ const SummaryPanel = (p: PanelProps) => {
                         )}
                         {!p.apiKey && (
                           <div style={{ marginTop: 8, fontSize: 10, color: C.muted, lineHeight: 1.5 }}>
-                            Add an API key in <button onClick={() => setShowKeyBox(true)} style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 10, padding: 0, textDecoration: 'underline' }}>Overview</button> to auto-generate fixes.
+                            Add an API key in <button onClick={() => setShowKeyBox(true)} style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 10, padding: 0, textDecoration: 'underline' }}>Overview</button> to get suggestions for restoring this component.
                           </div>
                         )}
                       </div>
@@ -1091,16 +1152,16 @@ const SummaryPanel = (p: PanelProps) => {
             p.tokenViolations.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '28px 0' }}>
                 <div style={{ fontSize: 26, marginBottom: 8 }}>✓</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>No token violations</div>
-                <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>All colors use CSS variables</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>No style issues found</div>
+                <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>All colours and shapes match your design palette</div>
               </div>
             ) : (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                   <span style={{ fontSize: 32, fontWeight: 800, color: C.red, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{p.tokenViolations.length}</span>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>hardcoded colors</div>
-                    <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>should use <code style={{ fontFamily: 'monospace' }}>var(--ds-color-*)</code></div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>colours not from your palette</div>
+                    <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>these were set manually by the developer, not from your design tokens</div>
                   </div>
                 </div>
                 <div>
@@ -1132,10 +1193,7 @@ const SummaryPanel = (p: PanelProps) => {
                   })}
                 </div>
                 <div style={{ marginTop: 12, fontSize: 10, color: C.muted, lineHeight: 1.6, padding: '8px 10px', background: C.pillBg, borderRadius: 7 }}>
-                  Replace with{' '}
-                  <code style={{ background: C.kbdBg, padding: '1px 4px', borderRadius: 3, color: C.textSub }}>var(--ds-color-*)</code>
-                  {' '}from{' '}
-                  <code style={{ background: C.kbdBg, padding: '1px 4px', borderRadius: 3, color: C.textSub }}>src/tokens/variables.css</code>
+                  Ask your developer to replace these with colours from your design palette so the screen stays visually consistent.
                 </div>
               </>
             )
@@ -1145,12 +1203,12 @@ const SummaryPanel = (p: PanelProps) => {
           {tab === 'history' && (
             p.history.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '28px 0' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: C.muted }}>No history yet</div>
-                <div style={{ fontSize: 10, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>Navigate between pages<br />to build up a coverage trail</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.muted }}>No screens reviewed yet</div>
+                <div style={{ fontSize: 10, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>Navigate between screens and run<br />an analysis on each one to build a trail</div>
               </div>
             ) : (
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 10 }}>Recent pages</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 10 }}>Screens reviewed</div>
                 {p.history.map((h, i) => {
                   const rowKey = `hist-${i}`
                   const isHov = hoveredRow === rowKey
@@ -1169,9 +1227,9 @@ const SummaryPanel = (p: PanelProps) => {
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 11, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.path}</div>
                       <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>
-                        <span style={{ color: C.green }}>{h.ds} matched</span>
+                        <span style={{ color: C.green }}>{h.ds} designed</span>
                         {' · '}
-                        <span style={{ color: C.red }}>{h.gaps} gaps</span>
+                        <span style={{ color: C.red }}>{h.gaps} custom</span>
                         {' · '}{timeAgo(h.ts)}
                       </div>
                     </div>
@@ -1191,9 +1249,9 @@ const SummaryPanel = (p: PanelProps) => {
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <div style={{ flexShrink: 0, marginTop: 12, fontSize: 10, color: C.textSub, textAlign: 'center', lineHeight: 1.7, borderTop: `1px solid ${C.panelBorder}`, paddingTop: 10 }}>
         <kbd style={{ background: C.kbdBg, color: C.kbdText, padding: '1px 6px', borderRadius: 4, fontFamily: 'monospace', border: `1px solid ${C.panelBorder}` }}>⌃⇧D</kbd>
-        {' toggle · '}
+        {' show/hide · '}
         <kbd style={{ background: C.kbdBg, color: C.kbdText, padding: '1px 6px', borderRadius: 4, fontFamily: 'monospace', border: `1px solid ${C.panelBorder}` }}>⌃⇧I</kbd>
-        {' inspect'}
+        {' identify'}
       </div>
     </div>
   )
@@ -1201,44 +1259,88 @@ const SummaryPanel = (p: PanelProps) => {
 
 // ─── Toggle button ────────────────────────────────────────────────────────────
 
-const ToggleButton = ({ visible, pct, total, scanned, scanning, inspectMode, tokenCount, onClick }: {
-  visible: boolean; pct: number; total: number
-  scanned: boolean; scanning: boolean; inspectMode: boolean; tokenCount: number; onClick: () => void
+const ToggleButton = ({ visible, pct, scanned, scanning, inspectMode, driftedCount, gapCount, onClick }: {
+  visible: boolean; pct: number
+  scanned: boolean; scanning: boolean; inspectMode: boolean
+  driftedCount: number; gapCount: number
+  onClick: () => void
 }) => {
   const C = useC()
-  const dotColor = visible
-    ? (scanning ? C.yellow : scanned ? coverageColor(pct, C) : C.muted)
-    : C.muted
 
   return (
     <button onClick={onClick} style={{
-      display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px',
-      background: visible ? C.toggleBgOn : C.toggleBg,
-      border: `1px solid ${inspectMode ? C.blue : (visible ? C.toggleBorderOn : C.toggleBorder)}`,
-      borderRadius: 24, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-      backdropFilter: 'blur(14px)',
-      boxShadow: visible ? C.toggleShadowOn : C.toggleShadow,
+      display: 'flex', alignItems: 'center', gap: 8, padding: '11px 16px',
+      background: visible ? C.toggleBgOn : '#ffffff',
+      border: 'none',
+      borderRadius: 28, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+      backdropFilter: visible ? 'blur(14px)' : 'none',
+      boxShadow: visible ? C.toggleShadowOn : 'none',
       transition: 'all 0.2s', userSelect: 'none',
     }}>
-      <ScanIcon size={13} color={inspectMode ? C.blue : dotColor} />
-      <span style={{ fontSize: 11, fontWeight: 700, color: inspectMode ? C.blue : C.text, letterSpacing: 0.3 }}>
-        {inspectMode ? 'INSPECT' : (visible && scanned && !scanning ? `${pct}%` : 'DS')}
-      </span>
-      {visible && scanned && !scanning && !inspectMode && total > 0 && (
+      <PaletteIcon size={20} color={'#a855f7'} />
+
+      {scanning && (
+        <span style={{ fontSize: 10, color: C.yellow }}>scanning…</span>
+      )}
+
+      {inspectMode && !scanning && (
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.blue, letterSpacing: 0.3 }}>Identifying…</span>
+      )}
+
+      {!inspectMode && !scanning && scanned && (
         <>
-          <MiniBar pct={pct} width={32} />
-          <span style={{ fontSize: 10, color: C.muted }}>{total}</span>
-          {tokenCount > 0 && (
-            <span title={`${tokenCount} token violations`} style={{
-              fontSize: 9, fontWeight: 700, color: C.red,
-              background: C.redChipBg, padding: '0 5px', borderRadius: 8, lineHeight: '14px',
-            }}>{tokenCount}</span>
+          {/* DS coverage — always shown */}
+          <span title={`${pct}% of elements on this screen are from your design system`} style={{
+            fontSize: 11, fontWeight: 700, color: C.green,
+            background: `${C.green}18`, padding: '2px 7px', borderRadius: 20,
+            fontVariantNumeric: 'tabular-nums',
+          }}>{pct}%</span>
+          {/* Drift — only if any */}
+          {driftedCount > 0 && (
+            <span title={`${driftedCount} designed components have custom styles applied on top`} style={{
+              fontSize: 11, fontWeight: 700, color: C.orange,
+              background: `${C.orange}18`, padding: '2px 7px', borderRadius: 20,
+              fontVariantNumeric: 'tabular-nums',
+            }}>{driftedCount}</span>
+          )}
+          {/* Custom-built — only if any */}
+          {gapCount > 0 && (
+            <span title={`${gapCount} elements were built from scratch, not from your design system`} style={{
+              fontSize: 11, fontWeight: 700, color: C.red,
+              background: `${C.red}18`, padding: '2px 7px', borderRadius: 20,
+              fontVariantNumeric: 'tabular-nums',
+            }}>{gapCount}</span>
           )}
         </>
       )}
-      {visible && scanning && <span style={{ fontSize: 10, color: C.yellow }}>scanning…</span>}
     </button>
   )
+}
+
+// ─── Gradient border animation ────────────────────────────────────────────────
+
+const GRADIENT_STYLE = `
+@keyframes dd-gradient-spin {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.dd-gradient-wrap {
+  background: linear-gradient(-45deg, #a855f7, #3b82f6, #22c55e, #f97316, #a855f7);
+  background-size: 400% 400%;
+  animation: dd-gradient-spin 4s ease infinite;
+  border-radius: 30px;
+  padding: 2px;
+  display: inline-flex;
+}
+`
+
+function injectGradientStyle() {
+  if (document.getElementById('dd-gradient-style')) return
+  const el = document.createElement('style')
+  el.id = 'dd-gradient-style'
+  el.textContent = GRADIENT_STYLE
+  document.head.appendChild(el)
 }
 
 // ─── Main overlay ─────────────────────────────────────────────────────────────
@@ -1357,13 +1459,38 @@ export function DSCoverageOverlay() {
     return () => window.removeEventListener('keydown', h)
   }, [])
 
+  // Inject gradient animation + auto-scan on mount
+  useEffect(() => {
+    injectGradientStyle()
+    scan()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Click-outside to close — uses a document listener so the backdrop
+  // div doesn't block page scrolling
+  useEffect(() => {
+    if (!visible) return
+    const handler = (e: MouseEvent) => {
+      const panel  = document.querySelector('[data-dd-panel]')
+      const toggle = document.querySelector('[data-dd-toggle]')
+      if (
+        panel  && !panel.contains(e.target as Node) &&
+        toggle && !toggle.contains(e.target as Node)
+      ) {
+        setVisible(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [visible])
+
   useEffect(() => {
     if (!visible) {
-      setComponents([]); setScanned(false); setScanning(false)
-      setInspectMode(false); setInspected(null); setTokenViolations([])
-      scanningRef.current = false; return
+      // Keep components/scanned so collapsed button keeps showing metrics
+      setInspectMode(false); setInspected(null)
+      return
     }
-    setHistory(loadHistory()); scan()
+    setHistory(loadHistory())
+    if (!scanned) scan()
   }, [visible]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (visible && scanned) scan() }, [surfaceMode]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -1417,14 +1544,14 @@ export function DSCoverageOverlay() {
   return (
     <ThemeCtx.Provider value={C}>
       <div data-ds-overlay="true">
-        {visible && displayed.map((c, i) => (
+        {visible && (hoveredGap ? displayed.filter(c => c.name === hoveredGap) : displayed).map((c, i) => (
           <OverlayBox
             key={`${c.name}-${i}`}
             c={c}
             yOffset={offsets[i]}
             inspectMode={inspectMode}
             isInspected={inspected === c}
-            isHighlighted={hoveredGap === c.name}
+            isHighlighted={!!hoveredGap}
             onInspect={setInspected}
           />
         ))}
@@ -1447,9 +1574,9 @@ export function DSCoverageOverlay() {
 
         {/* Floating panel — anchored bottom-right, capped height, above toggle button */}
         {visible && (
-          <div style={{
+          <div data-dd-panel style={{
             position: 'fixed', bottom: 80, right: 16,
-            width: 320, maxHeight: 'min(75vh, 660px)',
+            width: 360, maxHeight: 'min(75vh, 660px)',
             background: C.panel, border: `1px solid ${C.panelBorder}`,
             borderRadius: 14,
             boxShadow: C.shadow,
@@ -1480,13 +1607,16 @@ export function DSCoverageOverlay() {
           </div>
         )}
 
-        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 99999 }}>
-          <ToggleButton
-            visible={visible} pct={pct} total={total}
-            scanned={scanned} scanning={scanning} inspectMode={inspectMode}
-            tokenCount={tokenViolations.length}
-            onClick={() => setVisible(v => !v)}
-          />
+        <div data-dd-toggle style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 99999 }}>
+          <div className="dd-gradient-wrap">
+            <ToggleButton
+              visible={visible} pct={pct}
+              scanned={scanned} scanning={scanning} inspectMode={inspectMode}
+              driftedCount={components.filter(c => c.drifted).length}
+              gapCount={components.filter(c => !c.inDS).length}
+              onClick={() => setVisible(v => !v)}
+            />
+          </div>
         </div>
       </div>
     </ThemeCtx.Provider>
