@@ -437,7 +437,7 @@ export default function App() {
 
       {/* Bottom-left controls: back link + tour trigger */}
       <div style={{
-        position: 'fixed', bottom: 16, left: 16, zIndex: 9998,
+        position: 'fixed', bottom: 16, left: 16, zIndex: 99995,
         display: 'flex', alignItems: 'center', gap: 8,
         fontFamily: 'Inter, system-ui, sans-serif',
       }}>
