@@ -1,0 +1,150 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Design System / How This Works" />
+
+# From Figma to Code — How This Works
+
+This page explains the workflow that built this component library,
+and why it matters for how your team ships product.
+
+---
+
+## The old way
+
+Traditionally, getting a design into code looks like this:
+
+```
+Designer finishes in Figma
+        ↓
+PM writes a ticket describing the component
+        ↓
+Engineer reads the ticket, opens Figma, manually translates it to code
+        ↓
+Engineer sends it back for design review
+        ↓
+Designer redlines it ("the padding is off", "wrong font weight")
+        ↓
+Engineer fixes it
+        ↓  (repeat 2–4 more times)
+Component ships — 1–2 weeks later
+```
+
+**The pain points:**
+- Engineers spend time on translation, not logic
+- PMs can't prototype ideas without engineering time
+- Designs drift from code over time — what's in Figma ≠ what's in the app
+- Feedback loops are slow
+
+---
+
+## The new way (what you're looking at)
+
+```
+Designer finishes in Figma
+        ↓
+Claude reads the Figma file directly via MCP (Model Context Protocol)
+        ↓
+Claude generates React components that match the design pixel-for-pixel
+        ↓
+Components land in Storybook — interactive, documented, ready to use
+        ↓
+Engineers drop them into the real app
+```
+
+**What is MCP?**
+MCP (Model Context Protocol) is a connection that lets Claude talk directly
+to external tools — in this case, the Figma API. Claude reads the actual
+design file: every color, font size, spacing value, text label, and component
+structure. No screenshots. No copy-paste. The real data.
+
+**Total time to generate this library from the Figma file: ~10 minutes.**
+
+---
+
+## Why Storybook?
+
+Storybook is the bridge between design and engineering. It's a living,
+interactive catalog of every UI component — isolated from the app.
+
+| What you can do | Why it matters |
+|---|---|
+| See every component variant in one place | No more hunting through the app to find "the button with the warning state" |
+| Change props with sliders/dropdowns | PMs and designers can explore states without writing code |
+| Check accessibility automatically | Catch a11y issues before they reach users |
+| Share a URL to a specific component state | "Here's exactly what I mean" — no more annotated screenshots |
+| Write tests against stories | QA knows exactly what to test |
+
+---
+
+## What this means for Product Managers
+
+This is the big one.
+
+**Before:** A PM has an idea. They mock it up in a slide or draw it in Figma.
+Then they wait for engineering bandwidth to see it as a real thing.
+
+**Now:** A PM can describe what they want in plain English to Claude —
+*"build me a page that uses the TenantPageHeader with the UnitDetailsCard
+below it, and make the active tab 'Billing'"* — and get a working prototype
+in minutes, using the **real components** from the design system.
+
+This is "vibe coding" — moving at the speed of thought, with guardrails.
+
+### The guardrails matter
+
+Vibe coding without a design system = spaghetti prototypes that engineers
+have to throw away. The PM builds something in `v0` or `Bolt`, it looks
+great in the demo, and then engineering says "we can't use any of this."
+
+Vibe coding **with** a design system = prototypes built from the same
+components that are already in production. When engineering picks it up,
+the heavy lifting is done. The colors, spacing, typography, and interactions
+are already correct. They're wiring logic, not rebuilding UI.
+
+### Concrete example
+
+A PM wants to prototype a new "Lease Renewal" flow:
+
+```
+PM: "Build a page with TenantPageHeader for Stephanie Anderson,
+     a new tab called 'Renewal', and a card below showing
+     renewal date, new rate, and an Accept/Decline button row."
+```
+
+Claude uses the components already in this Storybook,
+composes them into the new page, and the PM has something
+they can click through and share with stakeholders in 5 minutes.
+Engineering sees it and says: *"We can ship this — it's already
+using our components."*
+
+---
+
+## The full picture
+
+```
+┌─────────────┐     MCP      ┌─────────────┐   generates   ┌──────────────┐
+│   Figma     │ ──────────▶  │   Claude    │ ────────────▶ │  Storybook   │
+│  (design    │              │  (AI that   │               │  (component  │
+│   source    │              │  reads &    │               │   library +  │
+│   of truth) │              │  writes     │               │   docs)      │
+└─────────────┘              │   code)     │               └──────┬───────┘
+                             └─────────────┘                      │
+                                   ▲                              │ reuses
+                                   │ PMs describe                 ▼
+                                   │ new features        ┌──────────────┐
+                                   └──────────────────── │  Prototypes  │
+                                                         │  & new pages │
+                                                         └──────────────┘
+```
+
+**Figma** stays the design source of truth.
+**Claude + MCP** eliminates the translation layer.
+**Storybook** is the shared language between design, PM, and engineering.
+
+---
+
+## The pitch in one sentence
+
+> *"Instead of designs living in Figma and code living somewhere else,
+> this workflow keeps them in sync — and lets anyone on the team
+> build with real components at the speed of an idea."*

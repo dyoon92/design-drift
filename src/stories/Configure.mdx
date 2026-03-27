@@ -1,0 +1,64 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Design System / Welcome" />
+
+# Design AI with Dave — Component Library
+
+This Storybook documents the UI components imported from the **Design AI with Dave** Figma file.
+Each component is live, interactive, and built to match the Figma designs exactly.
+
+---
+
+## What is Storybook?
+
+Storybook is a sandbox where you can **view, test, and tweak UI components in isolation** — without needing to run the full app. Think of it as a living style guide.
+
+**Left sidebar** — browse components by category
+**Canvas tab** — interact with the live component
+**Docs tab** — see all variants + auto-generated prop documentation
+**Controls panel** (bottom) — change props in real-time and see the component update instantly
+**Actions panel** (bottom) — see when buttons/callbacks are triggered
+
+---
+
+## Components in this library
+
+### DesignAI / LineTab
+A tab navigation bar. Supports an active tab indicator (purple underline), optional badge counts, and click callbacks.
+
+**Try it:** Open `DesignAI → LineTab → Default`, then use the **Controls** panel at the bottom to change `activeTab` to `"billing"`.
+
+---
+
+### DesignAI / TenantPageHeader
+The full page header for a tenant profile. Includes the tenant name, colored status badges, contact meta-info row, action buttons, and the LineTab component embedded at the bottom.
+
+**Try it:** Open `DesignAI → TenantPageHeader → Default`, then in **Controls** toggle `accessStatus` between `active` and `inactive` to see the access dot change color.
+
+---
+
+### DesignAI / TenantInfoCard
+A detail card showing tenant information as label/value rows. Has a collapsible "Additional Details" section with alternate contact, beneficiary, and military info.
+
+**Try it:** Open `DesignAI → TenantInfoCard → Default` and click **Additional Details** inside the component to expand the accordion. Then switch to the **Docs** tab to see all three story variants side by side.
+
+---
+
+### DesignAI / UnitDetailsCard
+A two-panel card — a scrollable unit list on the left and a detail panel on the right. Supports status badges (Overdue / Active / Move Out) and dismissible alert banners.
+
+**Try it:** Open `DesignAI → UnitDetailsCard → Overdue`, then click different units in the left sidebar to select them. Use **Controls** to change `unitStatus` and watch the badge update.
+
+---
+
+## Design tokens used
+
+| Token | Value | Usage |
+|---|---|---|
+| Primary purple | `#7d52f7` | Active tab, links, buttons |
+| Dark purple | `#5d1dd6` | Unit numbers |
+| Text | `#161616` | All body text |
+| Error red | `#e02c3b` | Overdue badges, warnings |
+| Success green | `#17d797` | Active access indicator |
+| Border | `#e1e5ef` | Card borders, dividers |
+| Font | Inter | All components |

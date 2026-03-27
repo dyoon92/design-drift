@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DesignDrift</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 320px;
+      min-height: 180px;
+      font-family: Inter, system-ui, sans-serif;
+      background: #0d1019;
+      color: #f1f5f9;
+      font-size: 13px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo {
+      width: 18px; height: 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+    }
+    .logo span {
+      border-radius: 2px;
+      background: #3b82f6;
+    }
+    .logo span:nth-child(2), .logo span:nth-child(3) { opacity: 0.45; }
+    .title { font-size: 13px; font-weight: 800; letter-spacing: -0.2px; }
+
+    .settings-btn {
+      width: 26px; height: 26px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      cursor: pointer;
+      color: #8899b0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+
+    .body { padding: 14px; }
+
+    /* Not-configured state */
+    .unconfigured {
+      text-align: center;
+      padding: 20px 0 10px;
+      color: #8899b0;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .unconfigured strong { display: block; color: #f1f5f9; font-size: 13px; margin-bottom: 6px; }
+
+    /* Scan button */
+    .scan-btn {
+      width: 100%;
+      padding: 9px 0;
+      border: none;
+      border-radius: 8px;
+      background: #3b82f6;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .scan-btn:disabled { background: rgba(255,255,255,0.1); color: #8899b0; cursor: default; }
+
+    /* Coverage ring */
+    .coverage {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .ring-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+    .ring-wrap svg { transform: rotate(-90deg); }
+    .ring-pct {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800;
+    }
+    .coverage-stats { flex: 1; }
+    .stat { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px; }
+    .stat-label { color: #8899b0; }
+    .stat-value { font-weight: 700; }
+
+    /* Gap list */
+    .section-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #8899b0;
+      margin-bottom: 6px;
+    }
+    .gap-list { list-style: none; }
+    .gap-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 11px;
+    }
+    .gap-item:last-child { border-bottom: none; }
+    .gap-name { color: #ef4444; font-weight: 600; }
+    .gap-count {
+      font-size: 10px; font-weight: 700;
+      padding: 1px 6px; border-radius: 8px;
+      background: rgba(239,68,68,0.15); color: #ef4444;
+    }
+
+    /* Token violations */
+    .token-warn {
+      margin-top: 10px;
+      padding: 7px 10px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 7px;
+      font-size: 11px;
+      color: #fca5a5;
+    }
+
+    .no-react {
+      padding: 16px 0;
+      text-align: center;
+      color: #8899b0;
+      font-size: 12px;
+    }
+    .no-react strong { display: block; color: #f1f5f9; margin-bottom: 4px; }
+
+    .footer {
+      padding: 8px 14px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 10px;
+      color: #536070;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <span class="title">DesignDrift</span>
+    </div>
+    <button class="settings-btn" id="settingsBtn" title="Configure design system">⚙</button>
+  </div>
+
+  <div class="body" id="body">
+    <div class="unconfigured" id="unconfigured" style="display:none">
+      <strong>Not configured</strong>
+      Add your design system components in Settings to start scanning.
+    </div>
+
+    <div id="scanArea">
+      <button class="scan-btn" id="scanBtn">Scan this page</button>
+    </div>
+
+    <div id="results" style="display:none"></div>
+    <div id="noReact" style="display:none">
+      <div class="no-react">
+        <strong>No React detected</strong>
+        This page doesn't appear to use React, or it hasn't loaded yet.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span id="footerRoute">—</span>
+    <span id="footerTime">—</span>
+  </div>
+
+  <script src="src/popup.js"></script>
+</body>
+</html>

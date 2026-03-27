@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 12px;
+      color: #1e1e1e;
+      background: #fff;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .subtitle { color: #757575; font-size: 11px; margin-bottom: 16px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary { background: #7d52f7; color: #fff; }
+    .btn-primary:hover { background: #6b3de6; }
+    .btn-secondary { background: #f0f0f0; color: #1e1e1e; }
+    .btn-secondary:hover { background: #e0e0e0; }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+
+    .scan-area { display: flex; gap: 8px; margin-bottom: 16px; }
+
+    .status {
+      font-size: 11px;
+      color: #757575;
+      margin-bottom: 12px;
+      min-height: 16px;
+    }
+    .status.error { color: #e02c3b; }
+    .status.success { color: #08875c; font-weight: 700; }
+
+    .results {
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .results-header {
+      padding: 10px 12px;
+      background: #f7f7f7;
+      border-bottom: 1px solid #e5e5e5;
+      font-weight: 700;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .count-badge {
+      background: #7d52f7;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .component-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .component-item {
+      padding: 6px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+    }
+    .component-item:last-child { border-bottom: none; }
+    .component-name { font-weight: 600; }
+    .component-variants { color: #aaa; font-size: 10px; }
+
+    .export-area { display: none; }
+    .export-area h3 { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+    .code-block {
+      background: #f7f7f7;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      padding: 10px;
+      font-family: 'Menlo', 'Monaco', monospace;
+      font-size: 10px;
+      max-height: 120px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      white-space: pre;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+    .copy-btn {
+      width: 100%;
+      padding: 8px;
+      background: #1e1e1e;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background: #333; }
+    .copy-btn.copied { background: #08875c; }
+
+    .instructions {
+      background: #f0f7ff;
+      border: 1px solid #b3d4ff;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 11px;
+      line-height: 1.6;
+      color: #1a4a8a;
+      display: none;
+      margin-top: 12px;
+    }
+    .instructions ol { padding-left: 16px; }
+    .instructions code {
+      background: #dbeafe;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>◈ DesignDrift</h1>
+  <p class="subtitle">Export your Figma component library as a JSON manifest for drift detection.</p>
+
+  <div class="scan-area">
+    <button class="btn btn-primary" id="scanBtn">Scan components</button>
+    <button class="btn btn-secondary" id="closeBtn">Close</button>
+  </div>
+
+  <div class="status" id="status">Click "Scan components" to analyse this file.</div>
+
+  <div class="results" id="results">
+    <div class="results-header">
+      <span>Found components</span>
+      <span class="count-badge" id="countBadge">0</span>
+    </div>
+    <div class="component-list" id="componentList"></div>
+  </div>
+
+  <div class="export-area" id="exportArea">
+    <h3>Paste into <code>src/ds-coverage/config.ts</code></h3>
+    <div class="code-block" id="codeBlock"></div>
+    <button class="copy-btn" id="copyBtn">Copy JSON to clipboard</button>
+  </div>
+
+  <div class="instructions" id="instructions">
+    <strong>Next steps:</strong>
+    <ol>
+      <li>Copy the JSON above</li>
+      <li>Open <code>src/ds-coverage/config.ts</code> in your repo</li>
+      <li>Replace the <code>components: { ... }</code> object with the exported data</li>
+      <li>Add <code>storyPath</code> entries for each component pointing to your Storybook stories</li>
+      <li>Run <code>npm run dev</code> — the overlay now knows your entire component library</li>
+    </ol>
+  </div>
+
+  <script>
+    let manifest = null
+
+    document.getElementById('scanBtn').addEventListener('click', () => {
+      document.getElementById('status').textContent = 'Scanning…'
+      document.getElementById('status').className = 'status'
+      document.getElementById('results').style.display = 'none'
+      document.getElementById('exportArea').style.display = 'none'
+      document.getElementById('instructions').style.display = 'none'
+      parent.postMessage({ pluginMessage: { type: 'SCAN' } }, '*')
+    })
+
+    document.getElementById('closeBtn').addEventListener('click', () => {
+      parent.postMessage({ pluginMessage: { type: 'CLOSE' } }, '*')
+    })
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      if (!manifest) return
+      const json = JSON.stringify(manifest.components, null, 2)
+      try {
+        await navigator.clipboard.writeText(json)
+        const btn = document.getElementById('copyBtn')
+        btn.textContent = 'Copied!'
+        btn.classList.add('copied')
+        setTimeout(() => {
+          btn.textContent = 'Copy JSON to clipboard'
+          btn.classList.remove('copied')
+        }, 2000)
+      } catch {
+        // Figma doesn't always allow clipboard in plugin UI
+        prompt('Copy this JSON:', json)
+      }
+    })
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage
+      if (!msg) return
+
+      if (msg.type === 'READY') {
+        document.getElementById('status').textContent = 'Ready. Click "Scan components".'
+      }
+
+      if (msg.type === 'SCAN_RESULT') {
+        manifest = msg.manifest
+        const { componentCount, components, meta } = manifest
+
+        document.getElementById('status').textContent =
+          `Found ${componentCount} component${componentCount !== 1 ? 's' : ''} in "${manifest.figmaFileKey}"`
+        document.getElementById('status').className = 'status success'
+
+        // Render component list
+        document.getElementById('countBadge').textContent = componentCount
+        const list = document.getElementById('componentList')
+        list.innerHTML = meta.map(c => `
+          <div class="component-item">
+            <span class="component-name">${c.reactName}</span>
+            <span class="component-variants">
+              ${c.variants ? c.variants.length + ' variants' : 'standalone'}
+            </span>
+          </div>
+        `).join('')
+        document.getElementById('results').style.display = 'block'
+
+        // Render export JSON
+        const exportJson = JSON.stringify(components, null, 2)
+        document.getElementById('codeBlock').textContent = exportJson
+        document.getElementById('exportArea').style.display = 'block'
+        document.getElementById('instructions').style.display = 'block'
+      }
+    }
+  </script>
+</body>
+</html>

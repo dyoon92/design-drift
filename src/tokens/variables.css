@@ -1,0 +1,90 @@
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+:root {
+  --ds-color-primary: #7d52f7;
+  --ds-color-primary-dark: #5d1dd6;
+  --ds-color-text-primary: #161616;
+  --ds-color-text-muted: #94a0b8;
+  --ds-color-white: #ffffff;
+  --ds-color-surface-subtle: #f7f9fb;
+  --ds-color-surface-muted: #f0f2f8;
+  --ds-color-border: #e1e5ef;
+  --ds-color-error: #e02c3b;
+  --ds-color-error-light: #fee1e3;
+  --ds-color-success: #08875c;
+  --ds-color-success-light: #e4f5e8;
+  --ds-color-success-bright: #17d797;
+  --ds-color-warning: #b25d09;
+  --ds-color-warning-light: #fff1d6;
+  --ds-color-warning-subtle: #fff8eb;
+  --ds-color-warning-icon: #db7612;
+  --ds-color-primary-light: #f5f0ff;
+  --ds-color-info-light: #eaf1ff;
+  --ds-color-error-subtle: #fdf0f1;
+  --ds-color-color-1: #f1f3f9; /** New color found in Figma — give it a name! */
+  --ds-color-color-2: #e1e6ef; /** New color found in Figma — give it a name! */
+  --ds-color-color-3: #7d52f8; /** New color found in Figma — give it a name! */
+  --ds-color-color-4: #f8f9fc; /** New color found in Figma — give it a name! */
+  --ds-color-color-5: #f4f0ff; /** New color found in Figma — give it a name! */
+  --ds-color-color-6: #fef1f2; /** New color found in Figma — give it a name! */
+  --ds-color-color-7: #e02d3c; /** New color found in Figma — give it a name! */
+  --ds-color-color-8: #08875d; /** New color found in Figma — give it a name! */
+  --ds-font-size-sm: 12px;
+  --ds-font-size-base: 14px;
+  --ds-font-size-md: 15px;
+  --ds-font-weight-regular: 400;
+  --ds-font-weight-medium: 500;
+  --ds-font-weight-semibold: 600;
+  --ds-font-weight-bold: 700;
+  --ds-font-family-body: Inter;
+  --ds-border-radius-sm: 4px;
+  --ds-border-radius-md: 6px;
+  --ds-border-radius-lg: 8px;
+  --ds-border-radius-full: 999px;
+  --ds-spacing-1: 4px;
+  --ds-spacing-2: 8px;
+  --ds-spacing-3: 12px;
+  --ds-spacing-4: 16px;
+  --ds-spacing-5: 20px;
+  --ds-spacing-6: 24px;
+  --ds-spacing-8: 32px;
+
+  /* Page background — used by App shell */
+  --ds-color-page-bg: #f1f3f9;
+  --ds-color-surface: #ffffff;
+}
+
+/* ─── Dark mode ─────────────────────────────────────────────────────────────── */
+
+[data-theme="dark"] {
+  --ds-color-primary: #9b78fa;
+  --ds-color-primary-dark: #7d52f7;
+  --ds-color-primary-light: #2a1f4a;
+  --ds-color-text-primary: #f0f0f0;
+  --ds-color-text-muted: #6b7a99;
+  --ds-color-white: #1a1d26;
+  --ds-color-surface: #1a1d26;
+  --ds-color-surface-subtle: #1e2130;
+  --ds-color-surface-muted: #252a38;
+  --ds-color-border: #2e3347;
+  --ds-color-page-bg: #13151e;
+  --ds-color-error: #f04a57;
+  --ds-color-error-light: #3a1520;
+  --ds-color-error-subtle: #2d1118;
+  --ds-color-success: #0fa876;
+  --ds-color-success-light: #0d2e22;
+  --ds-color-warning: #d97c1a;
+  --ds-color-warning-light: #2e1e06;
+  --ds-color-warning-subtle: #241808;
+  --ds-color-info-light: #1a2340;
+  --ds-color-color-1: #252a38;
+  --ds-color-color-2: #2e3347;
+  --ds-color-color-3: #9b78fa;
+  --ds-color-color-4: #1e2130;
+  --ds-color-color-5: #2a1f4a;
+  --ds-color-color-6: #3a1520;
+  --ds-color-color-7: #f04a57;
+  --ds-color-color-8: #0fa876;
+}

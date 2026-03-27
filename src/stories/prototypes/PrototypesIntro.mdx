@@ -1,0 +1,89 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="🧪 Prototypes / How to Prototype" />
+
+# Vibe Coding with Real Components
+
+This section is where **prototypes live** — new screens and flows built by composing
+the design system components, not by writing UI from scratch.
+
+---
+
+## The workflow
+
+```
+PM describes what they want in plain English
+        ↓
+Paste the prompt into Claude Code along with the component list below
+        ↓
+Claude composes existing components into a working prototype
+        ↓
+Click through it in Storybook, share the URL, gather feedback
+        ↓
+Engineering picks it up — the components are already production-ready
+```
+
+**Total time from idea to clickable prototype: 5–10 minutes.**
+
+---
+
+## The prompt template
+
+Copy this and fill in the blanks:
+
+```
+Using the components in our design system Storybook
+(TenantPageHeader, PaymentBanner, MultiUnitBanner, TenantInfoCard,
+TenantsTable, AccessStatus), build a prototype for:
+
+[describe the screen or flow in plain English]
+
+Rules:
+- Use the real component props, don't reinvent the UI
+- Use CSS variables (var(--ds-color-*)) for any new styles, not hardcoded hex
+- Put the file in src/stories/prototypes/
+- Add a .stories.ts file with layout: fullscreen
+```
+
+---
+
+## Available components to compose
+
+| Component | What it does | Key props |
+|---|---|---|
+| `TenantPageHeader` | Full tenant page header with tabs, balance, access status | `name`, `balance`, `activeTab`, `numberOfUnits` |
+| `PaymentBanner` | Payment status strip below the header | `status`, `balanceAmount`, `autopay` |
+| `MultiUnitBanner` | Multi-unit status summary | `status`, `unitCount`, `overdueCount` |
+| `TenantInfoCard` | Collapsible info card (lease details, emergency contact) | `details`, `alternateContact` |
+| `TenantsTable` | Full tenants list with Current/Past tabs | `tab`, `tenants` |
+| `AccessStatus` | Gate/access status badge | `status`, `unitCount` |
+
+---
+
+## Example prompts that work well
+
+**New feature tab:**
+> *"Add a 'Renewal' tab to Stephanie Anderson's page. Show her lease dates and a rate
+> increase with Accept/Decline buttons."*
+
+**New status state:**
+> *"Show what the tenant page looks like for a tenant who is 3 months overdue
+> and has had access revoked."*
+
+**New page layout:**
+> *"Build a Move-Out Checklist page with TenantPageHeader at the top and a
+> checklist card below showing inspection, key return, and final balance steps."*
+
+---
+
+## What makes this different from building in v0 or Bolt
+
+When you prototype in **v0 or Bolt**, you get something that *looks* like your product
+but is built from scratch with custom CSS. Engineering has to throw it away and rebuild
+the real thing.
+
+When you prototype **here**, you're using the same components that are already in the
+production app. Engineering sees the prototype and says:
+*"We can ship this — the components are already there. We just need to wire the data."*
+
+That's the difference between a prototype that creates work and one that **becomes** the feature.

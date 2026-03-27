@@ -1,0 +1,72 @@
+{
+  "name": "design-drift",
+  "displayName": "DesignDrift",
+  "description": "Real-time design system compliance checker. Highlights non-DS component usage inline as you code.",
+  "version": "0.1.0",
+  "publisher": "design-drift",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Linters", "Other"],
+  "keywords": ["design system", "component library", "drift", "storybook", "react"],
+  "icon": "icons/icon128.png",
+  "activationEvents": [
+    "onLanguage:typescriptreact",
+    "onLanguage:javascriptreact",
+    "onCommand:designDrift.scanFile",
+    "onCommand:designDrift.scanWorkspace"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "designDrift.scanFile",
+        "title": "DesignDrift: Scan Current File",
+        "icon": "$(search)"
+      },
+      {
+        "command": "designDrift.scanWorkspace",
+        "title": "DesignDrift: Scan Workspace",
+        "icon": "$(search-fuzzy)"
+      },
+      {
+        "command": "designDrift.openConfig",
+        "title": "DesignDrift: Open Config"
+      }
+    ],
+    "configuration": {
+      "title": "DesignDrift",
+      "properties": {
+        "designDrift.configPath": {
+          "type": "string",
+          "default": "src/ds-coverage/config.ts",
+          "description": "Path to your DesignDrift config file (relative to workspace root)"
+        },
+        "designDrift.storybookUrl": {
+          "type": "string",
+          "default": "http://localhost:6006",
+          "description": "Base URL of your Storybook instance"
+        },
+        "designDrift.severity": {
+          "type": "string",
+          "enum": ["error", "warning", "information", "hint"],
+          "default": "warning",
+          "description": "Diagnostic severity for non-DS component usage"
+        },
+        "designDrift.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable DesignDrift diagnostics"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.24.0",
+    "typescript": "~5.9.3"
+  }
+}
