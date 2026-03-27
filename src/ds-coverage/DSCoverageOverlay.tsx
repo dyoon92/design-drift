@@ -1299,67 +1299,72 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
                 return (
                   <div
                     key={i}
-                    onMouseEnter={() => setHoveredCard(i)}
-                    onMouseLeave={() => setHoveredCard(null)}
                     style={{
-                      padding: '10px 12px', marginBottom: 6,
+                      marginBottom: 6,
                       background: C.panel,
                       border: `1px solid ${C.panelBorder}`,
                       borderRadius: 8,
                       boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                      position: 'relative',
-                      transition: 'box-shadow 0.15s',
+                      overflow: 'hidden',
                     }}
                   >
-                    {/* Title row: label + value pill */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                        {g.type === 'color' && (
-                          <div style={{
-                            width: 10, height: 10, borderRadius: 2, flexShrink: 0,
-                            background: g.value, border: '1px solid rgba(0,0,0,0.12)',
-                          }} />
-                        )}
-                        <span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{label}</span>
-                      </div>
-                      <span style={{
-                        fontSize: 10, fontWeight: 600, fontFamily: 'monospace',
-                        color: C.orange, background: `${C.orange}14`,
-                        padding: '2px 8px', borderRadius: 4, flexShrink: 0,
-                      }}>{g.value}</span>
-                    </div>
-                    {/* Suggestion or fallback + Fix button */}
-                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      {suggestion ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 10, color: C.green }}>→ Replace with</span>
-                          <span style={{
-                            fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
-                            color: C.green, background: `${C.green}14`,
-                            padding: '1px 6px', borderRadius: 4,
-                          }}>{suggestion}</span>
+                    {/* Card body */}
+                    <div style={{ padding: '10px 12px' }}>
+                      {/* Title row: label + value pill */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                          {g.type === 'color' && (
+                            <div style={{
+                              width: 10, height: 10, borderRadius: 2, flexShrink: 0,
+                              background: g.value, border: '1px solid rgba(0,0,0,0.12)',
+                            }} />
+                          )}
+                          <span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{label}</span>
                         </div>
-                      ) : (
-                        <div style={{ fontSize: 10, color: C.muted }}>Not in your design tokens</div>
-                      )}
-                      {hoveredCard === i && hasAction && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 600, fontFamily: 'monospace',
+                          color: C.orange, background: `${C.orange}14`,
+                          padding: '2px 8px', borderRadius: 4, flexShrink: 0,
+                        }}>{g.value}</span>
+                      </div>
+                      {/* Suggestion or fallback */}
+                      <div style={{ marginTop: 6 }}>
+                        {suggestion ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 10, color: C.green }}>→ Replace with</span>
+                            <span style={{
+                              fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
+                              color: C.green, background: `${C.green}14`,
+                              padding: '1px 6px', borderRadius: 4,
+                            }}>{suggestion}</span>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 10, color: C.muted }}>Not in your design tokens</div>
+                        )}
+                      </div>
+                    </div>
+                    {/* Card footer — Fix button */}
+                    {hasAction && (
+                      <div style={{
+                        borderTop: `1px solid ${C.panelBorder}`,
+                        padding: '7px 12px',
+                        background: 'rgba(124,58,237,0.04)',
+                      }}>
                         <button
                           onClick={() => firePrompt(fixOnePrompt, label)}
                           disabled={sending}
                           style={{
-                            display: 'flex', alignItems: 'center', gap: 3,
-                            fontSize: 10, fontWeight: 700, padding: '2px 9px',
-                            background: 'rgba(124,58,237,0.12)', color: '#7c3aed',
-                            border: '1px solid rgba(124,58,237,0.3)', borderRadius: 5,
-                            cursor: sending ? 'default' : 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 4,
+                            fontSize: 10, fontWeight: 700,
+                            background: 'none', border: 'none', padding: 0,
+                            color: '#7c3aed', cursor: sending ? 'default' : 'pointer',
                             fontFamily: 'Inter, sans-serif', opacity: sending ? 0.5 : 1,
-                            flexShrink: 0, transition: 'opacity 0.15s',
                           }}
                         >
-                          <span style={{ fontSize: 9 }}>✦</span> Fix
+                          <span style={{ fontSize: 11 }}>✦</span> Fix this
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )
               })}
