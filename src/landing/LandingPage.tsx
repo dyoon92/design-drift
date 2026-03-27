@@ -17,8 +17,11 @@ const C = {
 }
 
 // ─── Shared styles ─────────────────────────────────────────────────────────────
-const mono: React.CSSProperties = { fontFamily: '"SF Mono", "Fira Code", "Cascadia Code", monospace' }
-const inter: React.CSSProperties = { fontFamily: 'Inter, system-ui, sans-serif' }
+const mono: React.CSSProperties = { fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", monospace' }
+const sans: React.CSSProperties = { fontFamily: '"DM Sans", system-ui, sans-serif' }
+const display: React.CSSProperties = { fontFamily: '"Syne", system-ui, sans-serif' }
+// Legacy alias — gradually being replaced
+const inter = sans
 
 function Chip({ color, children }: { color: string; children: React.ReactNode }) {
   return (
@@ -85,7 +88,7 @@ function Nav() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 14,
         }}>⬡</div>
-        <span style={{ fontWeight: 700, fontSize: 15, color: C.text }}>DesignDrift</span>
+        <span style={{ fontWeight: 700, fontSize: 15, color: C.text, ...display }}>DesignDrift</span>
       </div>
 
       {/* Links */}
@@ -163,9 +166,10 @@ function Hero() {
       </div>
 
       <h1 style={{
-        fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 800,
+        ...display,
+        fontSize: 'clamp(38px, 6.5vw, 76px)', fontWeight: 800,
         color: C.text, margin: '0 0 20px',
-        lineHeight: 1.1, letterSpacing: -1.5, maxWidth: 820,
+        lineHeight: 1.05, letterSpacing: -2, maxWidth: 860,
       }}>
         Catch design system drift
         <br />
@@ -176,8 +180,8 @@ function Hero() {
       </h1>
 
       <p style={{
-        fontSize: 18, color: C.muted, maxWidth: 560,
-        lineHeight: 1.7, margin: '0 0 48px',
+        ...sans, fontSize: 18, color: C.muted, maxWidth: 560,
+        lineHeight: 1.75, margin: '0 0 48px', fontWeight: 300,
       }}>
         A floating overlay that scans your React app in real time, flags
         components drifting from your design tokens, and suggests one-click AI fixes.
@@ -361,10 +365,10 @@ function Features() {
     <section id="features" style={{ padding: '80px 40px', maxWidth: 1100, margin: '0 auto', ...inter }}>
       <div style={{ textAlign: 'center', marginBottom: 56 }}>
         <Chip color={C.blue}>Features</Chip>
-        <h2 style={{ fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -0.8 }}>
+        <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -1 }}>
           Everything you need to stay in sync
         </h2>
-        <p style={{ fontSize: 16, color: C.muted, maxWidth: 480, margin: '0 auto' }}>
+        <p style={{ ...sans, fontSize: 16, color: C.muted, maxWidth: 480, margin: '0 auto', fontWeight: 300, lineHeight: 1.7 }}>
           From live scanning to AI-assisted repairs, DesignDrift keeps your codebase and your design system speaking the same language.
         </p>
       </div>
@@ -386,8 +390,8 @@ function Features() {
             }}>
               {f.icon}
             </div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 8 }}>{f.title}</div>
-            <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>{f.body}</div>
+            <div style={{ ...display, fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 8 }}>{f.title}</div>
+            <div style={{ ...sans, fontSize: 13, color: C.muted, lineHeight: 1.7 }}>{f.body}</div>
           </div>
         ))}
       </div>
@@ -430,7 +434,7 @@ function HowItWorks() {
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <Chip color={C.purple}>How it works</Chip>
-          <h2 style={{ fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -0.8 }}>
+          <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -1 }}>
             Up and running in minutes
           </h2>
         </div>
@@ -444,8 +448,8 @@ function HowItWorks() {
                 ...mono, lineHeight: 1,
               }}>{s.n}</div>
               <div style={{ paddingTop: 40 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 8 }}>{s.title}</div>
-                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, marginBottom: 16 }}>{s.body}</div>
+                <div style={{ ...display, fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 8 }}>{s.title}</div>
+                <div style={{ ...sans, fontSize: 13, color: C.muted, lineHeight: 1.7, marginBottom: 16 }}>{s.body}</div>
                 <div style={{
                   padding: '10px 14px', borderRadius: 8,
                   background: '#0a0a10', border: `1px solid ${C.border2}`,
@@ -486,7 +490,7 @@ function ExtensionCard({
         }}>{icon}</div>
         <div>
           <Chip color={color}>{badge}</Chip>
-          <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginTop: 6 }}>{title}</div>
+          <div style={{ ...display, fontSize: 18, fontWeight: 700, color: C.text, marginTop: 6 }}>{title}</div>
         </div>
       </div>
 
@@ -525,10 +529,10 @@ function Extensions() {
     <section id="extensions" style={{ padding: '80px 40px', maxWidth: 1100, margin: '0 auto', ...inter }}>
       <div style={{ textAlign: 'center', marginBottom: 56 }}>
         <Chip color={C.orange}>Extensions</Chip>
-        <h2 style={{ fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -0.8 }}>
+        <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -1 }}>
           Works where you work
         </h2>
-        <p style={{ fontSize: 16, color: C.muted, maxWidth: 480, margin: '0 auto' }}>
+        <p style={{ ...sans, fontSize: 16, color: C.muted, maxWidth: 480, margin: '0 auto', fontWeight: 300, lineHeight: 1.7 }}>
           Use the overlay in-browser, inspect live components from VS Code, or run drift checks in CI — your choice.
         </p>
       </div>
@@ -596,7 +600,7 @@ function Install() {
       <div style={{ maxWidth: 680, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <Chip color={C.green}>Get started</Chip>
-          <h2 style={{ fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -0.8 }}>
+          <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -1 }}>
             Install in 2 minutes
           </h2>
           <p style={{ fontSize: 16, color: C.muted }}>
@@ -659,15 +663,15 @@ function About() {
   return (
     <section id="about" style={{ padding: '80px 40px', maxWidth: 760, margin: '0 auto', textAlign: 'center', ...inter }}>
       <Chip color={C.pink}>About</Chip>
-      <h2 style={{ fontSize: 36, fontWeight: 800, color: C.text, margin: '16px 0 16px', letterSpacing: -0.6 }}>
+      <h2 style={{ ...display, fontSize: 36, fontWeight: 800, color: C.text, margin: '16px 0 16px', letterSpacing: -1 }}>
         Built for design-engineering teams
       </h2>
-      <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.8, marginBottom: 20 }}>
+      <p style={{ ...sans, fontSize: 15, color: C.muted, lineHeight: 1.8, marginBottom: 20 }}>
         DesignDrift was built because the gap between Figma and production is a real problem —
         not just for big enterprises, but for any team moving fast with AI-assisted code.
         When vibe-coded components ship without token validation, the design system erodes silently.
       </p>
-      <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.8, marginBottom: 40 }}>
+      <p style={{ ...sans, fontSize: 15, color: C.muted, lineHeight: 1.8, marginBottom: 40 }}>
         This tool sits at that boundary. It's lightweight, non-invasive, and designed to
         feel like a natural extension of your dev workflow — not a compliance gate.
       </p>

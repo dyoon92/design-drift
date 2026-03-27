@@ -212,7 +212,7 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
         opacity: visible ? 1 : 0,
         transition: 'opacity 0.25s',
         pointerEvents: 'auto',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: '"DM Sans", system-ui, sans-serif',
       }}
     >
       {/* ── Backdrop with spotlight cutout ─────────────────────────── */}
@@ -315,7 +315,7 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
         </div>
 
         {/* Content */}
-        <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 8, lineHeight: 1.3 }}>
+        <div style={{ fontFamily: '"Syne", system-ui, sans-serif', fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 8, lineHeight: 1.3 }}>
           {current.title}
         </div>
         <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.65, marginBottom: current.action ? 14 : 20 }}>
