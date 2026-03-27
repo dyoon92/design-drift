@@ -19,7 +19,7 @@ const C = {
 // ─── Shared styles ─────────────────────────────────────────────────────────────
 const mono: React.CSSProperties = { fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", monospace' }
 const sans: React.CSSProperties = { fontFamily: '"DM Sans", system-ui, sans-serif' }
-const display: React.CSSProperties = { fontFamily: '"Syne", system-ui, sans-serif' }
+const display: React.CSSProperties = { fontFamily: '"Space Grotesk", system-ui, sans-serif' }
 // Legacy alias — gradually being replaced
 const inter = sans
 
@@ -169,7 +169,7 @@ function Hero() {
         ...display,
         fontSize: 'clamp(38px, 6.5vw, 76px)', fontWeight: 800,
         color: C.text, margin: '0 0 20px',
-        lineHeight: 1.05, letterSpacing: -2, maxWidth: 860,
+        lineHeight: 1.08, letterSpacing: -1.5, maxWidth: 860,
       }}>
         Catch design system drift
         <br />
@@ -365,7 +365,7 @@ function Features() {
     <section id="features" style={{ padding: '80px 40px', maxWidth: 1100, margin: '0 auto', ...inter }}>
       <div style={{ textAlign: 'center', marginBottom: 56 }}>
         <Chip color={C.blue}>Features</Chip>
-        <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -1 }}>
+        <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -0.6 }}>
           Everything you need to stay in sync
         </h2>
         <p style={{ ...sans, fontSize: 16, color: C.muted, maxWidth: 480, margin: '0 auto', fontWeight: 300, lineHeight: 1.7 }}>
@@ -434,7 +434,7 @@ function HowItWorks() {
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <Chip color={C.purple}>How it works</Chip>
-          <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -1 }}>
+          <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -0.6 }}>
             Up and running in minutes
           </h2>
         </div>
@@ -529,7 +529,7 @@ function Extensions() {
     <section id="extensions" style={{ padding: '80px 40px', maxWidth: 1100, margin: '0 auto', ...inter }}>
       <div style={{ textAlign: 'center', marginBottom: 56 }}>
         <Chip color={C.orange}>Extensions</Chip>
-        <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -1 }}>
+        <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -0.6 }}>
           Works where you work
         </h2>
         <p style={{ ...sans, fontSize: 16, color: C.muted, maxWidth: 480, margin: '0 auto', fontWeight: 300, lineHeight: 1.7 }}>
@@ -600,7 +600,7 @@ function Install() {
       <div style={{ maxWidth: 680, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <Chip color={C.green}>Get started</Chip>
-          <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -1 }}>
+          <h2 style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, margin: '16px 0 12px', letterSpacing: -0.6 }}>
             Install in 2 minutes
           </h2>
           <p style={{ fontSize: 16, color: C.muted }}>
@@ -663,7 +663,7 @@ function About() {
   return (
     <section id="about" style={{ padding: '80px 40px', maxWidth: 760, margin: '0 auto', textAlign: 'center', ...inter }}>
       <Chip color={C.pink}>About</Chip>
-      <h2 style={{ ...display, fontSize: 36, fontWeight: 800, color: C.text, margin: '16px 0 16px', letterSpacing: -1 }}>
+      <h2 style={{ ...display, fontSize: 36, fontWeight: 800, color: C.text, margin: '16px 0 16px', letterSpacing: -0.6 }}>
         Built for design-engineering teams
       </h2>
       <p style={{ ...sans, fontSize: 15, color: C.muted, lineHeight: 1.8, marginBottom: 20 }}>

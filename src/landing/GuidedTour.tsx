@@ -86,60 +86,50 @@ function useSpotlightRect(selector?: string, deps?: unknown[]) {
 
 // ─── Tooltip position ─────────────────────────────────────────────────────────
 
-const TOOLTIP_W = 320
-const TOOLTIP_PAD = 20  // gap from spotlight edge
+const TOOLTIP_W     = 300
+const TOOLTIP_PAD   = 16   // gap between spotlight edge and tooltip
+const SCREEN_MARGIN = 12   // min distance from any viewport edge
+// Conservative height estimate — keeps tooltip fully on-screen without measuring
+const TOOLTIP_MAX_H = 340
+
+/** Clamp a raw pixel value so the tooltip box stays inside the viewport */
+function clampX(left: number) {
+  return Math.max(SCREEN_MARGIN, Math.min(left, window.innerWidth - TOOLTIP_W - SCREEN_MARGIN))
+}
+function clampY(top: number) {
+  return Math.max(SCREEN_MARGIN, Math.min(top, window.innerHeight - TOOLTIP_MAX_H - SCREEN_MARGIN))
+}
 
 function tooltipStyle(
   side: Step['tooltipSide'],
   rect: Rect | null,
   padding: number,
 ): React.CSSProperties {
+  const base: React.CSSProperties = { position: 'fixed', width: TOOLTIP_W, maxHeight: TOOLTIP_MAX_H, overflowY: 'auto' }
+
   if (!rect || side === 'center') {
-    return {
-      position: 'fixed',
-      top: '50%', left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width: TOOLTIP_W,
-    }
+    return { ...base, top: '50%', left: '50%', transform: 'translate(-50%, -50%)', maxHeight: 'unset', overflowY: 'visible' }
   }
 
-  const sp = { // spotlight box
+  const sp = {
     top:    rect.top    - padding,
     left:   rect.left   - padding,
     right:  rect.left   + rect.width  + padding,
     bottom: rect.top    + rect.height + padding,
+    midX:   rect.left   + rect.width  / 2,
+    midY:   rect.top    + rect.height / 2,
   }
 
   switch (side) {
     case 'left':
-      return {
-        position: 'fixed',
-        top:  Math.max(16, sp.top + (rect.height / 2) - 100),
-        left: Math.max(16, sp.left - TOOLTIP_W - TOOLTIP_PAD),
-        width: TOOLTIP_W,
-      }
+      return { ...base, top: clampY(sp.midY - TOOLTIP_MAX_H / 2), left: clampX(sp.left - TOOLTIP_W - TOOLTIP_PAD) }
     case 'right':
-      return {
-        position: 'fixed',
-        top:  Math.max(16, sp.top + (rect.height / 2) - 100),
-        left: Math.min(window.innerWidth - TOOLTIP_W - 16, sp.right + TOOLTIP_PAD),
-        width: TOOLTIP_W,
-      }
+      return { ...base, top: clampY(sp.midY - TOOLTIP_MAX_H / 2), left: clampX(sp.right + TOOLTIP_PAD) }
     case 'top':
-      return {
-        position: 'fixed',
-        bottom: window.innerHeight - sp.top + TOOLTIP_PAD,
-        left: Math.max(16, sp.left + rect.width / 2 - TOOLTIP_W / 2),
-        width: TOOLTIP_W,
-      }
+      return { ...base, top: clampY(sp.top - TOOLTIP_MAX_H - TOOLTIP_PAD), left: clampX(sp.midX - TOOLTIP_W / 2) }
     case 'bottom':
     default:
-      return {
-        position: 'fixed',
-        top: sp.bottom + TOOLTIP_PAD,
-        left: Math.max(16, sp.left + rect.width / 2 - TOOLTIP_W / 2),
-        width: TOOLTIP_W,
-      }
+      return { ...base, top: clampY(sp.bottom + TOOLTIP_PAD), left: clampX(sp.midX - TOOLTIP_W / 2) }
   }
 }
 
@@ -315,7 +305,7 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
         </div>
 
         {/* Content */}
-        <div style={{ fontFamily: '"Syne", system-ui, sans-serif', fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 8, lineHeight: 1.3 }}>
+        <div style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 8, lineHeight: 1.3 }}>
           {current.title}
         </div>
         <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.65, marginBottom: current.action ? 14 : 20 }}>
