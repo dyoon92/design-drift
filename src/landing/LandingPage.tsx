@@ -72,7 +72,7 @@ function Nav() {
     <nav style={{
       position: 'sticky', top: 0, zIndex: 100,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 40px', height: 60,
+      padding: '0 40px', height: 60, width: '100%', boxSizing: 'border-box',
       background: `${C.bg}e8`, backdropFilter: 'blur(12px)',
       borderBottom: `1px solid ${C.border}`,
       ...inter,
@@ -132,7 +132,7 @@ function Nav() {
           onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
           onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
         >
-          Live demo →
+          ▶ See it in action
         </a>
       </div>
     </nav>
@@ -185,8 +185,9 @@ function Hero() {
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 56 }}>
         <a
-          href="#install"
+          href="?demo=1"
           style={{
+            display: 'flex', alignItems: 'center', gap: 8,
             fontSize: 14, fontWeight: 700, padding: '12px 28px',
             background: C.blue, color: '#fff',
             borderRadius: 10, textDecoration: 'none',
@@ -196,11 +197,16 @@ function Hero() {
           onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = `0 4px 40px ${C.blue}60` }}
           onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 0 32px ${C.blue}40` }}
         >
-          Get started free
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 20, height: 20, borderRadius: 999,
+            background: 'rgba(255,255,255,0.25)',
+            fontSize: 10,
+          }}>▶</span>
+          See it in action
         </a>
         <a
-          href="https://github.com/dyoon92/design-drift"
-          target="_blank" rel="noopener noreferrer"
+          href="#install"
           style={{
             fontSize: 14, fontWeight: 600, padding: '12px 28px',
             background: 'transparent', color: C.text,
@@ -210,7 +216,7 @@ function Hero() {
           onMouseEnter={e => (e.currentTarget.style.borderColor = C.muted)}
           onMouseLeave={e => (e.currentTarget.style.borderColor = C.border2)}
         >
-          View on GitHub
+          Get started free
         </a>
       </div>
 
@@ -739,7 +745,10 @@ function Footer() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export function LandingPage() {
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', color: C.text }}>
+    <div style={{
+      background: C.bg, minHeight: '100vh', color: C.text,
+      width: '100%', overflowX: 'hidden', boxSizing: 'border-box',
+    }}>
       <Nav />
       <Hero />
       <Features />

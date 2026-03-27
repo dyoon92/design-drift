@@ -430,6 +430,25 @@ export default function App() {
       </div>
 
       {import.meta.env.DEV && <DSCoverageOverlay />}
+
+      {/* Back to landing page */}
+      <a
+        href="/"
+        style={{
+          position: 'fixed', bottom: 16, left: 16, zIndex: 9998,
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: 11, fontWeight: 600, padding: '6px 12px',
+          background: 'rgba(10,10,15,0.85)', color: '#e8e8f0',
+          border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
+          textDecoration: 'none', backdropFilter: 'blur(8px)',
+          fontFamily: 'Inter, system-ui, sans-serif',
+          transition: 'border-color 0.15s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)')}
+        onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+      >
+        ← Back to DesignDrift
+      </a>
     </div>
   )
 }
