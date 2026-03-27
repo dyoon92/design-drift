@@ -2054,12 +2054,17 @@ const SummaryPanel = (p: PanelProps) => {
                     const suggestion = p.suggestions[name]
                     const gapProps   = p.components.find(c => c.name === name)?.fiber?.memoizedProps ?? {}
                     const isFrequent = count >= PROMOTE_MIN
+                    const isHovered  = p.hoveredGap === name
                     return (
-                      <div key={name} style={{
-                        marginBottom: 6, background: C.panel,
-                        border: `1px solid ${C.panelBorder}`, borderRadius: 8,
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden',
-                      }}>
+                      <div key={name}
+                        onMouseEnter={() => p.onHoverGap(name)}
+                        onMouseLeave={() => p.onHoverGap(null)}
+                        style={{
+                          marginBottom: 6, background: C.panel,
+                          border: `1px solid ${isHovered ? C.red : C.panelBorder}`, borderRadius: 8,
+                          boxShadow: isHovered ? `0 0 0 1px ${C.red}` : '0 1px 3px rgba(0,0,0,0.05)',
+                          overflow: 'hidden', transition: 'border-color 0.15s, box-shadow 0.15s',
+                        }}>
                         {/* Card body */}
                         <div style={{ padding: '10px 12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
