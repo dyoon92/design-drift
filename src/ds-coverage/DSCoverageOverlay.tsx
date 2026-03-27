@@ -1046,7 +1046,6 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
   const [fixResponse,  setFixResponse]  = useState<string | null>(null)
   const [fixError,     setFixError]     = useState<string | null>(null)
   const [sending,      setSending]      = useState(false)
-  const [hoveredCard,  setHoveredCard]  = useState<number | null>(null)
   const [copiedToast,  setCopiedToast]  = useState(false)
   const [fixTitle,     setFixTitle]     = useState('')
 
@@ -1054,7 +1053,6 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
     setFixResponse(null)
     setFixError(null)
     setSending(false)
-    setHoveredCard(null)
     setCopiedToast(false)
   }, [component.name])
 
