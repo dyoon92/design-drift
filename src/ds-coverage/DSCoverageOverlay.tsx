@@ -2268,7 +2268,7 @@ const SummaryPanel = (p: PanelProps) => {
                         }}>
                         {/* Card body */}
                         <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 28, height: 28, borderRadius: 6, flexShrink: 0, background: v.value, border: `1px solid rgba(0,0,0,0.18)`, boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }} />
+                          <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, background: v.value, border: `1px solid rgba(0,0,0,0.18)`, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.value}</div>
                             <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{v.prop} · used {v.count}×</div>
@@ -2818,25 +2818,46 @@ export function DSCoverageOverlay() {
           />
         ))}
 
-        {/* Token violation hover highlights — red ring over each matching DOM element */}
-        {visible && hoveredViolation && hoveredViolation.elements.map((el, i) => {
-          const r = el.getBoundingClientRect()
-          if (r.width === 0 && r.height === 0) return null
+        {/* Token violation hover — grayscale backdrop with holes over matched elements */}
+        {visible && hoveredViolation && (() => {
+          const pad = 4
+          const vw  = window.innerWidth
+          const vh  = window.innerHeight
+          const rects = hoveredViolation.elements
+            .map(el => el.getBoundingClientRect())
+            .filter(r => r.width > 0 || r.height > 0)
+          // evenodd clip-path: full viewport minus a cutout per element rect
+          const outer = `0px 0px, ${vw}px 0px, ${vw}px ${vh}px, 0px ${vh}px`
+          const holes = rects.map(r =>
+            `${r.left - pad}px ${r.top - pad}px, ${r.right + pad}px ${r.top - pad}px, ${r.right + pad}px ${r.bottom + pad}px, ${r.left - pad}px ${r.bottom + pad}px`
+          ).join(', ')
           return (
-            <div key={i} style={{
-              position: 'fixed',
-              top: r.top - 2, left: r.left - 2,
-              width: r.width + 4, height: r.height + 4,
-              outline: `2px solid ${C.red}`,
-              outlineOffset: '-1px',
-              background: 'rgba(239,68,68,0.06)',
-              borderRadius: 4,
-              pointerEvents: 'none',
-              zIndex: 99993,
-              boxSizing: 'border-box',
-            }} />
+            <>
+              {/* Grayscale layer — covers viewport, holes reveal elements in color */}
+              <div style={{
+                position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 99991,
+                backdropFilter: 'grayscale(1)',
+                WebkitBackdropFilter: 'grayscale(1)',
+                clipPath: rects.length > 0 ? `polygon(evenodd, ${outer}, ${holes})` : undefined,
+              }} />
+              {/* Red ring overlays on each matched element */}
+              {rects.map((r, i) => (
+                <div key={i} style={{
+                  position: 'fixed',
+                  top: r.top - 2, left: r.left - 2,
+                  width: r.width + 4, height: r.height + 4,
+                  outline: `2px solid ${C.red}`,
+                  outlineOffset: '-1px',
+                  background: 'rgba(239,68,68,0.06)',
+                  borderRadius: 4,
+                  pointerEvents: 'none',
+                  zIndex: 99993,
+                  boxSizing: 'border-box',
+                }} />
+              ))}
+            </>
           )
-        })}
+        })()}
 
         {/* Capture layer — always present when overlay is open so the user can
             hover to highlight any component and click to inspect it without
