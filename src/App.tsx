@@ -392,7 +392,7 @@ export default function App() {
   const [nav, setNav] = useState<NavId>('dashboard')
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null)
   const [darkMode, setDarkMode] = useState(false)
-  const [showTour, setShowTour] = useState(false)
+  const [showTour, setShowTour] = useState(true)
   const width = useWindowWidth()
   const isMobile = width < 768
 
