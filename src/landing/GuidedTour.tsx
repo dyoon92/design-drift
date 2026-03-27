@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,6 +47,7 @@ const STEPS: Step[] = [
         btn?.click()
       }
     },
+
   },
   {
     id: 'tabs',
@@ -56,10 +57,20 @@ const STEPS: Step[] = [
     tooltipSide: 'left',
     padding: 6,
     onEnter: () => {
-      // Click the Modifications tab so the user sees it highlighted
-      const tabs = document.querySelectorAll<HTMLElement>('[data-dd-tabs] button')
-      const modsTab = Array.from(tabs).find(b => b.textContent?.includes('Modifications'))
-      modsTab?.click()
+      // Panel may have just opened — wait for tabs to render then click Modifications
+      const clickMods = () => {
+        const tabs = document.querySelectorAll<HTMLElement>('[data-dd-tabs] button')
+        const modsTab = Array.from(tabs).find(b => b.textContent?.includes('Modifications'))
+        if (modsTab) { modsTab.click(); return true }
+        return false
+      }
+      if (!clickMods()) {
+        // Retry a few times if tabs aren't in DOM yet
+        let attempts = 0
+        const retry = setInterval(() => {
+          if (clickMods() || ++attempts > 10) clearInterval(retry)
+        }, 150)
+      }
     },
   },
   {
@@ -70,14 +81,23 @@ const STEPS: Step[] = [
     tooltipSide: 'left',
     padding: 10,
     onEnter: () => {
-      // Ensure Modifications tab is active and scroll the first drift card into view
-      const tabs = document.querySelectorAll<HTMLElement>('[data-dd-tabs] button')
-      const modsTab = Array.from(tabs).find(b => b.textContent?.includes('Modifications'))
-      modsTab?.click()
-      // Give the tab a tick to render then scroll drift summary into view
-      setTimeout(() => {
-        document.querySelector('[data-dd-drift-summary]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-      }, 120)
+      // Ensure Modifications tab is active, then scroll drift summary into view
+      const activate = () => {
+        const tabs = document.querySelectorAll<HTMLElement>('[data-dd-tabs] button')
+        const modsTab = Array.from(tabs).find(b => b.textContent?.includes('Modifications'))
+        if (!modsTab) return false
+        modsTab.click()
+        setTimeout(() => {
+          document.querySelector('[data-dd-drift-summary]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }, 150)
+        return true
+      }
+      if (!activate()) {
+        let attempts = 0
+        const retry = setInterval(() => {
+          if (activate() || ++attempts > 10) clearInterval(retry)
+        }, 150)
+      }
     },
   },
   {
@@ -90,15 +110,18 @@ const STEPS: Step[] = [
 
 // ─── Spotlight ────────────────────────────────────────────────────────────────
 
-function useSpotlightRect(selector?: string, deps?: unknown[]) {
+function useSpotlightRect(selector?: string, onFound?: () => void, deps?: unknown[]) {
   const [rect, setRect] = useState<Rect | null>(null)
+  const onFoundRef = useRef(onFound)
+  onFoundRef.current = onFound
 
   useLayoutEffect(() => {
-    if (!selector) { setRect(null); return }
+    if (!selector) { setRect(null); onFoundRef.current?.(); return }
     const el = document.querySelector<HTMLElement>(selector)
     if (!el) { setRect(null); return }
     const r = el.getBoundingClientRect()
     setRect({ top: r.top, left: r.left, width: r.width, height: r.height })
+    onFoundRef.current?.()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selector, ...(deps ?? [])])
 
@@ -168,22 +191,32 @@ const C = {
 }
 
 export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
-  const [step, setStep]     = useState(0)
-  const [visible, setVisible] = useState(false)
-  const [tick, setTick]     = useState(0)  // force re-measure
+  const [step, setStep]         = useState(0)
+  const [visible, setVisible]   = useState(false)
+  const [tick, setTick]         = useState(0)
+  // Hide tooltip until it has a measured position (prevents center→corner snap)
+  const [positioned, setPositioned] = useState(false)
 
   const current = STEPS[step]
 
-  // Fade in
+  // Fade in on mount
   useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
 
-  // Re-measure on step change (DOM might not have the element yet)
+  // On step change: reset positioned, fire onEnter with delay, then poll for DOM
   useEffect(() => {
-    current.onEnter?.()
-    // poll briefly in case the selector element isn't rendered yet
-    const id = setInterval(() => setTick(t => t + 1), 120)
-    const stop = setTimeout(() => clearInterval(id), 800)
-    return () => { clearInterval(id); clearTimeout(stop) }
+    setPositioned(false)
+    setTick(0)
+
+    // Give the DOM time to render before firing onEnter actions
+    const enterDelay = setTimeout(() => {
+      current.onEnter?.()
+    }, 80)
+
+    // Poll for the target element (panel/tabs may take a few frames to appear)
+    const id = setInterval(() => setTick(t => t + 1), 100)
+    const stop = setTimeout(() => clearInterval(id), 1200)
+
+    return () => { clearTimeout(enterDelay); clearInterval(id); clearTimeout(stop) }
   }, [step, current])
 
   // Keyboard
@@ -211,10 +244,12 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
     if (step > 0) setStep(s => s - 1)
   }, [step])
 
-  const rect = useSpotlightRect(current.selector, [tick])
+  const rect = useSpotlightRect(current.selector, () => setPositioned(true), [tick])
   const padding = current.padding ?? 10
 
   const isCenter = !current.selector || current.tooltipSide === 'center'
+  // For center steps there's no element to find — show immediately
+  useEffect(() => { if (isCenter) setPositioned(true) }, [isCenter])
 
   return (
     <div
@@ -298,6 +333,9 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
           padding: '20px 22px',
           boxShadow: '0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)',
           zIndex: 1,
+          // Hide until position is known — prevents snap from center to corner
+          opacity: positioned ? 1 : 0,
+          transition: 'opacity 0.18s ease',
         }}
         onClick={e => e.stopPropagation()}
       >
