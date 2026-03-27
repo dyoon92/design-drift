@@ -1278,15 +1278,17 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
                     onClick={() => firePrompt(fixAllPrompt, `Fix all ${grouped.length} issues`)}
                     disabled={sending}
                     style={{
-                      fontSize: 11, fontWeight: 600, padding: '3px 10px',
-                      background: C.blue, color: '#fff',
-                      border: 'none', borderRadius: 6,
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      fontSize: 11, fontWeight: 700, padding: '4px 11px',
+                      background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                      color: '#fff', border: 'none', borderRadius: 7,
                       cursor: sending ? 'default' : 'pointer',
-                      fontFamily: 'Inter, sans-serif', opacity: sending ? 0.5 : 1,
-                      transition: 'opacity 0.15s',
+                      fontFamily: 'Inter, sans-serif', opacity: sending ? 0.55 : 1,
+                      boxShadow: sending ? 'none' : '0 2px 8px rgba(124,58,237,0.35)',
+                      transition: 'opacity 0.15s, box-shadow 0.15s',
                     }}
                   >
-                    Fix all
+                    <span style={{ fontSize: 11 }}>✦</span> Fix all
                   </button>
                 )}
               </div>
@@ -1345,15 +1347,16 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
                           onClick={() => firePrompt(fixOnePrompt, label)}
                           disabled={sending}
                           style={{
-                            fontSize: 10, fontWeight: 600, padding: '2px 8px',
-                            background: `${C.blue}15`, color: C.blue,
-                            border: `1px solid ${C.blue}30`, borderRadius: 4,
+                            display: 'flex', alignItems: 'center', gap: 3,
+                            fontSize: 10, fontWeight: 700, padding: '2px 9px',
+                            background: 'rgba(124,58,237,0.12)', color: '#7c3aed',
+                            border: '1px solid rgba(124,58,237,0.3)', borderRadius: 5,
                             cursor: sending ? 'default' : 'pointer',
                             fontFamily: 'Inter, sans-serif', opacity: sending ? 0.5 : 1,
                             flexShrink: 0, transition: 'opacity 0.15s',
                           }}
                         >
-                          Fix
+                          <span style={{ fontSize: 9 }}>✦</span> Fix
                         </button>
                       )}
                     </div>
