@@ -392,7 +392,7 @@ export default function App() {
   const [nav, setNav] = useState<NavId>('dashboard')
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null)
   const [darkMode, setDarkMode] = useState(false)
-  const [showTour, setShowTour] = useState(true)
+  const [showTour, setShowTour] = useState(false)
   const width = useWindowWidth()
   const isMobile = width < 768
 
@@ -435,24 +435,44 @@ export default function App() {
 
       {showTour && <GuidedTour onDismiss={() => setShowTour(false)} />}
 
-      {/* Back to landing page */}
-      <a
-        href="/"
-        style={{
-          position: 'fixed', bottom: 16, left: 16, zIndex: 9998,
-          display: 'flex', alignItems: 'center', gap: 6,
-          fontSize: 11, fontWeight: 600, padding: '6px 12px',
-          background: 'rgba(10,10,15,0.85)', color: '#e8e8f0',
-          border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
-          textDecoration: 'none', backdropFilter: 'blur(8px)',
-          fontFamily: 'Inter, system-ui, sans-serif',
-          transition: 'border-color 0.15s',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)')}
-        onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
-      >
-        ← Back to DesignDrift
-      </a>
+      {/* Bottom-left controls: back link + tour trigger */}
+      <div style={{
+        position: 'fixed', bottom: 16, left: 16, zIndex: 9998,
+        display: 'flex', alignItems: 'center', gap: 8,
+        fontFamily: 'Inter, system-ui, sans-serif',
+      }}>
+        <a
+          href="/"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 11, fontWeight: 600, padding: '6px 12px',
+            background: 'rgba(10,10,15,0.85)', color: '#e8e8f0',
+            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
+            textDecoration: 'none', backdropFilter: 'blur(8px)',
+            transition: 'border-color 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+        >
+          ← Back
+        </a>
+        <button
+          onClick={() => setShowTour(true)}
+          title="How to use this demo"
+          style={{
+            width: 30, height: 30, borderRadius: 999,
+            background: 'rgba(10,10,15,0.85)', color: '#e8e8f0',
+            border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)',
+            fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'border-color 0.15s, background 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'; e.currentTarget.style.background = 'rgba(79,142,247,0.2)' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.background = 'rgba(10,10,15,0.85)' }}
+        >
+          ?
+        </button>
+      </div>
     </div>
   )
 }
