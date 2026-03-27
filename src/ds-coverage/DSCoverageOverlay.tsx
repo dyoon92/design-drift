@@ -881,6 +881,7 @@ const OverlayBox = React.memo(({ c, yOffset, inspectMode, isInspected, isHighlig
       {/* Gap badge — click to inspect props (outside inspect mode) */}
       {!c.inDS && (
         <div
+          data-dd-gap-badge
           onClick={inspectMode ? undefined : e => { e.stopPropagation(); onInspect(c) }}
           title={inspectMode ? c.name : 'Click to inspect props'}
           style={{ ...badgeBase, fontFamily: 'monospace',
