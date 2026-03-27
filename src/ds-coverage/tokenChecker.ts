@@ -10,9 +10,10 @@
  */
 
 export interface TokenViolation {
-  prop:  string   // CSS property name, e.g. "background"
-  value: string   // the offending value, e.g. "#1a1a2e"
-  count: number   // how many DOM elements have this exact prop+value
+  prop:     string          // CSS property name, e.g. "background"
+  value:    string          // the offending value, e.g. "#1a1a2e"
+  count:    number          // how many DOM elements have this exact prop+value
+  elements: HTMLElement[]   // actual DOM nodes (empty when loaded from cache)
 }
 
 // ─── Patterns that identify a hardcoded color ─────────────────────────────────
@@ -100,7 +101,8 @@ export function hasColorViolationsInSubtree(root: Element): boolean {
  * Returns a deduplicated list sorted by frequency (most common first).
  */
 export function scanTokenViolations(): TokenViolation[] {
-  const tally = new Map<string, number>() // key: "prop||value"
+  const tally    = new Map<string, number>()          // key: "prop||value"
+  const elsByKey = new Map<string, HTMLElement[]>()   // key: "prop||value" → elements
 
   const elements = document.querySelectorAll('[style]')
   for (const el of Array.from(elements)) {
@@ -116,13 +118,16 @@ export function scanTokenViolations(): TokenViolation[] {
 
       const key = `${prop}||${value}`
       tally.set(key, (tally.get(key) ?? 0) + 1)
+      const arr = elsByKey.get(key) ?? []
+      arr.push(el as HTMLElement)
+      elsByKey.set(key, arr)
     }
   }
 
   return [...tally.entries()]
     .map(([key, count]) => {
       const [prop, value] = key.split('||')
-      return { prop, value, count }
+      return { prop, value, count, elements: elsByKey.get(key) ?? [] }
     })
     .sort((a, b) => b.count - a.count)
 }

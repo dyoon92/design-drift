@@ -1479,7 +1479,9 @@ interface PanelProps {
   onToggleSurface: () => void
   onToggleInspect: () => void
   onToggleTheme: () => void
+  hoveredViolation: TokenViolation | null
   onHoverGap: (name: string | null) => void
+  onHoverViolation: (v: TokenViolation | null) => void
   onSaveApiKey: (key: string) => void
   onInspect: (c: ScannedComponent) => void
   onSuggest: (name: string, count: number, props: Record<string, unknown>) => void
@@ -2253,28 +2255,34 @@ const SummaryPanel = (p: PanelProps) => {
                 </div>
                 <div>
                   {p.tokenViolations.map((v, i) => {
-                    const rowKey = `tok-${i}`
-                    const isHov = hoveredRow === rowKey
+                    const isHov = p.hoveredViolation === v
                     return (
                       <div key={i}
-                        onMouseEnter={() => setHoveredRow(rowKey)}
-                        onMouseLeave={() => setHoveredRow(null)}
+                        onMouseEnter={() => p.onHoverViolation(v)}
+                        onMouseLeave={() => p.onHoverViolation(null)}
                         style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '6px 0', gap: 6,
-                          borderBottom: `1px solid ${C.divider}`,
-                          boxShadow: isHov ? `inset 3px 0 0 ${C.red}` : 'none',
-                          paddingLeft: isHov ? 8 : 0,
-                          transition: 'box-shadow 0.15s, padding-left 0.15s',
+                          marginBottom: 6, background: C.panel,
+                          border: `1px solid ${isHov ? C.red : C.panelBorder}`, borderRadius: 8,
+                          boxShadow: isHov ? `0 0 0 1px ${C.red}` : '0 1px 3px rgba(0,0,0,0.05)',
+                          overflow: 'hidden', transition: 'border-color 0.15s, box-shadow 0.15s',
                         }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                          <div style={{ width: 14, height: 14, borderRadius: 4, flexShrink: 0, background: v.value, border: `1px solid rgba(0,0,0,0.18)`, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 10, fontWeight: 600, color: C.muted, fontFamily: 'monospace', letterSpacing: 0.2 }}>{v.prop}</div>
-                            <div style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.value}</div>
+                        {/* Card body */}
+                        <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 6, flexShrink: 0, background: v.value, border: `1px solid rgba(0,0,0,0.18)`, boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.value}</div>
+                            <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{v.prop} · used {v.count}×</div>
+                          </div>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: C.red, background: C.redChipBg, padding: '2px 7px', borderRadius: 10, flexShrink: 0 }}>×{v.count}</span>
+                        </div>
+                        {/* Card footer */}
+                        <div style={{ borderTop: `1px solid ${C.panelBorder}`, padding: '6px 12px', background: isHov ? 'rgba(239,68,68,0.04)' : undefined }}>
+                          <div style={{ fontSize: 10, color: C.muted }}>
+                            {isHov && v.elements.length > 0
+                              ? `Highlighting ${v.elements.length} element${v.elements.length !== 1 ? 's' : ''} on screen`
+                              : 'Hover to highlight on screen · replace with a design token'}
                           </div>
                         </div>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: C.red, background: C.redChipBg, padding: '2px 7px', borderRadius: 10, flexShrink: 0 }}>×{v.count}</span>
                       </div>
                     )
                   })}
@@ -2536,8 +2544,9 @@ export function DSCoverageOverlay() {
   const [driftFixes,     setDriftFixes]     = useState<Record<string, Suggestion>>({})
   const [isCached,       setIsCached]       = useState(false)
 
-  const [hoverComp,  setHoverComp]  = useState<ScannedComponent | null>(null)
-  const [hoverPos,   setHoverPos]   = useState<{ x: number; y: number } | null>(null)
+  const [hoverComp,       setHoverComp]       = useState<ScannedComponent | null>(null)
+  const [hoverPos,        setHoverPos]        = useState<{ x: number; y: number } | null>(null)
+  const [hoveredViolation, setHoveredViolation] = useState<TokenViolation | null>(null)
 
   const rafRef      = useRef<number>(0)
   const scanningRef = useRef(false)
@@ -2577,7 +2586,7 @@ export function DSCoverageOverlay() {
           const cachedViolations = cached.driftMap[c.name] ?? []
           return { ...c, drifted: cachedViolations.length > 0, driftViolations: cachedViolations }
         })
-        violations = cached.tokenViolations
+        violations = cached.tokenViolations.map(v => ({ ...v, elements: [] }))
         fromCache = true
       } else {
         // Cache miss — full drift analysis
@@ -2809,6 +2818,26 @@ export function DSCoverageOverlay() {
           />
         ))}
 
+        {/* Token violation hover highlights — red ring over each matching DOM element */}
+        {visible && hoveredViolation && hoveredViolation.elements.map((el, i) => {
+          const r = el.getBoundingClientRect()
+          if (r.width === 0 && r.height === 0) return null
+          return (
+            <div key={i} style={{
+              position: 'fixed',
+              top: r.top - 2, left: r.left - 2,
+              width: r.width + 4, height: r.height + 4,
+              outline: `2px solid ${C.red}`,
+              outlineOffset: '-1px',
+              background: 'rgba(239,68,68,0.06)',
+              borderRadius: 4,
+              pointerEvents: 'none',
+              zIndex: 99993,
+              boxSizing: 'border-box',
+            }} />
+          )
+        })}
+
         {/* Capture layer — always present when overlay is open so the user can
             hover to highlight any component and click to inspect it without
             having to toggle inspect mode manually. The panel/toggle are excluded
@@ -2881,6 +2910,8 @@ export function DSCoverageOverlay() {
                 onToggleInspect={() => setInspectMode(v => !v)}
                 onToggleTheme={toggleTheme}
                 onHoverGap={setHoveredGap}
+                hoveredViolation={hoveredViolation}
+                onHoverViolation={setHoveredViolation}
                 onSaveApiKey={saveApiKey}
                 onInspect={setInspected}
                 onSuggest={handleSuggest}
