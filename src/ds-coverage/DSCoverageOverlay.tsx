@@ -1475,6 +1475,7 @@ interface PanelProps {
   onToggleTheme: () => void
   onHoverGap: (name: string | null) => void
   onSaveApiKey: (key: string) => void
+  onInspect: (c: ScannedComponent) => void
   onSuggest: (name: string, count: number, props: Record<string, unknown>) => void
   onDriftFix: (name: string, violations: DriftViolation[]) => void
   onClose: () => void
@@ -1489,8 +1490,6 @@ const SummaryPanel = (p: PanelProps) => {
   const [keyDraft,   setKeyDraft]  = useState('')
   const [settingsPage, setSettingsPage] = useState(false)
   const [hoveredRow,       setHoveredRow]       = useState<string | null>(null)
-  const [copiedFix,        setCopiedFix]        = useState<string | null>(null)
-  const [hoveredViolation, setHoveredViolation] = useState<string | null>(null)
   // Palette generator
   const [palette,       setPalette]      = useState<PaletteEntry[] | null>(null)
   const [paletteCopied, setPaletteCopied]= useState(false)
@@ -2181,141 +2180,41 @@ const SummaryPanel = (p: PanelProps) => {
                 </div>
                 <div>
                   {p.components.filter(c => c.drifted).map((c, i) => {
-                    const fix = p.driftFixes[c.name]
-                    // Build a fix snippet from AI JSON response
-                    let fixSnippet = ''
-                    if (fix?.status === 'done' && fix.text) {
-                      try {
-                        const jsonMatch = fix.text.match(/\{[\s\S]*\}/)
-                        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null
-                        if (parsed) {
-                          fixSnippet = Object.entries(parsed)
-                            .map(([k, v]) => `  ${k}: '${v}',`)
-                            .join('\n')
-                        }
-                      } catch { fixSnippet = fix.text }
-                    }
-                    const copyKey = `fix-${c.name}`
+                    // Group violations to get a unique issue count (same as PropsPanel)
+                    const grouped = Object.values(
+                      c.driftViolations.reduce((acc, v) => {
+                        const key = `${v.type}||${v.value}`
+                        if (!acc[key]) acc[key] = { type: v.type, value: v.value, props: [] as string[] }
+                        acc[key].props.push(v.prop)
+                        return acc
+                      }, {} as Record<string, { type: string; value: string; props: string[] }>)
+                    )
+                    const isHovered = p.hoveredGap === c.name
                     return (
                       <div key={`${c.name}-${i}`}
+                        onClick={() => p.onInspect(c)}
                         onMouseEnter={() => p.onHoverGap(c.name)}
                         onMouseLeave={() => p.onHoverGap(null)}
                         style={{
-                          marginBottom: 10, padding: '12px', borderRadius: 10,
-                          background: C.panel, border: `1px solid ${C.panelBorder}`,
-                          boxShadow: p.hoveredGap === c.name ? `inset 3px 0 0 ${C.orange}` : '0 1px 4px rgba(0,0,0,0.08)',
-                          transition: 'box-shadow 0.15s',
+                          marginBottom: 6, padding: '10px 12px', borderRadius: 8,
+                          background: C.panel,
+                          border: `1px solid ${isHovered ? C.orange : C.panelBorder}`,
+                          boxShadow: isHovered ? `0 0 0 1px ${C.orange}` : '0 1px 3px rgba(0,0,0,0.05)',
+                          cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s',
                         }}>
-                        {/* Component header */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: C.orange, fontFamily: 'Inter, sans-serif' }}>{c.name}</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {p.apiKey && (
-                              <button
-                                onClick={() => p.onDriftFix(c.name, c.driftViolations)}
-                                disabled={fix?.status === 'loading' || fix?.status === 'done'}
-                                title="Ask AI to suggest how to restore this to its designed state"
-                                style={{
-                                  display: 'flex', alignItems: 'center', gap: 3,
-                                  background: fix?.status === 'done' ? `${C.blue}20` : `${C.blue}10`,
-                                  border: `1px solid ${fix?.status === 'done' ? C.blue : `${C.blue}40`}`,
-                                  borderRadius: 8, padding: '3px 8px', cursor: fix?.status === 'loading' || fix?.status === 'done' ? 'default' : 'pointer',
-                                  fontSize: 10, fontWeight: 600, color: fix?.status === 'done' ? C.blue : C.textSub,
-                                  fontFamily: 'Inter, sans-serif',
-                                }}>
-                                <span>✦</span>
-                                <span>{fix?.status === 'loading' ? 'Thinking…' : fix?.status === 'done' ? 'Suggestion ready' : 'Suggest fix'}</span>
-                              </button>
-                            )}
-                            <span style={{ fontSize: 10, color: C.muted, background: `${C.orange}20`, padding: '2px 7px', borderRadius: 6 }}>
-                              {c.driftViolations.length} change{c.driftViolations.length > 1 ? 's' : ''}
-                            </span>
-                          </div>
+                        {/* Title row: name + override count pill */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{c.name}</span>
+                          <span style={{
+                            fontSize: 10, fontWeight: 600, fontFamily: 'monospace',
+                            color: C.orange, background: `${C.orange}14`,
+                            padding: '2px 8px', borderRadius: 4, flexShrink: 0,
+                          }}>{grouped.length} override{grouped.length !== 1 ? 's' : ''}</span>
                         </div>
-
-                        {/* Violations list — grouped by type+value */}
-                        {Object.values(
-                          c.driftViolations.reduce((acc, v) => {
-                            const key = `${v.type}||${v.value}`
-                            if (!acc[key]) acc[key] = { type: v.type, value: v.value, props: [] }
-                            acc[key].props.push(v.prop)
-                            return acc
-                          }, {} as Record<string, { type: 'color' | 'radius', value: string, props: string[] }>)
-                        ).map((v, j) => {
-                          const suggestion = suggestToken(v.type, v.value)
-                          const propLabel = v.type === 'radius' ? 'border-radius' : v.props[0].replace(/([A-Z])/g, '-$1').toLowerCase()
-                          const violKey = `${i}-${j}`
-                          const isViolHovered = hoveredViolation === violKey
-                          return (
-                            <div key={j}
-                              onMouseEnter={() => { p.onHoverGap(c.name); setHoveredViolation(violKey) }}
-                              onMouseLeave={() => { p.onHoverGap(null); setHoveredViolation(null) }}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 8,
-                                padding: isViolHovered ? '5px 6px' : '5px 0',
-                                margin: isViolHovered ? '0 -6px' : '0',
-                                borderBottom: `1px solid ${C.orange}15`,
-                                cursor: 'default',
-                                borderRadius: isViolHovered ? 6 : 0,
-                                background: isViolHovered
-                                  ? (v.type === 'color' ? `${v.value}18` : `${C.orange}10`)
-                                  : 'transparent',
-                                transition: 'background 0.15s',
-                              }}>
-                              {v.type === 'color' && (
-                                <div style={{ width: 14, height: 14, borderRadius: 3, flexShrink: 0, background: v.value, border: '1px solid rgba(0,0,0,0.18)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} />
-                              )}
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 11, color: C.text, fontFamily: 'Inter, sans-serif' }}>
-                                  <span style={{ color: C.muted }}>{propLabel}: </span>
-                                  <span style={{ fontWeight: 600, color: C.orange }}>{v.value}</span>
-                                  {v.props.length > 1 && (
-                                    <span style={{ fontSize: 10, color: C.muted, marginLeft: 5 }}>
-                                      {v.type === 'radius'
-                                        ? `on ${v.props.length} corners`
-                                        : `on ${v.props.length} elements`}
-                                    </span>
-                                  )}
-                                </div>
-                                {suggestion && (
-                                  <div style={{ fontSize: 10, color: C.green, marginTop: 2, fontFamily: 'monospace' }}>
-                                    → {suggestion}
-                                  </div>
-                                )}
-                              </div>
-                              <span style={{ fontSize: 10, color: C.muted, background: C.pillBg, padding: '1px 5px', borderRadius: 4, flexShrink: 0, textTransform: 'capitalize' }}>{v.type}</span>
-                            </div>
-                          )
-                        })}
-
-                        {/* Fix snippet */}
-                        {fix?.status === 'done' && fixSnippet && (
-                          <div style={{ marginTop: 10, background: C.panel, border: `1px solid ${C.blue}30`, borderRadius: 8, overflow: 'hidden' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: `1px solid ${C.blue}20` }}>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: C.blue }}>✦ How to restore it</span>
-                              <button
-                                onClick={async () => {
-                                  const code = `// ${c.name} — replace hardcoded styles with DS tokens:\n${fixSnippet}`
-                                  try { await navigator.clipboard.writeText(code) } catch { prompt('Copy:', code) }
-                                  setCopiedFix(copyKey); setTimeout(() => setCopiedFix(null), 2000)
-                                }}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: copiedFix === copyKey ? C.green : C.muted, fontFamily: 'Inter, sans-serif' }}>
-                                {copiedFix === copyKey ? '✓ Copied' : '⎘ Copy'}
-                              </button>
-                            </div>
-                            <pre style={{ margin: 0, padding: '8px 10px', fontSize: 10, fontFamily: 'monospace', color: C.text, overflowX: 'auto', lineHeight: 1.6 }}>
-                              {fixSnippet}
-                            </pre>
-                          </div>
-                        )}
-                        {fix?.status === 'error' && (
-                          <div style={{ marginTop: 8, padding: '6px 10px', background: C.redChipBg, borderRadius: 6, fontSize: 10, color: C.red }}>{fix.text}</div>
-                        )}
-                        {!p.apiKey && (
-                          <div style={{ marginTop: 8, fontSize: 10, color: C.muted, lineHeight: 1.5 }}>
-                            <button onClick={() => setSettingsPage(true)} style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 10, padding: 0, textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>Enable AI suggestions</button> to get a one-click fix for this component.
-                          </div>
-                        )}
+                        {/* Subtitle */}
+                        <div style={{ fontSize: 10, color: C.muted, marginTop: 5 }}>
+                          Hardcoded styles applied on top of the design → click to inspect
+                        </div>
                       </div>
                     )
                   })}
@@ -2972,6 +2871,7 @@ export function DSCoverageOverlay() {
                 onToggleTheme={toggleTheme}
                 onHoverGap={setHoveredGap}
                 onSaveApiKey={saveApiKey}
+                onInspect={setInspected}
                 onSuggest={handleSuggest}
                 onDriftFix={handleDriftFix}
                 onClose={handleClosePanel}
