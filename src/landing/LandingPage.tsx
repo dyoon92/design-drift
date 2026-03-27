@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
@@ -22,6 +22,74 @@ const sans: React.CSSProperties = { fontFamily: '"DM Sans", system-ui, sans-seri
 const display: React.CSSProperties = { fontFamily: '"Space Grotesk", system-ui, sans-serif' }
 // Legacy alias — gradually being replaced
 const inter = sans
+
+// ─── Typewriter ───────────────────────────────────────────────────────────────
+function Typewriter({ text, delay = 900, speed = 52 }: { text: string; delay?: number; speed?: number }) {
+  const [displayed, setDisplayed] = useState('')
+  const [done, setDone] = useState(false)
+  const [cursorOn, setCursorOn] = useState(true)
+  const idx = useRef(0)
+
+  useEffect(() => {
+    idx.current = 0
+    setDisplayed('')
+    setDone(false)
+
+    const start = setTimeout(() => {
+      const interval = setInterval(() => {
+        idx.current += 1
+        setDisplayed(text.slice(0, idx.current))
+        if (idx.current >= text.length) {
+          clearInterval(interval)
+          setDone(true)
+        }
+      }, speed)
+      return () => clearInterval(interval)
+    }, delay)
+
+    return () => clearTimeout(start)
+  }, [text, delay, speed])
+
+  // Blink cursor until done, then stop
+  useEffect(() => {
+    if (done) { setCursorOn(true); return }
+    const id = setInterval(() => setCursorOn(v => !v), 530)
+    return () => clearInterval(id)
+  }, [done])
+
+  return (
+    <span style={{ position: 'relative', display: 'inline-block' }}>
+      {/* Gradient text — fades in once typing is complete */}
+      <span style={{
+        background: `linear-gradient(90deg, ${C.blue}, ${C.purple})`,
+        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        opacity: done ? 1 : 0,
+        transition: 'opacity 0.6s ease',
+        position: 'absolute', left: 0, top: 0, whiteSpace: 'nowrap', pointerEvents: 'none',
+      }}>{text}</span>
+
+      {/* Typed plain text shown while typing */}
+      <span style={{
+        color: C.text,
+        opacity: done ? 0 : 1,
+        transition: 'opacity 0.4s ease',
+        whiteSpace: 'nowrap',
+      }}>
+        {displayed}
+        <span style={{
+          display: 'inline-block', width: 3, height: '0.85em',
+          background: C.blue, borderRadius: 2, marginLeft: 2,
+          verticalAlign: 'text-bottom',
+          opacity: done ? 0 : (cursorOn ? 1 : 0),
+          transition: done ? 'opacity 0.3s' : 'none',
+        }} />
+      </span>
+
+      {/* Invisible spacer so the element holds its full width always */}
+      <span style={{ visibility: 'hidden', whiteSpace: 'nowrap' }}>{text}</span>
+    </span>
+  )
+}
 
 function Chip({ color, children }: { color: string; children: React.ReactNode }) {
   return (
@@ -167,16 +235,14 @@ function Hero() {
 
       <h1 style={{
         ...display,
-        fontSize: 'clamp(38px, 6.5vw, 76px)', fontWeight: 800,
+        fontSize: 'clamp(34px, 5.5vw, 68px)', fontWeight: 800,
         color: C.text, margin: '0 0 20px',
-        lineHeight: 1.08, letterSpacing: -1.5, maxWidth: 860,
+        lineHeight: 1.1, letterSpacing: -1.5, maxWidth: 900,
+        textAlign: 'center',
       }}>
-        Catch design system drift
+        Catch design system
         <br />
-        <span style={{
-          background: `linear-gradient(90deg, ${C.blue}, ${C.purple})`,
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>before it ships</span>
+        drift{' '}<Typewriter text="before it ships" delay={700} speed={48} />
       </h1>
 
       <p style={{

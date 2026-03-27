@@ -388,13 +388,11 @@ function TenantsView({ onSelectTenant }: { onSelectTenant: (id: string) => void 
 
 // ─── App shell ────────────────────────────────────────────────────────────────
 
-const TOUR_KEY = 'dd-tour-seen'
-
 export default function App() {
   const [nav, setNav] = useState<NavId>('dashboard')
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null)
   const [darkMode, setDarkMode] = useState(false)
-  const [showTour, setShowTour] = useState(() => !sessionStorage.getItem(TOUR_KEY))
+  const [showTour, setShowTour] = useState(true)
   const width = useWindowWidth()
   const isMobile = width < 768
 
@@ -435,12 +433,7 @@ export default function App() {
 
       {import.meta.env.DEV && <DSCoverageOverlay />}
 
-      {showTour && (
-        <GuidedTour onDismiss={() => {
-          sessionStorage.setItem(TOUR_KEY, '1')
-          setShowTour(false)
-        }} />
-      )}
+      {showTour && <GuidedTour onDismiss={() => setShowTour(false)} />}
 
       {/* Back to landing page */}
       <a

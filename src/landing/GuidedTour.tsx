@@ -351,9 +351,19 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
           </button>
         </div>
 
-        {/* Keyboard hint */}
-        <div style={{ marginTop: 10, fontSize: 10, color: `${C.muted}80`, textAlign: 'center' }}>
-          ← → arrow keys · Esc to skip
+        {/* Skip + keyboard hint */}
+        <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button
+            onClick={dismiss}
+            style={{
+              background: 'none', border: 'none', fontSize: 11,
+              color: `${C.muted}90`, cursor: 'pointer', padding: 0,
+              textDecoration: 'underline', textUnderlineOffset: 3,
+            }}
+          >
+            Skip tour
+          </button>
+          <span style={{ fontSize: 10, color: `${C.muted}60` }}>← → · Esc</span>
         </div>
       </div>
 
