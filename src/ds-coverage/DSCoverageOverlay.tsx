@@ -1487,7 +1487,7 @@ const SummaryPanel = (p: PanelProps) => {
   const [mdCopied,   setMdCopied]  = useState(false)
   const [pngBusy,    setPngBusy]   = useState(false)
   const [keyDraft,   setKeyDraft]  = useState('')
-  const [showKeyBox, setShowKeyBox]= useState(false)
+  const [settingsPage, setSettingsPage] = useState(false)
   const [hoveredRow,       setHoveredRow]       = useState<string | null>(null)
   const [copiedFix,        setCopiedFix]        = useState<string | null>(null)
   const [hoveredViolation, setHoveredViolation] = useState<string | null>(null)
@@ -1706,8 +1706,113 @@ const SummaryPanel = (p: PanelProps) => {
         </div>
       )}
 
-      {/* ── Normal panel (hidden while bootstrap page is open) ──────── */}
-      {!bootstrapPage && <>
+      {/* ── Settings page ─────────────────────────────────────────── */}
+      {!bootstrapPage && settingsPage && (
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          {/* Settings header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 14px', borderBottom: `1px solid ${C.panelBorder}`, flexShrink: 0,
+          }}>
+            <button onClick={() => setSettingsPage(false)} title="Back" style={{
+              width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: C.btnBg, border: `1px solid ${C.panelBorder}`, borderRadius: 8,
+              cursor: 'pointer', color: C.textSub,
+            }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M8 2L4 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Settings</span>
+          </div>
+
+          {/* Settings content */}
+          <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+            {/* Appearance card */}
+            <div style={{ background: C.btnBg, border: `1px solid ${C.panelBorder}`, borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: 0.6, marginBottom: 10, fontFamily: 'Inter, sans-serif' }}>APPEARANCE</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 12, color: C.text, fontFamily: 'Inter, sans-serif' }}>Dark mode</span>
+                <button
+                  onClick={p.onToggleTheme}
+                  style={{
+                    width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
+                    background: p.theme === 'dark' ? C.blue : C.track,
+                    position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute', top: 2, left: p.theme === 'dark' ? 18 : 2,
+                    width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                    transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                  }} />
+                </button>
+              </div>
+            </div>
+
+            {/* AI suggestions card */}
+            <div style={{ background: C.btnBg, border: `1px solid ${C.panelBorder}`, borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: 0.6, marginBottom: 10, fontFamily: 'Inter, sans-serif' }}>AI SUGGESTIONS</div>
+              <div style={{ fontSize: 12, color: C.textSub, lineHeight: 1.55, marginBottom: 12, fontFamily: 'Inter, sans-serif' }}>
+                Connect an Anthropic API key to get one-click fixes for drift and custom components.
+              </div>
+              {p.apiKey ? (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: `${C.blue}15`, borderRadius: 8, marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ color: C.blue, fontSize: 12 }}>✦</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: C.blue, fontFamily: 'Inter, sans-serif' }}>AI suggestions active</span>
+                    </div>
+                    <button onClick={() => p.onSaveApiKey('')} style={{
+                      background: 'none', border: 'none', fontSize: 10, color: C.muted,
+                      cursor: 'pointer', padding: 0, textDecoration: 'underline', fontFamily: 'Inter, sans-serif',
+                    }}>Remove</button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <input
+                    type="password"
+                    placeholder="sk-ant-api03-..."
+                    value={keyDraft}
+                    onChange={e => setKeyDraft(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && keyDraft) { p.onSaveApiKey(keyDraft); setKeyDraft('') } }}
+                    style={{
+                      width: '100%', boxSizing: 'border-box', marginBottom: 8,
+                      background: C.panel, border: `1px solid ${C.panelBorder}`,
+                      borderRadius: 8, padding: '8px 10px', fontSize: 11,
+                      color: C.text, fontFamily: 'monospace', outline: 'none',
+                    }}
+                  />
+                  <button
+                    onClick={() => { if (keyDraft) { p.onSaveApiKey(keyDraft); setKeyDraft('') } }}
+                    disabled={!keyDraft}
+                    style={{
+                      width: '100%', background: keyDraft ? C.blue : C.pillBg, border: 'none',
+                      borderRadius: 8, padding: '8px 0', color: keyDraft ? '#fff' : C.muted,
+                      fontSize: 12, fontWeight: 600, cursor: keyDraft ? 'pointer' : 'default',
+                      fontFamily: 'Inter, sans-serif', marginBottom: 10, transition: 'background 0.15s',
+                    }}
+                  >Save key</button>
+                </div>
+              )}
+              <a
+                href="https://console.anthropic.com/settings/keys"
+                target="_blank"
+                rel="noreferrer"
+                style={{ fontSize: 10, color: C.blue, textDecoration: 'none', fontFamily: 'Inter, sans-serif' }}
+              >
+                Get an Anthropic API key →
+              </a>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ── Normal panel (hidden while bootstrap page or settings is open) ── */}
+      {!bootstrapPage && !settingsPage && <>
 
       {/* ── Header row: title + icon buttons ────────────────────────── */}
       <div style={{
@@ -1721,22 +1826,17 @@ const SummaryPanel = (p: PanelProps) => {
           <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: -0.2, color: C.text }}>DesignDrift</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {/* Theme toggle */}
-          <button onClick={p.onToggleTheme} title="Toggle light/dark mode" style={{
+          {/* Settings */}
+          <button onClick={() => setSettingsPage(true)} title="Settings" style={{
             width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: C.btnBg, border: `1px solid ${C.panelBorder}`, borderRadius: 8,
-            cursor: 'pointer', color: C.textSub,
+            background: settingsPage ? C.inspectBg : C.btnBg,
+            border: `1px solid ${settingsPage ? C.blue : C.panelBorder}`, borderRadius: 8,
+            cursor: 'pointer', color: settingsPage ? C.blue : C.textSub,
           }}>
-            {p.theme === 'dark' ? (
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.3"/>
-                <path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.06 1.06M11.54 11.54l1.06 1.06M3.4 12.6l1.06-1.06M11.54 4.46l1.06-1.06" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-              </svg>
-            ) : (
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <path d="M14 8.53A6 6 0 117.47 2 4.5 4.5 0 0014 8.53z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-              </svg>
-            )}
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/>
+              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
           </button>
           {/* Identify — crosshair icon button.  Hover + click is always on when
               the panel is open; this button just toggles the name tooltip. */}
@@ -1923,19 +2023,6 @@ const SummaryPanel = (p: PanelProps) => {
                 {pill(p.filter === 'gaps', 'Custom-built', () => p.onFilterChange('gaps'))}
               </div>
 
-              {/* Compact AI hint when no key set */}
-              {!p.apiKey && gaps.length > 0 && !showKeyBox && (
-                <button onClick={() => setShowKeyBox(true)} style={{
-                  display: 'flex', alignItems: 'center', gap: 6, width: '100%', marginBottom: 8,
-                  padding: '6px 10px', background: 'none',
-                  border: `1px solid ${C.panelBorder}`, borderRadius: 8,
-                  cursor: 'pointer', textAlign: 'left',
-                }}>
-                  <span style={{ fontSize: 11, color: C.muted }}>✦</span>
-                  <span style={{ fontSize: 11, color: C.muted, fontFamily: 'Inter, sans-serif' }}>Add API key for AI replacement suggestions</span>
-                </button>
-              )}
-
               {/* Gap list */}
               {gaps.length > 0 ? (
                 <div>
@@ -2004,7 +2091,7 @@ const SummaryPanel = (p: PanelProps) => {
                                 }}
                               >✦</button>
                             ) : (
-                              <button onClick={() => setShowKeyBox(true)} title="Add API key to enable AI suggestions"
+                              <button onClick={() => setSettingsPage(true)} title="Add API key to enable AI suggestions"
                                 style={{ background: 'none', border: 'none', padding: '2px 4px', cursor: 'pointer', fontSize: 12, color: C.muted, opacity: isHovered ? 0.4 : 0, pointerEvents: isHovered ? 'auto' : 'none', transition: 'opacity 0.15s' }}>
                                 ✦
                               </button>
@@ -2042,49 +2129,6 @@ const SummaryPanel = (p: PanelProps) => {
                   <div style={{ fontSize: 20, marginBottom: 6 }}>✓</div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: C.green }}>Everything on this screen was designed</div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>No custom-built elements found</div>
-                </div>
-              )}
-
-              {/* API key setup box */}
-              {showKeyBox && (
-                <div style={{ marginTop: 10, padding: '10px', background: C.pillBg, borderRadius: 8, border: `1px solid ${C.panelBorder}` }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: C.text, marginBottom: 2 }}>Enable AI suggestions</div>
-                  <div style={{ fontSize: 10, color: C.muted, marginBottom: 8 }}>Add an Anthropic API key to get suggestions for replacing custom-built elements with designed components. Stored in your browser only.</div>
-                  <input
-                    type="password"
-                    placeholder="sk-ant-..."
-                    value={keyDraft}
-                    onChange={e => setKeyDraft(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') { p.onSaveApiKey(keyDraft); setShowKeyBox(false) } }}
-                    autoFocus
-                    style={{
-                      width: '100%', boxSizing: 'border-box',
-                      background: C.panel, border: `1px solid ${C.panelBorder}`,
-                      borderRadius: 4, padding: '6px 8px', fontSize: 11,
-                      color: C.text, fontFamily: 'monospace', outline: 'none',
-                    }}
-                  />
-                  <div style={{ display: 'flex', gap: 6, marginTop: 7 }}>
-                    <button onClick={() => { p.onSaveApiKey(keyDraft); setShowKeyBox(false) }} style={{
-                      flex: 1, background: C.blue, border: 'none', borderRadius: 4,
-                      padding: '5px 0', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                    }}>Save key</button>
-                    <button onClick={() => setShowKeyBox(false)} style={{
-                      background: C.pillBg, border: `1px solid ${C.panelBorder}`, borderRadius: 4,
-                      padding: '5px 8px', color: C.muted, fontSize: 11, cursor: 'pointer',
-                    }}>Cancel</button>
-                  </div>
-                </div>
-              )}
-
-              {/* API key status */}
-              {p.apiKey && !showKeyBox && (
-                <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', background: `${C.blue}10`, borderRadius: 6 }}>
-                  <span style={{ fontSize: 10, color: C.blue, fontWeight: 600 }}>✦ AI suggestions active</span>
-                  <button onClick={() => { p.onSaveApiKey(''); setShowKeyBox(false) }} style={{
-                    background: 'none', border: 'none', fontSize: 10, color: C.muted,
-                    cursor: 'pointer', padding: 0, textDecoration: 'underline',
-                  }}>Clear key</button>
                 </div>
               )}
 
@@ -2269,7 +2313,7 @@ const SummaryPanel = (p: PanelProps) => {
                         )}
                         {!p.apiKey && (
                           <div style={{ marginTop: 8, fontSize: 10, color: C.muted, lineHeight: 1.5 }}>
-                            Add an API key in <button onClick={() => setShowKeyBox(true)} style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 10, padding: 0, textDecoration: 'underline' }}>Overview</button> to get suggestions for restoring this component.
+                            <button onClick={() => setSettingsPage(true)} style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 10, padding: 0, textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>Enable AI suggestions</button> to get a one-click fix for this component.
                           </div>
                         )}
                       </div>
@@ -2437,18 +2481,18 @@ const SummaryPanel = (p: PanelProps) => {
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <div style={{ flexShrink: 0, borderTop: `1px solid ${C.panelBorder}`, paddingTop: 10, marginTop: 12 }}>
-        {/* API key prompt — only when no key set and key box is hidden */}
-        {!p.apiKey && !showKeyBox && (
-          <button onClick={() => setShowKeyBox(true)} style={{
-            display: 'flex', alignItems: 'center', gap: 8, width: '100%', marginBottom: 10,
+        {/* AI suggestions prompt — only when no key set */}
+        {!p.apiKey && (
+          <button onClick={() => setSettingsPage(true)} style={{
+            display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
             padding: '8px 12px', background: `${C.blue}12`,
             border: `1px solid ${C.blue}30`, borderRadius: 8,
-            cursor: 'pointer', textAlign: 'left',
+            cursor: 'pointer', textAlign: 'left', width: '100%', boxSizing: 'border-box',
           }}>
             <span style={{ fontSize: 14, color: C.blue }}>✦</span>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: C.text, fontFamily: 'Inter, sans-serif' }}>Add API key for AI fixes</div>
-              <div style={{ fontSize: 10, color: C.muted, fontFamily: 'Inter, sans-serif' }}>Anthropic Claude · stored in your browser only</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: C.text, fontFamily: 'Inter, sans-serif' }}>Enable AI suggestions</div>
+              <div style={{ fontSize: 10, color: C.muted, fontFamily: 'Inter, sans-serif' }}>One-click fixes for drift and custom components</div>
             </div>
           </button>
         )}
@@ -2463,7 +2507,7 @@ const SummaryPanel = (p: PanelProps) => {
         </div>
       </div>
 
-      </> /* end !bootstrapPage */ }
+      </> /* end !bootstrapPage && !settingsPage */ }
     </div>
   )
 }
