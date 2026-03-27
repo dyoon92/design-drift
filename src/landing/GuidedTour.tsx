@@ -202,21 +202,27 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
   // Fade in on mount
   useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
 
-  // On step change: reset positioned, fire onEnter with delay, then poll for DOM
+  // On step change: reset positioned, fire onEnter, poll for DOM element
   useEffect(() => {
     setPositioned(false)
     setTick(0)
 
-    // Give the DOM time to render before firing onEnter actions
-    const enterDelay = setTimeout(() => {
-      current.onEnter?.()
-    }, 80)
+    // Fire onEnter after a short delay so prior DOM changes settle
+    const enterDelay = setTimeout(() => current.onEnter?.(), 80)
 
-    // Poll for the target element (panel/tabs may take a few frames to appear)
+    // Poll for target element
     const id = setInterval(() => setTick(t => t + 1), 100)
-    const stop = setTimeout(() => clearInterval(id), 1200)
+    const stop = setTimeout(() => clearInterval(id), 1500)
 
-    return () => { clearTimeout(enterDelay); clearInterval(id); clearTimeout(stop) }
+    // Fallback: always show tooltip after 700ms even if element never appears
+    const fallback = setTimeout(() => setPositioned(true), 700)
+
+    return () => {
+      clearTimeout(enterDelay)
+      clearInterval(id)
+      clearTimeout(stop)
+      clearTimeout(fallback)
+    }
   }, [step, current])
 
   // Keyboard
