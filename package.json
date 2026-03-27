@@ -19,6 +19,7 @@
     "chromatic": "chromatic --project-token=$CHROMATIC_PROJECT_TOKEN"
   },
   "dependencies": {
+    "driver.js": "^1.4.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
