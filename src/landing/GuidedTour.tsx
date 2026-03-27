@@ -90,12 +90,12 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
           element: '[data-dd-panel]',
           popover: {
             title: 'Inspect any component',
-            description: "Click any red badge on the canvas to open the inspector. You'll see exactly which props are hardcoded, what token to use instead, and a one-click AI fix — like this OccupancyWidget.",
+            description: "Click any red badge on the canvas to open the inspector for that component. Here we've opened one automatically — you can see the hardcoded props and get a one-click AI fix.",
             side: 'left' as const,
             align: 'center',
           },
           onHighlightStarted: () => {
-            // Click the first gap badge to open PropsPanel
+            // Click the first gap badge on canvas to open PropsPanel
             retryUntil(() => {
               const badge = document.querySelector<HTMLElement>('[data-dd-gap-badge]')
               if (!badge) return false

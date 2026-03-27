@@ -431,7 +431,7 @@ export default function App() {
         </main>
       </div>
 
-      {import.meta.env.DEV && <DSCoverageOverlay />}
+      <DSCoverageOverlay />
 
       {showTour && <GuidedTour onDismiss={() => setShowTour(false)} />}
 

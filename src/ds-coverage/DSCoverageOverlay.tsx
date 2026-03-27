@@ -8,8 +8,8 @@
  *   Red    = custom gap    →  click badge to inspect live props
  *                             hover name in panel → highlight on canvas
  *
- * Toggle:  Ctrl+Shift+D  or  click the floating badge
- * Inspect: click any red badge, or Ctrl+Shift+I for inspect-everything mode
+ * Toggle:  D (while not typing)  or  click the floating badge
+ * Inspect: I (while not typing)  or  click any component badge
  */
 
 import React, { useState, useEffect, useRef, useCallback, useContext, createContext } from 'react'
@@ -1743,8 +1743,8 @@ const SummaryPanel = (p: PanelProps) => {
           <button
             onClick={p.onToggleInspect}
             title={p.inspectMode
-              ? 'Inspect mode ON — hover any element to see what it is, click to inspect props. Click to hide tooltip. (Ctrl+Shift+I)'
-              : 'Inspect mode OFF — hover tooltips hidden. Click to re-enable. (Ctrl+Shift+I)'}
+              ? 'Inspect mode ON — hover any element to see what it is, click to inspect props. Click to hide tooltip. (press I)'
+              : 'Inspect mode OFF — hover tooltips hidden. Click to re-enable. (press I)'}
 
             style={{
               width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2436,11 +2436,31 @@ const SummaryPanel = (p: PanelProps) => {
       )}
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
-      <div style={{ flexShrink: 0, marginTop: 12, fontSize: 10, color: C.textSub, textAlign: 'center', lineHeight: 1.7, borderTop: `1px solid ${C.panelBorder}`, paddingTop: 10 }}>
-        <kbd style={{ background: C.kbdBg, color: C.kbdText, padding: '1px 6px', borderRadius: 4, fontFamily: 'monospace', border: `1px solid ${C.panelBorder}` }}>⌃⇧D</kbd>
-        {' show/hide · '}
-        <kbd style={{ background: C.kbdBg, color: C.kbdText, padding: '1px 6px', borderRadius: 4, fontFamily: 'monospace', border: `1px solid ${C.panelBorder}` }}>⌃⇧I</kbd>
-        {' identify'}
+      <div style={{ flexShrink: 0, borderTop: `1px solid ${C.panelBorder}`, paddingTop: 10, marginTop: 12 }}>
+        {/* API key prompt — only when no key set and key box is hidden */}
+        {!p.apiKey && !showKeyBox && (
+          <button onClick={() => setShowKeyBox(true)} style={{
+            display: 'flex', alignItems: 'center', gap: 8, width: '100%', marginBottom: 10,
+            padding: '8px 12px', background: `${C.blue}12`,
+            border: `1px solid ${C.blue}30`, borderRadius: 8,
+            cursor: 'pointer', textAlign: 'left',
+          }}>
+            <span style={{ fontSize: 14, color: C.blue }}>✦</span>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: C.text, fontFamily: 'Inter, sans-serif' }}>Add API key for AI fixes</div>
+              <div style={{ fontSize: 10, color: C.muted, fontFamily: 'Inter, sans-serif' }}>Anthropic Claude · stored in your browser only</div>
+            </div>
+          </button>
+        )}
+        {/* Keyboard shortcuts */}
+        <div style={{ fontSize: 10, color: C.muted, textAlign: 'center', lineHeight: 1.7 }}>
+          <kbd style={{ background: C.kbdBg, color: C.kbdText, padding: '1px 7px', borderRadius: 4, fontFamily: 'monospace', border: `1px solid ${C.panelBorder}`, fontSize: 11 }}>D</kbd>
+          {' show/hide · '}
+          <kbd style={{ background: C.kbdBg, color: C.kbdText, padding: '1px 7px', borderRadius: 4, fontFamily: 'monospace', border: `1px solid ${C.panelBorder}`, fontSize: 11 }}>I</kbd>
+          {' inspect · '}
+          <kbd style={{ background: C.kbdBg, color: C.kbdText, padding: '1px 7px', borderRadius: 4, fontFamily: 'monospace', border: `1px solid ${C.panelBorder}`, fontSize: 11 }}>Esc</kbd>
+          {' close'}
+        </div>
       </div>
 
       </> /* end !bootstrapPage */ }
@@ -2686,9 +2706,11 @@ export function DSCoverageOverlay() {
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'D') { e.preventDefault(); setVisible(v => !v) }
-      if (e.ctrlKey && e.shiftKey && e.key === 'I') { e.preventDefault(); setInspectMode(v => !v) }
-      if (e.key === 'Escape') { setInspectMode(false); setInspected(null) }
+      const inInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target as HTMLElement)?.isContentEditable
+      if (e.key === 'Escape') { setInspectMode(false); setInspected(null); return }
+      if (inInput || e.ctrlKey || e.metaKey || e.altKey) return
+      if (e.key === 'd' || e.key === 'D') { e.preventDefault(); setVisible(v => !v) }
+      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); setInspectMode(v => !v) }
     }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
