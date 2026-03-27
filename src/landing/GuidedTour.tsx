@@ -55,7 +55,12 @@ const STEPS: Step[] = [
     selector: '[data-dd-tabs]',
     tooltipSide: 'left',
     padding: 6,
-    action: 'Click "Modifications" to see drift',
+    onEnter: () => {
+      // Click the Modifications tab so the user sees it highlighted
+      const tabs = document.querySelectorAll<HTMLElement>('[data-dd-tabs] button')
+      const modsTab = Array.from(tabs).find(b => b.textContent?.includes('Modifications'))
+      modsTab?.click()
+    },
   },
   {
     id: 'drift',
@@ -64,7 +69,16 @@ const STEPS: Step[] = [
     selector: '[data-dd-drift-summary]',
     tooltipSide: 'left',
     padding: 10,
-    action: 'Click a card to inspect it',
+    onEnter: () => {
+      // Ensure Modifications tab is active and scroll the first drift card into view
+      const tabs = document.querySelectorAll<HTMLElement>('[data-dd-tabs] button')
+      const modsTab = Array.from(tabs).find(b => b.textContent?.includes('Modifications'))
+      modsTab?.click()
+      // Give the tab a tick to render then scroll drift summary into view
+      setTimeout(() => {
+        document.querySelector('[data-dd-drift-summary]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }, 120)
+    },
   },
   {
     id: 'done',
