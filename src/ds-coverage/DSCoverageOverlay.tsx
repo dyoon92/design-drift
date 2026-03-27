@@ -1905,7 +1905,7 @@ const SummaryPanel = (p: PanelProps) => {
 
       {/* ── Tab bar — top level, full width ──────────────────────────── */}
       {p.scanned && !p.scanning && (
-        <div style={{ borderBottom: `1px solid ${C.panelBorder}`, flexShrink: 0 }}>
+        <div data-dd-tabs style={{ borderBottom: `1px solid ${C.panelBorder}`, flexShrink: 0 }}>
           <TabBar active={tab} onChange={setTab} tokenCount={p.tokenViolations.length} promoteCount={promoteCount} driftCount={driftedCount} />
         </div>
       )}
@@ -2127,7 +2127,7 @@ const SummaryPanel = (p: PanelProps) => {
               </div>
             ) : (
               <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <div data-dd-drift-summary style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                   <span style={{ fontSize: 32, fontWeight: 800, color: C.orange, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{driftedCount}</span>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>designed components modified</div>

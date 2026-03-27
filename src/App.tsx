@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DSCoverageOverlay } from './ds-coverage/DSCoverageOverlay'
+import { GuidedTour } from './landing/GuidedTour'
 
 function useWindowWidth() {
   const [width, setWidth] = useState(window.innerWidth)
@@ -387,10 +388,13 @@ function TenantsView({ onSelectTenant }: { onSelectTenant: (id: string) => void 
 
 // ─── App shell ────────────────────────────────────────────────────────────────
 
+const TOUR_KEY = 'dd-tour-seen'
+
 export default function App() {
   const [nav, setNav] = useState<NavId>('dashboard')
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null)
   const [darkMode, setDarkMode] = useState(false)
+  const [showTour, setShowTour] = useState(() => !sessionStorage.getItem(TOUR_KEY))
   const width = useWindowWidth()
   const isMobile = width < 768
 
@@ -430,6 +434,13 @@ export default function App() {
       </div>
 
       {import.meta.env.DEV && <DSCoverageOverlay />}
+
+      {showTour && (
+        <GuidedTour onDismiss={() => {
+          sessionStorage.setItem(TOUR_KEY, '1')
+          setShowTour(false)
+        }} />
+      )}
 
       {/* Back to landing page */}
       <a
