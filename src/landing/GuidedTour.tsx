@@ -27,11 +27,11 @@ const STEPS: Step[] = [
   {
     id: 'toggle',
     title: 'The DesignDrift button',
-    body: "This floating button lives in the corner of your app during development. The badge shows how many components are drifting. Click it to open the panel.",
+    body: "This floating button lives in the corner of your app during development. The numbers show how many components are drifting from your design tokens.",
     selector: '[data-dd-toggle]',
-    tooltipSide: 'left',
+    tooltipSide: 'top',
     padding: 12,
-    action: 'Click to open the panel',
+    action: 'Click the button to open the panel',
   },
   {
     id: 'panel',
@@ -40,6 +40,13 @@ const STEPS: Step[] = [
     selector: '[data-dd-panel]',
     tooltipSide: 'left',
     padding: 8,
+    onEnter: () => {
+      // Auto-open the panel if it isn't already visible
+      if (!document.querySelector('[data-dd-panel]')) {
+        const btn = document.querySelector<HTMLElement>('[data-dd-toggle] button')
+        btn?.click()
+      }
+    },
   },
   {
     id: 'tabs',
@@ -278,10 +285,9 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
           boxShadow: '0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)',
           zIndex: 1,
         }}
-        // Stop click from bubbling to backdrop (which advances)
         onClick={e => e.stopPropagation()}
       >
-        {/* Step counter */}
+        {/* Step counter dots — outside the keyed content so they don't re-animate */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           marginBottom: 12,
@@ -304,25 +310,26 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
           >×</button>
         </div>
 
-        {/* Content */}
-        <div style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 8, lineHeight: 1.3 }}>
-          {current.title}
-        </div>
-        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.65, marginBottom: current.action ? 14 : 20 }}>
-          {current.body}
-        </div>
-
-        {/* Action hint */}
-        {current.action && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 7,
-            marginBottom: 18, padding: '7px 12px', borderRadius: 8,
-            background: `${C.blue}12`, border: `1px solid ${C.blue}25`,
-          }}>
-            <span style={{ fontSize: 14 }}>👆</span>
-            <span style={{ fontSize: 12, color: C.blue, fontWeight: 600 }}>{current.action}</span>
+        {/* Fading content block — re-keyed on step so it animates in */}
+        <div key={step} style={{ animation: 'dd-step-fade 0.22s ease both' }}>
+          <div style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 8, lineHeight: 1.3 }}>
+            {current.title}
           </div>
-        )}
+          <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.65, marginBottom: current.action ? 12 : 20 }}>
+            {current.body}
+          </div>
+
+          {/* Action hint — plain text style, not a button */}
+          {current.action && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              marginBottom: 18,
+            }}>
+              <span style={{ fontSize: 12 }}>↑</span>
+              <span style={{ fontSize: 12, color: C.muted, fontStyle: 'italic' }}>{current.action}</span>
+            </div>
+          )}
+        </div>
 
         {/* Buttons */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -372,6 +379,10 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
         @keyframes dd-tour-pulse {
           0%, 100% { box-shadow: 0 0 0 1px rgba(79,142,247,0.3), 0 0 16px rgba(79,142,247,0.2); }
           50%       { box-shadow: 0 0 0 1px rgba(79,142,247,0.6), 0 0 32px rgba(79,142,247,0.35); }
+        }
+        @keyframes dd-step-fade {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
