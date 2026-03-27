@@ -2053,78 +2053,78 @@ const SummaryPanel = (p: PanelProps) => {
                   {gaps.filter(([name]) => !p.gapFilter || name.toLowerCase().includes(p.gapFilter.toLowerCase())).map(([name, count]) => {
                     const suggestion = p.suggestions[name]
                     const gapProps   = p.components.find(c => c.name === name)?.fiber?.memoizedProps ?? {}
-                    const isHovered  = p.hoveredGap === name
                     const isFrequent = count >= PROMOTE_MIN
                     return (
-                      <div key={name}>
-                        <div
-                          onMouseEnter={() => p.onHoverGap(name)}
-                          onMouseLeave={() => p.onHoverGap(null)}
-                          style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '7px 0', cursor: 'default',
-                            borderBottom: suggestion?.status === 'done' ? 'none' : `1px solid ${C.divider}`,
-                            boxShadow: isHovered ? `inset 3px 0 0 ${C.red}` : 'none',
-                            paddingLeft: isHovered ? 8 : 0,
-                            transition: 'box-shadow 0.15s, padding-left 0.15s',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: 'Inter, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-                            {isFrequent && (
-                              <span
-                                title={`Used ${count} times — appears frequently enough to be worth designing and adding to your system`}
-                                style={{ fontSize: 10, color: C.purple, cursor: 'help', flexShrink: 0 }}>
-                                Worth designing
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginLeft: 8 }}>
-                            {/* AI button — icon only, tooltip explains; only visible on hover */}
-                            {p.apiKey ? (
-                              <button
-                                onClick={() => p.onSuggest(name, count, gapProps)}
-                                disabled={suggestion?.status === 'loading' || suggestion?.status === 'done'}
-                                title={suggestion?.status === 'done' ? 'Suggestion ready — see below' : 'Ask AI whether a designed component could replace this'}
-                                style={{
-                                  background: 'none', border: 'none', padding: '2px 4px',
-                                  cursor: suggestion?.status === 'loading' || suggestion?.status === 'done' ? 'default' : 'pointer',
-                                  fontSize: 12, color: suggestion?.status === 'done' ? C.blue : C.muted,
-                                  opacity: isHovered ? (suggestion?.status === 'loading' ? 0.5 : 1) : 0,
-                                  pointerEvents: isHovered ? 'auto' : 'none',
-                                  transition: 'opacity 0.15s',
-                                }}
-                              >✦</button>
-                            ) : (
-                              <button onClick={() => setSettingsPage(true)} title="Add API key to enable AI suggestions"
-                                style={{ background: 'none', border: 'none', padding: '2px 4px', cursor: 'pointer', fontSize: 12, color: C.muted, opacity: isHovered ? 0.4 : 0, pointerEvents: isHovered ? 'auto' : 'none', transition: 'opacity 0.15s' }}>
-                                ✦
-                              </button>
-                            )}
-                            <span
-                              title={`Renders ${count} time${count !== 1 ? 's' : ''} on this page`}
-                              style={{ fontSize: 11, fontWeight: 600, color: C.muted, minWidth: 20, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                              {count}
+                      <div key={name} style={{
+                        marginBottom: 6, background: C.panel,
+                        border: `1px solid ${C.panelBorder}`, borderRadius: 8,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden',
+                      }}>
+                        {/* Card body */}
+                        <div style={{ padding: '10px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                              {isFrequent && (
+                                <span title={`Used ${count} times — worth adding to your design system`}
+                                  style={{ fontSize: 10, color: C.purple, cursor: 'help', flexShrink: 0 }}>
+                                  Worth designing
+                                </span>
+                              )}
+                            </div>
+                            <span title={`Renders ${count} time${count !== 1 ? 's' : ''} on this page`}
+                              style={{
+                                fontSize: 10, fontWeight: 600, fontFamily: 'monospace',
+                                color: C.red, background: `${C.red}14`,
+                                padding: '2px 8px', borderRadius: 4, flexShrink: 0,
+                              }}>
+                              ×{count}
                             </span>
                           </div>
+                          <div style={{ fontSize: 10, color: C.muted, marginTop: 5 }}>
+                            Not in your design system
+                          </div>
+                          {/* AI suggestion result — inline when ready */}
+                          {suggestion?.status === 'done' && suggestion.text && (
+                            <div style={{ marginTop: 8, padding: '8px 10px', background: `${C.blue}0d`, border: `1px solid ${C.blue}25`, borderRadius: 6, fontSize: 11, color: C.text, lineHeight: 1.6 }}>
+                              <span style={{ fontWeight: 700, color: C.blue, fontSize: 10, display: 'block', marginBottom: 4 }}>✦ Replacement suggestion</span>
+                              {suggestion.text}
+                            </div>
+                          )}
+                          {suggestion?.status === 'error' && (
+                            <div style={{ marginTop: 6, padding: '6px 10px', background: C.redChipBg, borderRadius: 6, fontSize: 10, color: C.red }}>
+                              {suggestion.text}
+                            </div>
+                          )}
                         </div>
-
-                        {/* AI suggestion result */}
-                        {suggestion?.status === 'done' && suggestion.text && (
-                          <div style={{
-                            margin: '0 0 8px 0', padding: '10px 12px',
-                            background: C.pillBg, border: `1px solid ${C.panelBorder}`,
-                            borderRadius: 8, fontSize: 11, color: C.text, lineHeight: 1.6,
-                          }}>
-                            <span style={{ fontWeight: 700, color: C.blue, fontSize: 10, display: 'block', marginBottom: 5 }}>✦ Replacement suggestion</span>
-                            {suggestion.text}
-                          </div>
-                        )}
-                        {suggestion?.status === 'error' && (
-                          <div style={{ margin: '0 0 6px', padding: '6px 10px', background: C.redChipBg, borderRadius: 6, fontSize: 10, color: C.red }}>
-                            {suggestion.text}
-                          </div>
-                        )}
+                        {/* Card footer — AI suggest button */}
+                        <div style={{ borderTop: `1px solid ${C.panelBorder}`, padding: '7px 12px', background: 'rgba(124,58,237,0.04)' }}>
+                          {p.apiKey ? (
+                            <button
+                              onClick={() => p.onSuggest(name, count, gapProps)}
+                              disabled={suggestion?.status === 'loading' || suggestion?.status === 'done'}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 4,
+                                fontSize: 10, fontWeight: 700, background: 'none', border: 'none', padding: 0,
+                                color: suggestion?.status === 'done' ? C.muted : '#7c3aed',
+                                cursor: suggestion?.status === 'loading' || suggestion?.status === 'done' ? 'default' : 'pointer',
+                                fontFamily: 'Inter, sans-serif', opacity: suggestion?.status === 'loading' ? 0.5 : 1,
+                              }}
+                            >
+                              <span style={{ fontSize: 11 }}>✦</span>
+                              {suggestion?.status === 'loading' ? 'Thinking…' : suggestion?.status === 'done' ? 'Suggestion ready' : 'Suggest replacement'}
+                            </button>
+                          ) : (
+                            <button onClick={() => setSettingsPage(true)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 4,
+                                fontSize: 10, fontWeight: 700, background: 'none', border: 'none', padding: 0,
+                                color: '#7c3aed', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                              }}>
+                              <span style={{ fontSize: 11 }}>✦</span> Enable AI suggestions
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )
                   })}
