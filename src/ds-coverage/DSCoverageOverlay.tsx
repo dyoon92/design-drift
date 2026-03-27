@@ -1833,9 +1833,9 @@ const SummaryPanel = (p: PanelProps) => {
             border: `1px solid ${settingsPage ? C.blue : C.panelBorder}`, borderRadius: 8,
             cursor: 'pointer', color: settingsPage ? C.blue : C.textSub,
           }}>
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
           {/* Identify — crosshair icon button.  Hover + click is always on when
@@ -2480,14 +2480,14 @@ const SummaryPanel = (p: PanelProps) => {
       )}
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
-      <div style={{ flexShrink: 0, borderTop: `1px solid ${C.panelBorder}`, paddingTop: 10, marginTop: 12 }}>
+      <div style={{ flexShrink: 0, borderTop: `1px solid ${C.panelBorder}`, padding: '10px 16px 12px' }}>
         {/* AI suggestions prompt — only when no key set */}
         {!p.apiKey && (
           <button onClick={() => setSettingsPage(true)} style={{
             display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
             padding: '8px 12px', background: `${C.blue}12`,
             border: `1px solid ${C.blue}30`, borderRadius: 8,
-            cursor: 'pointer', textAlign: 'left', width: '100%', boxSizing: 'border-box',
+            cursor: 'pointer', textAlign: 'left', width: '100%',
           }}>
             <span style={{ fontSize: 14, color: C.blue }}>✦</span>
             <div>
@@ -2949,7 +2949,7 @@ export function DSCoverageOverlay() {
         {visible && (
           <div data-dd-panel style={{
             position: 'fixed', bottom: 80, right: 16,
-            width: 360, maxHeight: 'min(75vh, 660px)',
+            width: 360, height: 'min(75vh, 660px)',
             background: C.panel, border: `1px solid ${C.panelBorder}`,
             borderRadius: 14,
             boxShadow: C.shadow,
