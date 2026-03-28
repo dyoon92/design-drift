@@ -2709,10 +2709,9 @@ export function DSCoverageOverlay() {
     return () => window.removeEventListener('keydown', h)
   }, [])
 
-  // Inject gradient animation + auto-scan on mount
+  // Inject gradient animation on mount — scan is deferred to first panel open
   useEffect(() => {
     injectGradientStyle()
-    scan()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Click-outside to close — uses a document listener so the backdrop
@@ -2743,12 +2742,16 @@ export function DSCoverageOverlay() {
     setHistory(loadHistory())
     setInspectMode(true)
     if (!scanned) {
-      // Show skeleton immediately, then wait for the page to finish its initial
-      // render before scanning — avoids a two-step flicker (partial result →
-      // corrected result) caused by scanning before React has settled.
+      // Block any MutationObserver-triggered scans during the settle window,
+      // show the skeleton immediately, then run one clean scan after the page
+      // has had time to finish its initial render.
       setScanning(true)
-      const timer = setTimeout(() => scan(), 700)
-      return () => clearTimeout(timer)
+      scanningRef.current = true
+      const timer = setTimeout(() => {
+        scanningRef.current = false
+        scan()
+      }, 800)
+      return () => { clearTimeout(timer); scanningRef.current = false }
     }
   }, [visible]) // eslint-disable-line react-hooks/exhaustive-deps
 
