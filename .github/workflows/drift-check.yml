@@ -128,6 +128,11 @@ jobs:
               }
             }
 
+            // ── Max drop check ────────────────────────────────────────────────
+            const maxDrop = '${{ vars.DRIFT_MAX_DROP }}' !== ''
+              ? parseInt('${{ vars.DRIFT_MAX_DROP }}', 10)
+              : null
+
             // ── Build comment ─────────────────────────────────────────────────
             const lines = []
 
@@ -135,13 +140,21 @@ jobs:
             if (avgNow != null && baselineAvg != null) {
               const diff = avgNow - baselineAvg
               const trend = diff > 0 ? '↑' : diff < 0 ? '↓' : '→'
-              const trendEmoji = diff > 0 ? '✅' : diff < 0 ? '⚠️' : '➡️'
+              const dropBlocked = maxDrop != null && diff < -maxDrop
+              const trendEmoji = dropBlocked ? '🚫' : diff > 0 ? '✅' : diff < 0 ? '⚠️' : '➡️'
               lines.push(`## ${trendEmoji} Drift Delta`)
               lines.push('')
               lines.push(
                 `**${baselineAvg}% → ${avgNow}%** ${trend} ` +
                 `${diff !== 0 ? `${diff > 0 ? '+' : ''}${diff}% since main` : 'no change'}`
               )
+              if (dropBlocked) {
+                lines.push('')
+                lines.push(`> 🚫 **PR blocked** — coverage dropped ${Math.abs(diff)}%, exceeds the allowed maximum of ${maxDrop}% (\`DRIFT_MAX_DROP=${maxDrop}\`).`)
+              } else if (maxDrop != null && diff < 0) {
+                lines.push('')
+                lines.push(`> ℹ️ Coverage dropped ${Math.abs(diff)}% (max allowed: ${maxDrop}%). Within limit.`)
+              }
             } else {
               lines.push('## 📊 Drift Report')
             }
@@ -231,10 +244,49 @@ jobs:
               })
             }
 
-      # ── Fail CI if below threshold (when DRIFT_STRICT=true) ──────────────────
+      # ── Fail CI if below absolute threshold (when DRIFT_STRICT=true) ───────────
       - name: Fail if below threshold
         if: vars.DRIFT_STRICT == 'true'
         run: node -e "const r=require('./drift-report.json'); process.exit(r.passed ? 0 : 1)"
+
+      # ── Fail CI if PR drops coverage more than DRIFT_MAX_DROP ────────────────
+      # DRIFT_MAX_DROP=5  → block any PR that drops coverage by more than 5%
+      # DRIFT_MAX_DROP=0  → ratchet mode: coverage can never decrease
+      - name: Fail if delta exceeds max drop
+        if: >
+          github.event_name == 'pull_request' &&
+          vars.DRIFT_MAX_DROP != ''
+        run: |
+          node -e "
+            const fs = require('fs');
+            const maxDrop = parseInt('${{ vars.DRIFT_MAX_DROP }}', 10);
+            const report   = JSON.parse(fs.readFileSync('drift-report.json', 'utf8'));
+            const baseline = fs.existsSync('drift-baseline.json')
+              ? JSON.parse(fs.readFileSync('drift-baseline.json', 'utf8'))
+              : null;
+
+            if (!baseline) {
+              console.log('No baseline found — skipping delta check.');
+              process.exit(0);
+            }
+
+            const avgNow = report.routes.filter(r => !r.error)
+              .reduce((s, r, _, a) => s + r.pct / a.length, 0);
+            const avgBase = baseline.routes.filter(r => !r.error)
+              .reduce((s, r, _, a) => s + r.pct / a.length, 0);
+            const drop = avgBase - avgNow;
+
+            if (drop > maxDrop) {
+              console.error('');
+              console.error('🚫 Drift check failed: coverage dropped ' + drop.toFixed(1) + '%');
+              console.error('   Baseline: ' + avgBase.toFixed(1) + '%  →  This PR: ' + avgNow.toFixed(1) + '%');
+              console.error('   DRIFT_MAX_DROP=' + maxDrop + '% — set a higher value or improve DS coverage to merge.');
+              console.error('');
+              process.exit(1);
+            } else {
+              console.log('✅ Delta check passed: ' + avgBase.toFixed(1) + '% → ' + avgNow.toFixed(1) + '% (drop: ' + drop.toFixed(1) + '%, limit: ' + maxDrop + '%)');
+            }
+          "
 
       # ── Always upload the report as an artifact ───────────────────────────────
       - name: Upload drift report

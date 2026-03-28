@@ -149,7 +149,8 @@ The GitHub Action at `.github/workflows/drift-check.yml`:
 |---|---|---|
 | `DRIFT_THRESHOLD` | `80` | Minimum DS coverage % to pass |
 | `DRIFT_ROUTES` | `/` | Comma-separated routes, e.g. `/,/dashboard,/tenants` |
-| `DRIFT_STRICT` | `false` | Set `true` to fail CI on any violation |
+| `DRIFT_MAX_DROP` | *(unset)* | Block PRs that drop coverage by more than this %. Set `0` for ratchet mode (coverage can never decrease). |
+| `DRIFT_STRICT` | `false` | Fail CI on any gap or token violation, regardless of % |
 
 No secrets needed — uses the built-in `GITHUB_TOKEN`.
 
