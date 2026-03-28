@@ -1244,8 +1244,6 @@ function extractStyles(el: Element): CapturedStyles {
 }
 
 function buildFigmaMcpPrompt(name: string, styles: CapturedStyles | null, screenshotDataUrl: string | null): string {
-  const figmaKey = config.figmaFileKey || '<your-figma-file-key>'
-
   const styleBlock = styles ? `
 Measured from the live rendered component:
   - Size:             ${styles.width}px × ${styles.height}px
@@ -1262,7 +1260,7 @@ Measured from the live rendered component:
     ? `\nA screenshot of the rendered component is attached — use it as the visual reference.\n`
     : ''
 
-  return `Using the Figma MCP, create a new component called "${name}" in the design file (key: ${figmaKey}).
+  return `Using the Figma MCP, create a new component called "${name}" in our design file.
 ${screenshotNote}${styleBlock}
 
 Instructions:
