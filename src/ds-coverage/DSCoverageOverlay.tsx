@@ -3376,7 +3376,7 @@ function injectGradientStyle() {
 // ─── Main overlay ─────────────────────────────────────────────────────────────
 
 export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
-  const [theme,          setTheme]          = useState<Theme>(() => (localStorage.getItem(THEME_KEY) as Theme) ?? 'light')
+  const [theme,          setTheme]          = useState<Theme>(() => (localStorage.getItem(THEME_KEY) as Theme) ?? 'dark')
   const [visible,        setVisible]        = useState(false)
   const [isClosing,      setIsClosing]      = useState(false)
   const [showSetup,      setShowSetup]      = useState(() => Object.keys(config.components).length === 0)

@@ -438,7 +438,7 @@ function TenantsView({ onSelectTenant }: { onSelectTenant: (id: string) => void 
 export default function App() {
   const [nav, setNav]                     = useState<NavId>('dashboard')
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null)
-  const [darkMode, setDarkMode]           = useState(false)
+  const [darkMode, setDarkMode]           = useState(true)
   const [showTour, setShowTour]           = useState(true)
   const [openOverlay, setOpenOverlay]     = useState(false)
 
