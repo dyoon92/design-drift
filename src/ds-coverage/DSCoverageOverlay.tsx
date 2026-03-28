@@ -23,6 +23,9 @@ import figmaLogoUrl from './figma-logo.svg'
 import jiraLogoUrl from './jira-logo.png'
 
 const SB_BASE         = STORYBOOK_URL
+// True when storybookUrl points at localhost — links are only usable by the dev running the server locally.
+// When true we suppress external Storybook links so the demo doesn't show broken ↗ icons to visitors.
+const SB_IS_LOCAL     = SB_BASE.includes('localhost') || SB_BASE.includes('127.0.0.1')
 const BADGE_H         = 19
 const PROMOTE_MIN     = 5
 const HISTORY_KEY     = 'ds-coverage-history'
@@ -578,6 +581,17 @@ function generateBootstrapConfig(selected: string[]): string {
 // key server-side. Set it in .env: VITE_AI_PROXY_URL=http://localhost:3001
 const AI_PROXY_URL: string | undefined = (import.meta.env.VITE_AI_PROXY_URL as string | undefined)
 
+// Optional shared secret sent as Bearer token on every proxy request.
+// Must match PROXY_SECRET on the server. Set in .env: VITE_PROXY_SECRET=...
+const AI_PROXY_SECRET: string | undefined = (import.meta.env.VITE_PROXY_SECRET as string | undefined)
+
+/** Build headers for proxy requests — injects Authorization when secret is set. */
+function proxyHeaders(): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (AI_PROXY_SECRET) h['Authorization'] = `Bearer ${AI_PROXY_SECRET}`
+  return h
+}
+
 /**
  * Read CSS custom properties (design tokens) from the live document stylesheets.
  * Works in any app that loads a variables.css — no hardcoded token list.
@@ -701,7 +715,7 @@ async function fetchAISuggestion(
   if (AI_PROXY_URL) {
     const res = await fetch(`${AI_PROXY_URL}/api/ai/suggest`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: proxyHeaders(),
       body: JSON.stringify({
         name, count, pages,
         props: Object.fromEntries(
@@ -776,7 +790,7 @@ async function fetchDriftFix(
   if (AI_PROXY_URL) {
     const res = await fetch(`${AI_PROXY_URL}/api/ai/drift-fix`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: proxyHeaders(),
       body: JSON.stringify({ name, violations }),
     })
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error ?? `Proxy error ${res.status}`) }
@@ -1015,7 +1029,7 @@ const OverlayBox = React.memo(({ c, yOffset, inspectMode, isInspected, isHighlig
           pointerEvents: inspectMode ? 'none' : 'auto' }}>
           {c.drifted && <span title="Token drift: hardcoded colors override DS tokens">⚠</span>}
           <span style={{ whiteSpace: 'nowrap' }}>{c.name}</span>
-          {storyUrl && !inspectMode && (
+          {storyUrl && !inspectMode && !SB_IS_LOCAL && (
             <a href={storyUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
               title="Open in Storybook" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 8, textDecoration: 'none' }}>
               SB↗
@@ -1646,7 +1660,7 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
       let responseText: string
       if (AI_PROXY_URL) {
         const res = await fetch(`${AI_PROXY_URL}/api/ai/chat`, {
-          method: 'POST', headers: { 'content-type': 'application/json' },
+          method: 'POST', headers: proxyHeaders(),
           body: JSON.stringify({ system: buildSystemPrompt(), messages: msgs }),
         })
         if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error ?? `Proxy ${res.status}`) }
@@ -2846,18 +2860,30 @@ const SummaryPanel = (p: PanelProps) => {
               <span style={{ fontSize: 26, fontWeight: 800, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
               <span style={{ fontSize: 10, color: C.muted }}>from your designs</span>
             </div>
-            <a href={SB_BASE} target="_blank" rel="noreferrer" title="Open component library in Storybook"
-              style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: C.blue, textDecoration: 'none', flexShrink: 0, opacity: 0.8 }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '0.8')}
-            >
-              Storybook
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
-                <polyline points="15 3 21 3 21 9"/>
-                <line x1="10" y1="14" x2="21" y2="3"/>
-              </svg>
-            </a>
+            {SB_IS_LOCAL ? (
+              <span title="Set a deployed storybookUrl in drift.config.ts to enable this link"
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: C.muted, flexShrink: 0, cursor: 'default', userSelect: 'none' }}>
+                Storybook
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}>
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </span>
+            ) : (
+              <a href={SB_BASE} target="_blank" rel="noreferrer" title="Open component library in Storybook"
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: C.blue, textDecoration: 'none', flexShrink: 0, opacity: 0.8 }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.8')}
+              >
+                Storybook
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            )}
           </div>
           {/* Bar */}
           <CoverageBar pct={pct} />
@@ -2982,7 +3008,7 @@ const SummaryPanel = (p: PanelProps) => {
                               color: accentColor, background: `${accentColor}14`,
                               padding: '2px 8px', borderRadius: 4,
                             }}>×{count}</span>
-                            {storyUrl && (
+                            {storyUrl && !SB_IS_LOCAL && (
                               <a href={storyUrl} target="_blank" rel="noreferrer" title="View in Storybook"
                                 onClick={e => e.stopPropagation()}
                                 style={{ display: 'flex', color: C.muted, textDecoration: 'none' }}
@@ -3425,8 +3451,6 @@ const SummaryPanel = (p: PanelProps) => {
         <div style={{ fontSize: 10, color: C.muted, textAlign: 'center', lineHeight: 1.7 }}>
           <kbd style={{ background: C.kbdBg, color: C.kbdText, padding: '1px 7px', borderRadius: 4, fontFamily: 'monospace', border: `1px solid ${C.panelBorder}`, fontSize: 11 }}>D</kbd>
           {' show/hide · '}
-          <kbd style={{ background: C.kbdBg, color: C.kbdText, padding: '1px 7px', borderRadius: 4, fontFamily: 'monospace', border: `1px solid ${C.panelBorder}`, fontSize: 11 }}>I</kbd>
-          {' inspect · '}
           <kbd style={{ background: C.kbdBg, color: C.kbdText, padding: '1px 7px', borderRadius: 4, fontFamily: 'monospace', border: `1px solid ${C.panelBorder}`, fontSize: 11 }}>Esc</kbd>
           {' close'}
         </div>

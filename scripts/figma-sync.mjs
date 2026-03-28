@@ -24,7 +24,31 @@ if (!FIGMA_TOKEN) {
   console.error('   Run: export FIGMA_API_TOKEN=your_token_here');
   process.exit(1);
 }
-const FILE_KEY    = 'yO7V6x2VhxuIhDyR24fQ2h';
+
+// Read figmaFileKey from drift.config.ts or src/ds-coverage/config.ts
+function readFigmaFileKey() {
+  const candidates = [
+    path.join(ROOT, 'drift.config.ts'),
+    path.join(ROOT, 'src/ds-coverage/config.ts'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) {
+      const src = fs.readFileSync(p, 'utf8');
+      const match = src.match(/figmaFileKey:\s*['"]([^'"]+)['"]/);
+      if (match) return match[1];
+    }
+  }
+  return null;
+}
+
+const FILE_KEY = readFigmaFileKey();
+if (!FILE_KEY) {
+  console.error('❌ figmaFileKey not found in drift.config.ts or src/ds-coverage/config.ts.');
+  console.error('   Add it: figmaFileKey: \'your-key-here\'  // figma.com/design/THIS_PART/...');
+  process.exit(1);
+}
+console.log(`   Using Figma file key: ${FILE_KEY}`);
+
 const API_BASE    = 'https://api.figma.com/v1';
 
 // ─── Fetch helpers ────────────────────────────────────────────────────────────
@@ -230,38 +254,59 @@ async function main() {
   console.log('✅ TS constants  → src/tokens/tokens.ts');
 
   // ─── Icon export ────────────────────────────────────────────────────────────
-  console.log('\n🖼  Exporting icons from Figma...');
-  const ICON_NODES = {
-    'activity':              '3:3751',
-    'calendar':              '3:3564',
-    'calendar-empty-alt':    '3:3563',
-    'envelope':              'I3:3710;16458:8350',
-    'hand-holding-dollar':   '3:3562',
-    'messages-dots':         'I3:3567;16458:8348',
-    'presentation-dollar':   '3:3560',
-    'presentation-trend-up': '3:3559',
-    'question-circle':       '3:3572',
-    'sack-dollar':           '3:3561',
-    'sticky-note-square':    '2939:23051',
-    'thumbtack':             '2939:23050',
-  };
+  console.log('\n🖼  Discovering icons from Figma...');
 
-  const ids = Object.values(ICON_NODES).join(',');
-  const imgRes = await figmaGet(`/images/${FILE_KEY}?ids=${encodeURIComponent(ids)}&format=svg`);
-  const imgMap = imgRes.images || {};
-
-  const iconsDir = path.join(ROOT, 'src/stories/assets/icons');
-  fs.mkdirSync(iconsDir, { recursive: true });
-
-  let downloaded = 0;
-  for (const [name, nodeId] of Object.entries(ICON_NODES)) {
-    const url = imgMap[nodeId];
-    if (!url) { console.log(`   ⚠️  ${name} — no URL returned`); continue; }
-    const svg = await fetch(url).then(r => r.text());
-    fs.writeFileSync(path.join(iconsDir, `${name}.svg`), svg);
-    downloaded++;
+  // Auto-discover icon nodes by walking the file tree.
+  // Any COMPONENT inside a frame/page whose name contains "icon" (case-insensitive)
+  // is included. Name your icon frame "Icons" or "Icon Library" and it works automatically.
+  function findIconNodes(node, inIconFrame, result) {
+    if (!result) result = {};
+    if (!inIconFrame) inIconFrame = false;
+    const nameLC = (node.name || '').toLowerCase();
+    const isIconContainer =
+      (nameLC.includes('icon')) &&
+      ['FRAME', 'PAGE', 'GROUP', 'COMPONENT_SET', 'SECTION'].includes(node.type);
+    const capture = (inIconFrame || isIconContainer) && node.type === 'COMPONENT';
+    if (capture) {
+      const slug = node.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      if (slug) result[slug] = node.id;
+    }
+    for (const child of node.children || []) {
+      findIconNodes(child, inIconFrame || isIconContainer, result);
+    }
+    return result;
   }
-  console.log(`✅ ${downloaded} icons → src/stories/assets/icons/`);
+
+  const ICON_NODES = findIconNodes(data.document);
+
+  if (Object.keys(ICON_NODES).length === 0) {
+    console.log('   ⚠️  No icons found. Name a Figma frame or page "Icons" to auto-export SVGs.');
+    console.log('   Skipping icon export.\n');
+  } else {
+    console.log(`   Found ${Object.keys(ICON_NODES).length} icons across icon frames.`);
+  }
+
+  if (Object.keys(ICON_NODES).length > 0) {
+    const ids = Object.values(ICON_NODES).join(',');
+    const imgRes = await figmaGet(`/images/${FILE_KEY}?ids=${encodeURIComponent(ids)}&format=svg`);
+    const imgMap = imgRes.images || {};
+
+    const iconsDir = path.join(ROOT, 'src/stories/assets/icons');
+    fs.mkdirSync(iconsDir, { recursive: true });
+
+    let downloaded = 0;
+    for (const [name, nodeId] of Object.entries(ICON_NODES)) {
+      const url = imgMap[nodeId];
+      if (!url) { console.log(`   ⚠️  ${name} — no URL returned`); continue; }
+      const svg = await fetch(url).then(r => r.text());
+      fs.writeFileSync(path.join(iconsDir, `${name}.svg`), svg);
+      downloaded++;
+    }
+    console.log(`✅ ${downloaded} icons → src/stories/assets/icons/`);
+  }
 
   console.log('\n🎉 Sync complete! Storybook will pick up changes on next reload.');
   console.log(`   Last Figma change: ${lastModified}`);

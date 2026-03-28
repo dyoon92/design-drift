@@ -24,9 +24,28 @@ export interface DesignDriftConfig {
    *  Default: 'http://localhost:6006' */
   storybookUrl?: string
 
+  /** Deployed Storybook URL (Chromatic, Netlify, etc.) — used for public links.
+   *  When set, overlay Storybook links point here instead of localhost.
+   *  e.g. 'https://main--abc123.chromatic.com' */
+  chromaticUrl?: string
+
   /** Figma file key — used by figma-sync to pull tokens and icons.
    *  Found in the Figma file URL: figma.com/design/{fileKey}/...  */
   figmaFileKey?: string
+
+  /** Jira base URL — used by the overlay to create real ticket links.
+   *  e.g. 'https://yourcompany.atlassian.net' */
+  jiraBaseUrl?: string
+
+  /** Jira project key — pre-fills the project when creating tickets.
+   *  e.g. 'DS' or 'DESIGN' */
+  jiraProjectKey?: string
+
+  /** Figma page to push new/proposed components to.
+   *  When drift-push creates a component spec, it targets this page.
+   *  e.g. '🚧 In Progress' or 'Proposals' or 'Component Library'
+   *  If not set, drift-push will list available pages and ask. */
+  figmaProposalsPage?: string
 
   /** Minimum DS coverage % for CI to pass (0–100).
    *  Used by the drift-check CLI. Default: 80 */

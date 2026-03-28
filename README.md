@@ -55,7 +55,17 @@ design-drift/
 │
 ├── scripts/
 │   ├── drift-check.mjs             CI scanner — headless Playwright scan
-│   └── figma-sync.mjs              Figma API → tokens pipeline
+│   ├── figma-sync.mjs              Figma API → tokens + icons pipeline
+│   └── drift-mcp.mjs               MCP server for IDE integration
+│
+├── api-proxy/
+│   └── server.mjs                  Node proxy — keeps Anthropic key server-side
+│
+├── .claude/commands/               Claude Code slash commands
+│   ├── drift.md
+│   ├── drift-setup.md
+│   ├── drift-sync.md
+│   └── drift-push.md
 │
 └── .github/workflows/
     └── drift-check.yml             PR drift delta GitHub Action
@@ -127,9 +137,40 @@ npm run storybook      # Component catalog → http://localhost:6006
 npm run dev            # Demo app → http://localhost:5173
 npm run build          # Production build
 npm run drift-check    # Run the CI scanner locally (requires a running app)
-npm run figma-sync     # Pull design tokens from Figma
+npm run figma-sync     # Pull design tokens + icons from Figma
+npm run drift-mcp      # Start the MCP server for IDE integration
+npm run proxy          # Start the AI proxy (keeps Anthropic key server-side)
 npm run chromatic      # Publish Storybook to Chromatic
 ```
+
+### Claude Code slash commands
+
+If you use Claude Code, these commands are pre-loaded in `.claude/commands/`:
+
+```
+/drift-setup        Full interactive install wizard — sets up config, CLAUDE.md, CI, MCP
+/drift              Coverage report + gap analysis from terminal
+/drift-sync         Sync component registry from Figma and/or Storybook
+/drift-push <Name>  Push component spec back to Figma
+```
+
+### MCP server (Claude Code, Cursor, Windsurf)
+
+Add to `~/.claude.json` (or your IDE's MCP config):
+
+```json
+{
+  "mcpServers": {
+    "drift": {
+      "command": "node",
+      "args": ["scripts/drift-mcp.mjs"],
+      "cwd": "/absolute/path/to/design-drift"
+    }
+  }
+}
+```
+
+Tools exposed: `drift_manifest`, `drift_analyze`, `drift_gaps`, `drift_suggest`, `drift_report`.
 
 ---
 
@@ -174,7 +215,8 @@ Route: /dashboard — 🔴 74% DS coverage
 ## Token sync (Figma → code)
 
 ```bash
-FIGMA_TOKEN=your_token npm run figma-sync
+export FIGMA_API_TOKEN=your_token
+npm run figma-sync
 ```
 
 Reads your Figma file (key in `config.ts`) and writes:

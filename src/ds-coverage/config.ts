@@ -13,7 +13,7 @@
 import type { DesignDriftConfig } from './types'
 
 const config: DesignDriftConfig = {
-  storybookUrl: 'http://localhost:6006',
+  storybookUrl: 'https://main--69c2a87a5e92304e85acd938.chromatic.com',
   figmaFileKey: 'yO7V6x2VhxuIhDyR24fQ2h',
   threshold: 80,
 

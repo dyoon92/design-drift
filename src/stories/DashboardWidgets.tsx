@@ -710,6 +710,7 @@ export const ECRIWidget = () => (
     />
   </div>
 )
+// Exported widgets
 OccupancyWidget.displayName = 'OccupancyWidget'
 RevenueWidget.displayName = 'RevenueWidget'
 NetMoveInsWidget.displayName = 'NetMoveInsWidget'
@@ -718,3 +719,15 @@ PastDueWidget.displayName = 'PastDueWidget'
 UnitStatusWidget.displayName = 'UnitStatusWidget'
 ProtectionAutopayWidget.displayName = 'ProtectionAutopayWidget'
 ECRIWidget.displayName = 'ECRIWidget'
+// Internal primitives — need displayName to survive Rolldown minification in production
+BtnGrp.displayName = 'BtnGrp'
+LinkBtn.displayName = 'LinkBtn'
+CardHeader.displayName = 'CardHeader'
+Trend.displayName = 'Trend'
+MiniCard.displayName = 'MiniCard'
+ECRICard.displayName = 'ECRICard'
+DonutChart.displayName = 'DonutChart'
+LineChart.displayName = 'LineChart'
+Sparkline.displayName = 'Sparkline'
+BarChart.displayName = 'BarChart'
+ColorDot.displayName = 'ColorDot'

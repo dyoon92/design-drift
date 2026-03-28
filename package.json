@@ -12,6 +12,7 @@
     "build-storybook": "storybook build",
     "figma-sync": "node scripts/figma-sync.mjs",
     "drift-check": "node scripts/drift-check.mjs",
+    "drift-mcp": "node scripts/drift-mcp.mjs",
     "proxy": "node api-proxy/server.mjs",
     "build:extension": "node browser-extension/build.mjs",
     "build:figma-plugin": "node figma-plugin/build.mjs",
@@ -27,6 +28,7 @@
   "devDependencies": {
     "@chromatic-com/storybook": "^5.0.2",
     "@eslint/js": "^9.39.4",
+    "@modelcontextprotocol/sdk": "^1.28.0",
     "@storybook/addon-a11y": "^10.3.3",
     "@storybook/addon-docs": "^10.3.3",
     "@storybook/addon-onboarding": "^10.3.3",

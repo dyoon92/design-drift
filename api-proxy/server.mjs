@@ -24,13 +24,23 @@ import { createServer } from 'http'
 
 const PORT           = parseInt(process.env.PORT             ?? '3001', 10)
 const API_KEY        = process.env.ANTHROPIC_API_KEY
+const PROXY_SECRET   = process.env.PROXY_SECRET   // clients must send this as Bearer token
 const ALLOWED_ORIGIN = process.env.PROXY_ALLOWED_ORIGIN ?? 'http://localhost:5173'
 const ANTHROPIC_URL  = 'https://api.anthropic.com/v1/messages'
+
+// Rate limiting — max requests per IP per minute
+const RATE_LIMIT     = parseInt(process.env.RATE_LIMIT_RPM ?? '20', 10)
+const rateCounts     = new Map() // ip → { count, resetAt }
 
 if (!API_KEY) {
   console.error('❌  ANTHROPIC_API_KEY env var is required.')
   console.error('    Run: ANTHROPIC_API_KEY=sk-ant-... node api-proxy/server.mjs')
   process.exit(1)
+}
+
+if (!PROXY_SECRET) {
+  console.warn('⚠️   PROXY_SECRET is not set — the proxy is open to anyone.')
+  console.warn('     Set PROXY_SECRET=a-long-random-string to require auth.')
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -52,10 +62,31 @@ function cors(res, origin) {
     res.setHeader('Access-Control-Allow-Origin', allowed[0])
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 }
 
-async function callAnthropic(model, maxTokens, messages) {
+/** Returns true if the request carries a valid Bearer token. */
+function isAuthorized(req) {
+  if (!PROXY_SECRET) return true // no secret configured → open (dev mode)
+  const header = req.headers['authorization'] ?? ''
+  return header === `Bearer ${PROXY_SECRET}`
+}
+
+/** Returns true if this IP is within the rate limit, false if exceeded. */
+function checkRateLimit(ip) {
+  const now = Date.now()
+  let entry = rateCounts.get(ip)
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 0, resetAt: now + 60_000 }
+    rateCounts.set(ip, entry)
+  }
+  entry.count++
+  return entry.count <= RATE_LIMIT
+}
+
+async function callAnthropic(model, maxTokens, messages, system) {
+  const body = { model, max_tokens: maxTokens, messages }
+  if (system) body.system = system
   const resp = await fetch(ANTHROPIC_URL, {
     method: 'POST',
     headers: {
@@ -63,7 +94,7 @@ async function callAnthropic(model, maxTokens, messages) {
       'anthropic-version': '2023-06-01',
       'content-type':     'application/json',
     },
-    body: JSON.stringify({ model, max_tokens: maxTokens, messages }),
+    body: JSON.stringify(body),
   })
   const data = await resp.json()
   if (!resp.ok) throw new Error(data?.error?.message ?? `Anthropic API error ${resp.status}`)
@@ -138,10 +169,17 @@ JSON only, no explanation outside the object.`
   return callAnthropic('claude-haiku-4-5-20251001', 400, [{ role: 'user', content: prompt }])
 }
 
+async function handleChat(body) {
+  const { system, messages } = body
+  if (!messages || !Array.isArray(messages)) throw new Error('Missing "messages" array')
+  return callAnthropic('claude-haiku-4-5-20251001', 1024, messages, system)
+}
+
 // ─── Server ───────────────────────────────────────────────────────────────────
 
 const server = createServer(async (req, res) => {
   const origin = req.headers.origin ?? ''
+  const ip     = req.headers['x-forwarded-for']?.split(',')[0].trim() ?? req.socket.remoteAddress ?? 'unknown'
   cors(res, origin)
 
   // CORS preflight
@@ -157,6 +195,22 @@ const server = createServer(async (req, res) => {
     return
   }
 
+  // Auth check
+  if (!isAuthorized(req)) {
+    console.warn(`[proxy] 401 unauthorized — ${ip}`)
+    res.writeHead(401, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: 'Unauthorized' }))
+    return
+  }
+
+  // Rate limit check
+  if (!checkRateLimit(ip)) {
+    console.warn(`[proxy] 429 rate limit exceeded — ${ip}`)
+    res.writeHead(429, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: 'Too many requests — limit is ' + RATE_LIMIT + ' per minute' }))
+    return
+  }
+
   let text = ''
   try {
     const body = await readBody(req)
@@ -165,6 +219,8 @@ const server = createServer(async (req, res) => {
       text = await handleSuggest(body)
     } else if (req.url === '/api/ai/drift-fix') {
       text = await handleDriftFix(body)
+    } else if (req.url === '/api/ai/chat') {
+      text = await handleChat(body)
     } else {
       res.writeHead(404, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: 'Not found' }))
