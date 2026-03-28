@@ -256,19 +256,32 @@ function Nav({ onOpenModal }: { onOpenModal: () => void }) {
 function Hero({ onOpenModal }: { onOpenModal: () => void }) {
   return (
     <section style={{
-      display: 'grid', gridTemplateColumns: '1fr 1fr',
-      gap: 56, alignItems: 'center',
-      padding: '80px 64px 72px',
-      maxWidth: 1240, margin: '0 auto',
-      position: 'relative',
+      minHeight: 'calc(100vh - 60px)',
+      display: 'flex', flexDirection: 'column',
+      justifyContent: 'center',
+      position: 'relative', overflow: 'hidden',
     }}>
-      {/* Glow — left-side only to match the left-aligned copy */}
+      {/* Full-bleed gradient — covers the entire hero viewport */}
       <div style={{
-        position: 'absolute', top: '-10%', left: '-5%',
-        width: '60%', height: '120%',
-        background: `radial-gradient(ellipse at 30% 50%, ${C.blueGlow} 0%, transparent 70%)`,
+        position: 'absolute', inset: 0,
+        background: `radial-gradient(ellipse 70% 80% at 20% 50%, ${C.blueGlow} 0%, transparent 65%)`,
         pointerEvents: 'none',
       }} />
+      {/* Subtle bottom fade into the stats strip */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: 120,
+        background: `linear-gradient(to bottom, transparent, ${C.bg})`,
+        pointerEvents: 'none',
+      }} />
+
+      {/* Content grid */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr',
+        gap: 56, alignItems: 'center',
+        padding: '0 64px',
+        maxWidth: 1240, margin: '0 auto', width: '100%',
+        boxSizing: 'border-box', position: 'relative', zIndex: 1,
+      }}>
 
       {/* Left: copy */}
       <div style={{ position: 'relative', zIndex: 1 }}>
@@ -415,6 +428,24 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           </div>
         </div>
       </div>
+      </div>{/* end content grid */}
+
+      {/* Scroll indicator */}
+      <div style={{
+        position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+        zIndex: 2, cursor: 'pointer',
+      }}
+        onClick={() => document.getElementById('social-proof')?.scrollIntoView({ behavior: 'smooth' })}>
+        <span style={{ ...sans, fontSize: 11, color: C.muted, letterSpacing: 0.5, textTransform: 'uppercase' }}>Scroll</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, animation: 'drift-bounce 1.8s ease-in-out infinite' }}>
+          <div style={{ width: 1.5, height: 20, background: `linear-gradient(to bottom, transparent, ${C.muted})`, borderRadius: 1 }} />
+          <svg width="12" height="7" viewBox="0 0 12 7" fill="none">
+            <path d="M1 1L6 6L11 1" stroke={C.muted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+        <style>{`@keyframes drift-bounce { 0%,100%{transform:translateY(0)}50%{transform:translateY(6px)} }`}</style>
+      </div>
     </section>
   )
 }
@@ -422,7 +453,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
 // ─── Social proof ─────────────────────────────────────────────────────────────
 function SocialProof() {
   return (
-    <div style={{
+    <div id="social-proof" style={{
       borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`,
       padding: '32px 48px',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
