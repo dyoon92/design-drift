@@ -224,7 +224,7 @@ function Nav({ onOpenModal }: { onOpenModal: () => void }) {
         <WaveLogo size={20} />
         <span style={{ ...display, fontWeight: 800, fontSize: 16, color: C.text, letterSpacing: -0.3 }}>Drift</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+      <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
         {[['Features', '#features'], ['How it works', '#how-it-works'], ['Pricing', '#pricing']].map(([label, href]) => (
           <a key={label} href={href} style={{ fontSize: 13, color: C.muted, textDecoration: 'none', transition: 'color 0.15s' }}
             onMouseEnter={e => (e.currentTarget.style.color = C.text)}
@@ -275,7 +275,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
       }} />
 
       {/* Content grid */}
-      <div style={{
+      <div className="hero-grid" style={{
         display: 'grid', gridTemplateColumns: '1fr 1fr',
         gap: 56, alignItems: 'center',
         padding: '0 64px',
@@ -338,7 +338,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
       </div>
 
       {/* Right: mock browser + Drift panel */}
-      <div style={{ position: 'relative', zIndex: 1 }}>
+      <div className="hero-mock" style={{ position: 'relative', zIndex: 1 }}>
         <div style={{
           background: C.surface, border: `1px solid ${C.border2}`,
           borderRadius: 14, overflow: 'hidden',
@@ -500,7 +500,7 @@ function AIEraSection() {
         </div>
 
         {/* The flow: Figma → Storybook → AI → Gap */}
-        <div style={{
+        <div className="aiera-flow" style={{
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
           background: '#fff', borderRadius: 18,
           border: `1px solid ${C.creamBorder}`,
@@ -556,7 +556,7 @@ function AIEraSection() {
         </div>
 
         {/* Positioning + 3 audiences */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'start' }}>
+        <div className="aiera-bottom" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'start' }}>
           <div>
             <h3 style={{
               ...display, fontSize: 28, fontWeight: 800,
@@ -729,72 +729,62 @@ function PRDeltaCallout() {
   )
 }
 
-// ─── How it works — the real story ────────────────────────────────────────────
+// ─── How it works — 3 steps, tool-focused (story covered in AI Era section) ────
 function HowItWorks() {
   const steps = [
     {
-      n: '01', color: C.purple, icon: '◈',
-      title: 'Designer builds in Figma',
-      body: 'Components, tokens, and patterns are defined. Storybook is the living catalogue. This is the source of truth.',
-      tag: 'Source of truth',
+      n: '01', color: C.blue, icon: '⬡',
+      title: 'Add to any React app',
+      body: 'One import in your app entry point. The panel appears in dev mode only — nothing ships to production. No account, no config file.',
+      code: "import { DSCoverageOverlay } from '@drift/overlay'",
     },
     {
-      n: '02', color: C.blue, icon: '⚡',
-      title: 'AI helps engineers ship fast',
-      body: 'Cursor or Claude builds the screen in minutes. Fast — but the AI invents components and hardcodes values it doesn\'t know.',
-      tag: 'Drift enters here',
+      n: '02', color: C.orange, icon: '◎',
+      title: 'Press D — see your drift score instantly',
+      body: 'Drift reads the live React fiber tree. Every component is classified as on-spec or drifted. Token violations are highlighted on the element.',
+      code: '77% on-spec · 3 drifted · 19 token violations',
     },
     {
-      n: '03', color: C.orange, icon: '◎',
-      title: 'Drift measures the gap',
-      body: 'Press D to open the panel. Drift reads the live React fiber tree and shows you exactly what drifted and which tokens are hardcoded.',
-      tag: 'See the truth',
-    },
-    {
-      n: '04', color: C.green, icon: '✦',
-      title: 'Close the gap before it merges',
-      body: 'The GitHub Action posts a drift delta to every PR. Fix what drifted before review — not during a surprise design QA.',
-      tag: 'Ship aligned',
+      n: '03', color: C.green, icon: '✦',
+      title: 'Catch drift before every merge',
+      body: 'Add the GitHub Action once. Every PR gets an automatic drift delta — your team sees what changed before anyone reviews.',
+      code: 'DS coverage: 81% → 74% ⚠ drifted −7%',
     },
   ]
 
   return (
     <section id="how-it-works" style={{ padding: '88px 64px', maxWidth: 1240, margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: 64 }}>
-        <Chip color={C.purple}>How it works</Chip>
+      <div style={{ textAlign: 'center', marginBottom: 56 }}>
+        <Chip color={C.purple}>Get started</Chip>
         <h2 style={{ ...display, fontSize: 44, fontWeight: 800, color: C.text, margin: '20px 0 12px', letterSpacing: -1 }}>
-          Figma → Storybook → AI → ship.<br/>
-          <span style={{ color: C.purple }}>Drift closes the loop.</span>
+          Up and running in 2 minutes.
         </h2>
-        <p style={{ ...sans, fontSize: 15, color: C.muted, fontWeight: 300, maxWidth: 480, margin: '0 auto', lineHeight: 1.7 }}>
-          No account. No config. No AST transforms. Just the truth about how much your UI has drifted.
+        <p style={{ ...sans, fontSize: 15, color: C.muted, fontWeight: 300, maxWidth: 440, margin: '0 auto', lineHeight: 1.7 }}>
+          No account. No config. No AST transforms.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
+      <div className="how-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
         {steps.map(s => (
           <div key={s.n} style={{
-            padding: '26px', borderRadius: 14,
+            padding: '28px', borderRadius: 14,
             background: C.surface, border: `1px solid ${C.border}`,
-            display: 'flex', flexDirection: 'column', gap: 0,
+            display: 'flex', flexDirection: 'column',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
               <span style={{ ...mono, fontSize: 10, color: C.muted }}>{s.n}</span>
               <div style={{
-                flex: 1, padding: '3px 10px', borderRadius: 999,
-                background: `${s.color}12`, border: `1px solid ${s.color}25`,
-                fontSize: 10, fontWeight: 700, color: s.color, ...sans,
-                textAlign: 'center',
-              }}>{s.tag}</div>
+                width: 34, height: 34, borderRadius: 9,
+                background: `${s.color}15`, border: `1px solid ${s.color}28`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 15, color: s.color,
+              }}>{s.icon}</div>
             </div>
-            <div style={{
-              width: 36, height: 36, borderRadius: 9, marginBottom: 14,
-              background: `${s.color}15`, border: `1px solid ${s.color}28`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 16, color: s.color,
-            }}>{s.icon}</div>
-            <div style={{ ...display, fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 10, lineHeight: 1.3 }}>{s.title}</div>
-            <div style={{ ...sans, fontSize: 13, color: C.muted, lineHeight: 1.75 }}>{s.body}</div>
+            <div style={{ ...display, fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 10, lineHeight: 1.3 }}>{s.title}</div>
+            <div style={{ ...sans, fontSize: 13, color: C.muted, lineHeight: 1.75, flex: 1, marginBottom: 16 }}>{s.body}</div>
+            <div style={{ padding: '10px 14px', borderRadius: 8, background: '#09090f', border: `1px solid ${C.border2}`, fontSize: 11, color: s.color, ...mono, wordBreak: 'break-all' }}>
+              {s.code}
+            </div>
           </div>
         ))}
       </div>
@@ -989,6 +979,25 @@ export function LandingPage() {
 
   return (
     <div style={{ background: C.bg, minHeight: '100vh', color: C.text, width: '100%', overflowX: 'hidden' }}>
+      <style>{`
+        /* ── Responsive breakpoints ── */
+        @media (max-width: 960px) {
+          .hero-grid  { grid-template-columns: 1fr !important; padding: 0 40px !important; }
+          .hero-mock  { display: none !important; }
+          .aiera-flow { grid-template-columns: 1fr 1fr !important; }
+          .aiera-bottom { grid-template-columns: 1fr !important; }
+          .how-grid   { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 640px) {
+          .hero-grid  { padding: 0 24px !important; }
+          .nav-links  { gap: 16px !important; }
+          .nav-links a { display: none !important; }
+          .aiera-flow { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .hero-grid  { padding: 0 20px !important; }
+        }
+      `}</style>
       {modalOpen && <WaitlistModal onClose={closeModal} />}
       <Nav onOpenModal={openModal} />
       <Hero onOpenModal={openModal} />
