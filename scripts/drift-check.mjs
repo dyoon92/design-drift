@@ -91,11 +91,6 @@ const INJECTED_SCANNER = `
     'ConcurrentMode','ContextConsumer','ContextProvider',
     'ForwardRef','Memo','LazyComponent',
   ]);
-  const OVERLAY_NAMES = new Set([
-    'DSCoverageOverlay','OverlayBox','SummaryPanel','PropsPanel',
-    'ToggleButton','CoverageBar','MiniBar','TabBar','ScanIcon','ThemeCtx',
-  ]);
-
   function resolveName(fiber) {
     const type = fiber.type;
     if (!type || typeof type === 'string') return null;
@@ -106,7 +101,6 @@ const INJECTED_SCANNER = `
     const first = name.charCodeAt(0);
     if (first < 65 || first > 90) return null;
     if (REACT_INTERNALS.has(name)) return null;
-    if (OVERLAY_NAMES.has(name)) return null;
     if (name.includes('Provider') || name.includes('Consumer')) return null;
     return name;
   }
@@ -250,7 +244,7 @@ async function run() {
   let passed = true
 
   if (!JSON_OUT) {
-    console.log(`\n🔍 DesignDrift CI Check`)
+    console.log(`\n🔍 Drift CI Check`)
     console.log(`   URL:       ${BASE_URL}`)
     console.log(`   Routes:    ${ROUTES.join(', ')}`)
     console.log(`   Threshold: ${THRESHOLD}%`)

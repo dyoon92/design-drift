@@ -1,5 +1,5 @@
 /**
- * DesignDrift Configuration
+ * Drift Configuration
  * ─────────────────────────
  * Edit this file to register your own design system components.
  *
