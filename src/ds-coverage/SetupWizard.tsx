@@ -385,15 +385,18 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
         {/* Developer path */}
         <button onClick={() => setStep(2)} style={{
           background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
-          padding: '16px 14px', cursor: 'pointer', textAlign: 'center',
+          padding: '16px 14px', cursor: 'pointer', textAlign: 'left',
           fontFamily: 'Inter, system-ui, sans-serif',
           transition: 'border-color 0.15s',
         }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = C.blue)}
           onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}>
-          <div style={{ fontSize: 22, marginBottom: 6 }}>⚡</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4 }}>I'm a developer</div>
-          <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>Connect Storybook and register your DS components. Takes 2 minutes.</div>
+          <div style={{ fontSize: 22, marginBottom: 6, textAlign: 'center' }}>⚡</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4, textAlign: 'center' }}>I'm a developer</div>
+          <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5, textAlign: 'center', marginBottom: 10 }}>Connect Storybook and register your DS components.</div>
+          <div style={{ fontSize: 10, color: C.blue, background: `${C.blue}10`, border: `1px solid ${C.blue}25`, borderRadius: 6, padding: '6px 10px', lineHeight: 1.6 }}>
+            💡 <strong>Using Claude Code?</strong> Run <code style={{ fontFamily: 'monospace' }}>/drift-setup</code> instead — it does everything automatically in ~5 minutes.
+          </div>
         </button>
 
         <button onClick={() => setStep('manual')} style={{
@@ -458,8 +461,9 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
 
   // ─── Designer Step D2 — MCP setup ───────────────────────────────────────
 
-  const mcpInstructions = `// Add to Cursor Settings → MCP Servers
-// or Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json
+  const mcpInstructions = `// Claude Code: add to ~/.claude.json → mcpServers
+// Cursor: Settings → MCP Servers
+// Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json
 
 {
   "figma": {

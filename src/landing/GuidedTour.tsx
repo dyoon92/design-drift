@@ -33,8 +33,8 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
       steps: [
         {
           popover: {
-            title: 'Welcome to the DesignDrift demo',
-            description: "You're looking at Monument — a real React property management app built with a design system. DesignDrift scans it live and flags anything that's drifted from your tokens.",
+            title: 'Welcome to the Drift demo',
+            description: "You're looking at Monument — a real React property management app built with a design system. Drift scans it live and flags anything that's drifted from your tokens.",
             side: 'over' as const,
             align: 'center',
           },
@@ -42,7 +42,7 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
         {
           element: '[data-dd-toggle]',
           popover: {
-            title: 'The DesignDrift button',
+            title: 'The Drift button',
             description: 'This floating button lives in the corner of your app. The numbers show how many components are drifting from your design tokens. Click it to open the panel.',
             side: 'top' as const,
             align: 'end',
@@ -107,7 +107,7 @@ export function GuidedTour({ onDismiss }: { onDismiss: () => void }) {
         {
           popover: {
             title: "That's the full loop",
-            description: "DesignDrift rescans every time the DOM changes — so when you or your AI assistant pushes new code, drift is caught immediately. No CI step required during development.",
+            description: "Drift rescans every time the DOM changes — so when you or your AI assistant pushes new code, drift is caught immediately. No CI step required during development.",
             side: 'over' as const,
             align: 'center',
           },
