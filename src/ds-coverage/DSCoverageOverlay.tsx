@@ -30,6 +30,8 @@ const HISTORY_MAX     = 15
 const THEME_KEY       = 'ds-coverage-theme'
 const API_KEY_KEY     = 'ds-coverage-anthropic-key'
 const SCAN_CACHE_PFX  = 'ds-coverage-scan-'
+// Counts active html2canvas captures — MutationObserver skips scans while > 0
+let capturingCount = 0
 
 // ─── Scan result cache ─────────────────────────────────────────────────────────
 
@@ -1359,7 +1361,7 @@ const GapActionPanel = ({ component }: { component: ScannedComponent }) => {
     const el = component.element as HTMLElement | null
     if (!el) return
     setCaptureState('capturing')
-    document.body.setAttribute('data-dd-capturing', 'true')
+    capturingCount++
     try {
       const extracted = extractStyles(el)
       setStyles(extracted)
@@ -1375,7 +1377,7 @@ const GapActionPanel = ({ component }: { component: ScannedComponent }) => {
     } catch {
       setCaptureState('ready') // still show prompt with styles even if screenshot fails
     } finally {
-      document.body.removeAttribute('data-dd-capturing')
+      capturingCount--
     }
   }, [component.element])
 
@@ -1504,11 +1506,11 @@ const ComponentActionsBar = ({ component }: { component: ScannedComponent }) => 
     if (!el) { setCapturing(false); return }
     const extracted = extractStyles(el)
     setStyles(extracted)
-    document.body.setAttribute('data-dd-capturing', 'true')
+    capturingCount++
     html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null, logging: false })
       .then(canvas => { setScreenshot(canvas.toDataURL('image/png')); setCapturing(false) })
       .catch(() => setCapturing(false))
-      .finally(() => document.body.removeAttribute('data-dd-capturing'))
+      .finally(() => { capturingCount-- })
   }, [component.element])
 
   const copyJira = () => {
@@ -3838,7 +3840,7 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
       // Must check instanceof Element first: text nodes don't have .closest(),
       // and optional chaining returns undefined → !undefined = true (false positive).
       // Ignore mutations triggered by html2canvas DOM cloning
-      if (document.body.hasAttribute('data-dd-capturing')) return
+      if (capturingCount > 0) return
       const appMutation = mutations.some(m => {
         const el = m.target instanceof Element ? m.target : (m.target as Node).parentElement
         return !el?.closest('[data-ds-overlay]')
