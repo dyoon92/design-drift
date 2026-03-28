@@ -4039,6 +4039,7 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
             zIndex: 99998, display: 'flex', flexDirection: 'column',
             fontFamily: 'Inter, sans-serif',
             overflow: 'hidden',
+            colorScheme: theme === 'light' ? 'light' : 'dark',
             animation: isClosing
               ? 'drift-slide-down 0.22s ease-in forwards'
               : 'drift-slide-up 0.22s ease-out',
