@@ -232,21 +232,22 @@ function Hero() {
         color: C.text, margin: '0 0 24px',
         lineHeight: 1.08, letterSpacing: -2, maxWidth: 860,
       }}>
-        Your design system{' '}
+        Your UI is{' '}
         <span style={{
           background: `linear-gradient(95deg, ${C.blue} 0%, ${C.purple} 100%)`,
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>is leaking.</span>
+        }}>drifting</span>
+        {' '}from your design system.
       </h1>
 
       <p style={{
         ...sans, fontSize: 19, color: C.sub, maxWidth: 560,
         lineHeight: 1.75, margin: '0 0 16px', fontWeight: 300,
       }}>
-        Drift scans your live React component tree, flags every hardcoded token and rogue custom component, and posts the coverage delta to every PR.
+        Drift reads your live React component tree, measures how much of your UI is actually built from your design system, and flags what's gone off-course — before it merges.
       </p>
       <p style={{ ...sans, fontSize: 14, color: C.muted, maxWidth: 440, lineHeight: 1.6, margin: '0 0 48px' }}>
-        ESLint for your design system. Catches drift before it merges.
+        Like ESLint, but for design system compliance. Zero config, zero AST transforms.
       </p>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 64 }}>
@@ -392,9 +393,9 @@ function SocialProof() {
       gap: 48, flexWrap: 'wrap',
     }}>
       {[
-        { value: '77%', label: 'avg DS coverage found on first scan' },
-        { value: '38%', label: 'less sprint time at 80%+ DS coverage*' },
-        { value: '0', label: 'competitors read the live fiber tree' },
+        { value: '77%', label: 'average DS coverage on the first scan — 23% already drifted' },
+        { value: '38%', label: 'less rework time at 80%+ DS coverage*' },
+        { value: '0', label: 'other tools read the live React fiber tree' },
       ].map(stat => (
         <div key={stat.value} style={{ textAlign: 'center' }}>
           <div style={{ ...display, fontSize: 28, fontWeight: 800, color: C.blue, letterSpacing: -1 }}>{stat.value}</div>
@@ -413,32 +414,32 @@ const FEATURES = [
   {
     icon: '⬡', color: C.blue,
     title: 'Live fiber tree scanning',
-    body: 'Reads the actual rendered React component tree — not static AST analysis. Sees what\'s on screen right now, not what\'s in source.',
+    body: 'Reads the actual rendered React component tree — not static AST analysis. Sees what\'s drifted on screen right now, not what\'s in source.',
   },
   {
     icon: '◎', color: C.orange,
-    title: 'DS coverage %',
-    body: '"77% of this page is from your design system." A single number that gives leadership a KPI and engineers a target.',
+    title: 'Drift score per page',
+    body: '"23% of this page has drifted from your design system." One number. Leadership gets a KPI, engineers get a target.',
   },
   {
     icon: '⚡', color: C.purple,
-    title: 'PR drift comments',
-    body: 'Every pull request gets a coverage delta comment. Engineers see "DS coverage dropped 8%" before you do.',
+    title: 'PR drift delta',
+    body: 'Every pull request shows what drifted in this change. "DS coverage: 81% → 74% in this PR" — before anyone reviews it.',
   },
   {
     icon: '✦', color: C.green,
     title: 'AI context file export',
-    body: 'Generates .cursorrules and CLAUDE.md from your live token system. AI coding tools stop hallucinating hardcoded hex values.',
+    body: 'Generates .cursorrules and CLAUDE.md from your live tokens. AI coding tools stop drifting into hardcoded hex values.',
   },
   {
     icon: '⬚', color: C.pink,
     title: 'Page scaffold generator',
-    body: 'Describe a page in plain English. Get a React file scaffolded using only your registered design system components.',
+    body: 'Describe a screen in plain English. Get a React file built from only your registered DS components — no drift on day one.',
   },
   {
     icon: '⟳', color: C.orange,
     title: 'Token violation flagging',
-    body: 'Catches color: #2563EB before it merges. Every hardcoded value gets a suggested CSS variable replacement.',
+    body: 'Catches color: #2563EB before it ships. Every hardcoded value is flagged with its correct CSS variable replacement.',
   },
 ]
 
@@ -448,10 +449,10 @@ function Features() {
       <div style={{ textAlign: 'center', marginBottom: 60 }}>
         <Chip color={C.blue}>Features</Chip>
         <h2 style={{ ...display, fontSize: 44, fontWeight: 800, color: C.text, margin: '20px 0 14px', letterSpacing: -1 }}>
-          The compliance layer your DS has been missing
+          See every drift. Ship with confidence.
         </h2>
         <p style={{ ...sans, fontSize: 16, color: C.muted, maxWidth: 500, margin: '0 auto', lineHeight: 1.7, fontWeight: 300 }}>
-          Detection, enforcement, and generation — in one tool that takes 2 minutes to install.
+          Detection, measurement, and enforcement — in one tool that takes 2 minutes to add to any React app.
         </p>
       </div>
 
@@ -491,13 +492,13 @@ function PRDeltaCallout() {
         <div style={{ flex: 1, minWidth: 280 }}>
           <Chip color={C.green}>The viral loop</Chip>
           <h2 style={{ ...display, fontSize: 36, fontWeight: 800, color: C.text, margin: '20px 0 16px', letterSpacing: -0.8, lineHeight: 1.1 }}>
-            Every PR shows the drift delta
+            Know exactly what drifted in every PR
           </h2>
           <p style={{ ...sans, fontSize: 15, color: C.muted, lineHeight: 1.8, margin: '0 0 16px' }}>
-            The GitHub Action posts a coverage table to every pull request. Engineers see "DS coverage dropped from 81% → 74% in this PR" before anyone reviews it.
+            The GitHub Action posts a drift delta to every pull request. Engineers see exactly what drifted — components, tokens, coverage change — before anyone hits review.
           </p>
           <p style={{ ...sans, fontSize: 15, color: C.muted, lineHeight: 1.8, margin: '0 0 28px' }}>
-            When a teammate asks "what's that drift comment?" — that's when they install it for their own repo.
+            When a teammate asks "what's that Drift comment?" — that's your acquisition loop.
           </p>
           <a href="https://github.com/dyoon92/design-drift/blob/main/.github/workflows/drift-check.yml"
             target="_blank" rel="noopener noreferrer"
@@ -563,21 +564,21 @@ function HowItWorks() {
   const steps = [
     {
       n: '01', color: C.blue,
-      title: 'Install free, no account needed',
-      body: 'Clone the repo and import the overlay into your app entry point. The floating panel appears in dev mode only.',
+      title: 'Install in 2 minutes, no account',
+      body: 'Import the overlay into your app entry point. Press D to open the Drift panel. It appears in dev mode only — nothing ships to production.',
       code: 'npx drift install  # coming soon',
     },
     {
       n: '02', color: C.purple,
-      title: 'Scan your first page',
-      body: 'Press D to open Drift. It reads the live React fiber tree and shows you DS coverage % instantly.',
-      code: '77% DS coverage — 13 components, 3 custom',
+      title: 'See what\'s drifted right now',
+      body: 'Drift reads the live React fiber tree and shows your DS coverage % instantly. Every gap and token violation is highlighted on the page.',
+      code: '77% on-spec · 3 drifted components · 19 token violations',
     },
     {
       n: '03', color: C.green,
-      title: 'Add to your CI pipeline',
-      body: 'Install the GitHub App. Every PR gets a drift delta comment. Your whole team sees coverage before code merges.',
-      code: 'DS coverage: 81% → 74% ⚠️  (−7%)',
+      title: 'Catch drift before it merges',
+      body: 'Add the GitHub Action. Every PR gets an automatic drift delta — so your team knows what drifted in this change before anyone reviews it.',
+      code: 'DS coverage: 81% → 74% ⚠️  drifted −7%',
     },
   ]
 
@@ -586,9 +587,9 @@ function HowItWorks() {
       <div style={{ textAlign: 'center', marginBottom: 64 }}>
         <Chip color={C.purple}>How it works</Chip>
         <h2 style={{ ...display, fontSize: 44, fontWeight: 800, color: C.text, margin: '20px 0 12px', letterSpacing: -1 }}>
-          Up and running in 2 minutes
+          From zero to drift-free in 3 steps
         </h2>
-        <p style={{ ...sans, fontSize: 16, color: C.muted, fontWeight: 300 }}>No account. No config file. No AST transforms.</p>
+        <p style={{ ...sans, fontSize: 16, color: C.muted, fontWeight: 300 }}>No account. No config. No AST transforms. Just the truth about your UI.</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32 }}>
@@ -617,7 +618,7 @@ function Pricing() {
       price: '$0',
       period: 'forever',
       color: C.sub,
-      desc: 'For individual engineers evaluating Drift.',
+      desc: 'For engineers who want to see how much their UI has drifted.',
       features: [
         'Local overlay — unlimited scans',
         'DS coverage % per page',
@@ -634,7 +635,7 @@ function Pricing() {
       price: '$149',
       period: '/ month',
       color: C.blue,
-      desc: 'For teams that ship with a design system.',
+      desc: 'For teams that can\'t afford to let drift go unnoticed in PRs.',
       features: [
         'Everything in Free',
         'GitHub App — PR drift delta comments',
@@ -743,14 +744,14 @@ function WaitlistSection() {
       <div style={{ maxWidth: 560, margin: '0 auto' }}>
         <WaveLogo size={40} />
         <h2 style={{ ...display, fontSize: 44, fontWeight: 800, color: C.text, margin: '24px 0 16px', letterSpacing: -1, lineHeight: 1.1 }}>
-          Be in the first 200 teams
+          Stop guessing.<br />Start catching drift.
         </h2>
         <p style={{ ...sans, fontSize: 16, color: C.muted, lineHeight: 1.75, margin: '0 0 40px', fontWeight: 300 }}>
-          GitHub App access (PR drift comments) is invite-only while we tune the experience. Local overlay is free and available now.
+          The local overlay is free today. PR drift comments are invite-only for the first 200 teams — grab your spot.
         </p>
         <WaitlistForm size="lg" />
         <p style={{ ...sans, fontSize: 12, color: C.muted, marginTop: 14 }}>
-          No spam. We'll email once when team access opens.
+          No spam. One email when team access opens.
         </p>
       </div>
     </section>
