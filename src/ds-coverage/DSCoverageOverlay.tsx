@@ -3578,6 +3578,7 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
 
   const rafRef          = useRef<number>(0)
   const scanningRef     = useRef(false)
+  const scanGenRef      = useRef(0)
   const surfaceRef      = useRef(surfaceMode)
   const modeInitRef     = useRef(false)   // skip the initial mount firing of the surfaceMode effect
   const hoverClearRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -3641,8 +3642,11 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
   const scan = useCallback((forceRefresh = false) => {
     if (scanningRef.current) return
     scanningRef.current = true
+    const gen = ++scanGenRef.current
     setScanning(true)
     requestAnimationFrame(() => requestAnimationFrame(() => {
+      // Bail if a newer scan was started (e.g. surfaceMode changed mid-scan)
+      if (gen !== scanGenRef.current) { scanningRef.current = false; return }
       const route   = window.location.pathname
       const surface = surfaceRef.current
       const raw     = scanFiberTree(surface)
@@ -3808,10 +3812,13 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
     // Skip the initial mount — only fire when the user actually toggles the mode
     if (!modeInitRef.current) { modeInitRef.current = true; return }
     if (!visible) return
-    // Clear stale results immediately so the skeleton renders before scan data arrives
+    // Abort any in-flight scan (bump gen + clear lock) so our fresh scan isn't blocked
+    scanGenRef.current++
+    scanningRef.current = false
+    setScanning(false)
     setComponents([])
     setScanned(false)
-    scan()
+    scan(true) // force fresh — bypass cache for the new surface mode
   }, [surfaceMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
