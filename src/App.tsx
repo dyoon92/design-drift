@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import './tokens/variables.css'
 import { DSCoverageOverlay } from './ds-coverage/DSCoverageOverlay'
 import { StoryModal } from './landing/StoryModal'
+import { WaitlistModal } from './landing/LandingPage'
 import { Tabs } from './stories/Tabs'
 import { OccupancyWidget, RevenueWidget, NetMoveInsWidget, LeadsWidget, PastDueWidget, UnitStatusWidget, ProtectionAutopayWidget, ECRIWidget } from './stories/DashboardWidgets'
 import { FMKPIRow, PriorityTasksPanel, RecentCommunicationsPanel, GoalTrackerPanel, DelinquenciesPanel, GoogleReviewsPanel, PromotionsPanel } from './stories/FMDashboardWidgets'
@@ -446,6 +447,7 @@ export default function App() {
   const [darkMode, setDarkMode]           = useState(true)
   const [showTour, setShowTour]           = useState(true)
   const [openOverlay, setOpenOverlay]     = useState(false)
+  const [showWaitlist, setShowWaitlist]   = useState(false)
 
   const isMobile = useWindowWidth() < 768
 
@@ -482,7 +484,9 @@ export default function App() {
         </main>
       </div>
 
-      {(import.meta.env.DEV || import.meta.env.VITE_SHOW_OVERLAY === 'true') && <DSCoverageOverlay autoOpen={openOverlay} />}
+      {(import.meta.env.DEV || import.meta.env.VITE_SHOW_OVERLAY === 'true') && <DSCoverageOverlay autoOpen={openOverlay} onOpenWaitlist={() => setShowWaitlist(true)} />}
+
+      {showWaitlist && <WaitlistModal onClose={() => setShowWaitlist(false)} />}
 
       {showTour && <StoryModal onDone={() => { setShowTour(false); setOpenOverlay(true) }} />}
 

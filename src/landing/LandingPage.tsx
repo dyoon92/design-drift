@@ -173,7 +173,7 @@ function WaitlistForm({ onSuccess }: { onSuccess?: () => void }) {
 }
 
 // ─── Waitlist modal ────────────────────────────────────────────────────────────
-function WaitlistModal({ onClose }: { onClose: () => void }) {
+export function WaitlistModal({ onClose }: { onClose: () => void }) {
   const { count } = useWaitlistCount()
 
   useEffect(() => {
@@ -277,6 +277,7 @@ function Nav({ onOpenModal }: { onOpenModal: () => void }) {
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero({ onOpenModal }: { onOpenModal: () => void }) {
+  const { count } = useWaitlistCount()
   return (
     <section style={{
       minHeight: 'calc(100vh - 60px)',
@@ -362,6 +363,11 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
             <span style={{ opacity: 0.7 }}>▶</span> Live demo
           </a>
         </div>
+        {count !== null && count > 0 && (
+          <p style={{ ...sans, fontSize: 13, color: C.muted, marginTop: 14, marginBottom: 0 }}>
+            <span style={{ color: C.green, fontWeight: 700 }}>{count.toLocaleString()}</span> team{count !== 1 ? 's' : ''} already on the waitlist
+          </p>
+        )}
       </div>
 
       {/* Right: mock browser + Drift panel */}

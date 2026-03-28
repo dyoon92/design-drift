@@ -2067,6 +2067,7 @@ interface PanelProps {
   onSetup: () => void
   promotedComponents: Set<string>
   onPromote: (name: string, count: number) => void
+  onOpenWaitlist?: () => void
 }
 
 const SummaryPanel = (p: PanelProps) => {
@@ -2354,8 +2355,8 @@ const SummaryPanel = (p: PanelProps) => {
               </div>
             </div>
 
-            {/* AI suggestions card */}
-            <div style={{ background: C.btnBg, border: `1px solid ${C.panelBorder}`, borderRadius: 10, padding: '12px 14px' }}>
+            {/* AI suggestions card — hidden in demo mode */}
+            {!IS_DEMO && <div style={{ background: C.btnBg, border: `1px solid ${C.panelBorder}`, borderRadius: 10, padding: '12px 14px' }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: 0.6, marginBottom: 10, fontFamily: 'Inter, sans-serif' }}>AI SUGGESTIONS</div>
               <div style={{ fontSize: 12, color: C.textSub, lineHeight: 1.55, marginBottom: 12, fontFamily: 'Inter, sans-serif' }}>
                 Connect an Anthropic API key to get one-click fixes for drift and custom components.
@@ -2408,7 +2409,7 @@ const SummaryPanel = (p: PanelProps) => {
               >
                 Get an Anthropic API key →
               </a>
-            </div>
+            </div>}
 
             {/* AI Tools card */}
             <div style={{ background: C.btnBg, border: `1px solid ${C.panelBorder}`, borderRadius: 10, padding: '12px 14px' }}>
@@ -3434,8 +3435,8 @@ const SummaryPanel = (p: PanelProps) => {
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <div style={{ flexShrink: 0, borderTop: `1px solid ${C.panelBorder}`, padding: '10px 16px 12px' }}>
-        {/* AI suggestions prompt — only when no key set */}
-        {!p.apiKey && (
+        {/* AI suggestions prompt — only when no key set and not in demo */}
+        {!p.apiKey && !IS_DEMO && (
           <button onClick={() => setSettingsPage(true)} style={{
             display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
             padding: '8px 12px', background: `${C.blue}12`,
@@ -3451,23 +3452,17 @@ const SummaryPanel = (p: PanelProps) => {
         )}
         {/* Demo-only waitlist CTA */}
         {IS_DEMO && (
-          <a
-            href="/"
-            onClick={e => { e.preventDefault(); window.location.href = '/#waitlist' }}
+          <button
+            onClick={() => p.onOpenWaitlist ? p.onOpenWaitlist() : (window.location.href = '/')}
             style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginBottom: 10, padding: '8px 12px',
-              background: 'linear-gradient(135deg, #4f8ef710, #a78bfa10)',
-              border: '1px solid #4f8ef730',
-              borderRadius: 8, textDecoration: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              width: '100%', marginBottom: 10, padding: '9px 12px',
+              background: 'linear-gradient(135deg, #4f8ef7, #a78bfa)',
+              border: 'none', borderRadius: 8, cursor: 'pointer',
             }}
           >
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.text, fontFamily: 'Inter, sans-serif' }}>Like what you see?</div>
-              <div style={{ fontSize: 10, color: C.muted, fontFamily: 'Inter, sans-serif', marginTop: 1 }}>Join the waitlist for team access</div>
-            </div>
-            <span style={{ fontSize: 12, color: '#4f8ef7', fontWeight: 700, fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>Join →</span>
-          </a>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: 'Inter, sans-serif' }}>Like what you see? Join the waitlist →</span>
+          </button>
         )}
         {/* Keyboard shortcuts */}
         <div style={{ fontSize: 10, color: C.muted, textAlign: 'center', lineHeight: 1.7 }}>
@@ -3578,7 +3573,7 @@ function injectGradientStyle() {
 
 // ─── Main overlay ─────────────────────────────────────────────────────────────
 
-export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
+export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boolean; onOpenWaitlist?: () => void } = {}) {
   const [theme,          setTheme]          = useState<Theme>(() => (localStorage.getItem(THEME_KEY) as Theme) ?? 'dark')
   const [visible,        setVisible]        = useState(false)
   const [isClosing,      setIsClosing]      = useState(false)
@@ -4125,6 +4120,7 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
                 onSetup={() => setShowSetup(true)}
                 promotedComponents={promotedComponents}
                 onPromote={(name, count) => setPromotingComponent({ name, count })}
+                onOpenWaitlist={onOpenWaitlist}
               />
             )}
           </div>
