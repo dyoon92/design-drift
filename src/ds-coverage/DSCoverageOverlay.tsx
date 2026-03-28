@@ -3835,18 +3835,15 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
       return
     }
     setHistory(loadHistory())
+    // Always rescan on open — SPAs never change pathname so the route check is
+    // unreliable. The scan uses a component-hash cache, so same-page reopens
+    // are instant; different-page reopens get a fresh scan with no stale overlays.
+    setComponents([])
+    setScanned(false)
+    scannedRouteRef.current = null
     setInspectMode(true)
     inspectModeRef.current = true
-    // If we navigated away while the panel was closed, stale results are showing —
-    // clear them and re-scan for the current page.
-    if (scanned && scannedRouteRef.current !== window.location.pathname) {
-      setComponents([])
-      setScanned(false)
-      scannedRouteRef.current = null
-      scan()
-      return
-    }
-    if (!scanned) scan()
+    scan()
   }, [visible]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
