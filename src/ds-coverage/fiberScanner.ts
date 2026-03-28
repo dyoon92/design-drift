@@ -29,12 +29,9 @@ const REACT_INTERNALS = new Set([
   'ForwardRef', 'Memo', 'LazyComponent',
 ])
 
-// Names belonging to the overlay tool itself — skip to avoid noise
-const OVERLAY_NAMES = new Set([
-  'DSCoverageOverlay', 'OverlayBox', 'SummaryPanel', 'PropsPanel',
-  'ToggleButton', 'CoverageBar', 'MiniBar', 'TabBar', 'ScanIcon',
-  'ThemeCtx',
-])
+// Overlay root selector — any component whose DOM element lives inside here is excluded.
+// Robust against component renames; no manual name list to maintain.
+const OVERLAY_SELECTOR = '[data-ds-overlay]'
 
 /** Resolve a component name from a fiber, or null if it should be skipped. */
 function resolveName(fiber: any): string | null {
@@ -54,7 +51,6 @@ function resolveName(fiber: any): string | null {
   const first = name.charCodeAt(0)
   if (first < 65 || first > 90) return null
   if (REACT_INTERNALS.has(name)) return null
-  if (OVERLAY_NAMES.has(name)) return null
   if (name.includes('Provider') || name.includes('Consumer')) return null
 
   return name
@@ -89,6 +85,11 @@ function walkDown(rootFiber: any, out: ScannedComponent[], surfaceMode: boolean)
     if (name) {
       const element = findDOMElement(fiber)
       if (element) {
+        // Skip anything rendered inside the Drift overlay itself
+        if (element.closest(OVERLAY_SELECTOR)) {
+          if (fiber.sibling) stack.push(fiber.sibling)
+          continue
+        }
         const rect = element.getBoundingClientRect()
         if (rect.width > 0 || rect.height > 0) {
           const inDS = DS_COMPONENTS.has(name)
