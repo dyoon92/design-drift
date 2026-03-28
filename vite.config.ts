@@ -13,6 +13,9 @@ const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(file
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [svgr(), react()],
+  esbuild: {
+    keepNames: true,  // preserve function names so .displayName survives minification
+  },
   test: {
     projects: [{
       extends: true,
