@@ -2557,15 +2557,34 @@ export function DSCoverageOverlay() {
   const renderedRef  = useRef<ScannedComponent[]>([])
   const captureRef   = useRef<HTMLDivElement>(null)
 
-  // Passive wheel listener on the capture div so the browser can scroll
-  // immediately without waiting for JS (non-passive React onWheel blocks it).
+  // Forward wheel events from the capture div to the actual scrollable container
+  // underneath. Briefly set pointer-events:none to hit-test through the div,
+  // walk up the DOM to find the first scrollable ancestor, and scroll it.
   useEffect(() => {
     const el = captureRef.current
     if (!el) return
-    const onWheel = (e: WheelEvent) => window.scrollBy(e.deltaX, e.deltaY)
+    const onWheel = (e: WheelEvent) => {
+      const multiplier = e.deltaMode === 1 ? 20 : e.deltaMode === 2 ? window.innerHeight : 1
+      const dx = e.deltaX * multiplier
+      const dy = e.deltaY * multiplier
+      // Peek through the capture layer to find the real element under the cursor
+      el.style.pointerEvents = 'none'
+      const under = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null
+      el.style.pointerEvents = 'all'
+      // Walk up to find a scrollable container
+      let node: HTMLElement | null = under
+      while (node && node !== document.documentElement) {
+        const cs = window.getComputedStyle(node)
+        const canY = /auto|scroll/.test(cs.overflowY) && node.scrollHeight > node.clientHeight
+        const canX = /auto|scroll/.test(cs.overflowX) && node.scrollWidth  > node.clientWidth
+        if ((canY && dy !== 0) || (canX && dx !== 0)) { node.scrollBy(dx, dy); return }
+        node = node.parentElement
+      }
+      window.scrollBy(dx, dy)
+    }
     el.addEventListener('wheel', onWheel, { passive: true })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [inspectMode])
+  }, [inspectMode, visible])
 
   const C = THEMES[theme]
 
