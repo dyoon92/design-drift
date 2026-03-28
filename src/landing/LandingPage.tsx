@@ -256,7 +256,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
       {/* Full-bleed gradient — covers the entire hero viewport */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: `radial-gradient(ellipse 70% 80% at 20% 50%, ${C.blueGlow} 0%, transparent 65%)`,
+        background: `radial-gradient(ellipse 120% 70% at 50% 40%, ${C.blueGlow} 0%, transparent 70%)`,
         pointerEvents: 'none',
       }} />
       {/* Subtle bottom fade into the stats strip */}
