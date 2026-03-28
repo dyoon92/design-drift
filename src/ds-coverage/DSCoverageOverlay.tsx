@@ -2741,18 +2741,7 @@ export function DSCoverageOverlay() {
     }
     setHistory(loadHistory())
     setInspectMode(true)
-    if (!scanned) {
-      // Block any MutationObserver-triggered scans during the settle window,
-      // show the skeleton immediately, then run one clean scan after the page
-      // has had time to finish its initial render.
-      setScanning(true)
-      scanningRef.current = true
-      const timer = setTimeout(() => {
-        scanningRef.current = false
-        scan()
-      }, 800)
-      return () => { clearTimeout(timer); scanningRef.current = false }
-    }
+    // Don't auto-scan — user triggers the first scan via "Analyse this screen"
   }, [visible]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (visible && scanned) scan() }, [surfaceMode]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -2774,7 +2763,7 @@ export function DSCoverageOverlay() {
   }, [visible, scanned, scan])
 
   useEffect(() => {
-    if (!visible) return
+    if (!visible || !scanned) return
     let mutTimer: ReturnType<typeof setTimeout>
     let lastPath = window.location.pathname
     const obs = new MutationObserver((mutations) => {
@@ -2792,16 +2781,17 @@ export function DSCoverageOverlay() {
         clearScanCache(newPath)
         setInspected(null)
         if (routeChanged) {
-          // Clear stale component rects immediately so old boxes don't flash
+          // Route changed — clear stale boxes, require user to re-scan
           setComponents([])
           setScanned(false)
+        } else {
+          scan(true)
         }
-        scan(true)
       }, 400)
     })
     obs.observe(document.body, { childList: true, subtree: true })
     return () => { obs.disconnect(); clearTimeout(mutTimer) }
-  }, [visible, scan])
+  }, [visible, scanned, scan])
 
   const handleClosePanel = () => { setVisible(false) }
 
