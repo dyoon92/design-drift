@@ -70,20 +70,17 @@ function Chip({ color, children }: { color: string; children: React.ReactNode })
   )
 }
 
-// ─── Waitlist counter (countapi.xyz) ─────────────────────────────────────────
-const COUNTER_HIT = 'https://api.countapi.xyz/hit/design-drift.dev/waitlist'
-const COUNTER_GET = 'https://api.countapi.xyz/get/design-drift.dev/waitlist'
-
+// ─── Waitlist counter (Cloudflare Pages Function at /count) ──────────────────
 async function incrementCounter(): Promise<number> {
-  const r = await fetch(COUNTER_HIT)
+  const r = await fetch('/count', { method: 'POST' })
   const j = await r.json()
-  return j.value as number
+  return (j as any).value as number
 }
 
 function useWaitlistCount() {
   const [count, setCount] = useState<number | null>(null)
   useEffect(() => {
-    fetch(COUNTER_GET).then(r => r.json()).then(j => setCount(j.value as number)).catch(() => {})
+    fetch('/count').then(r => r.json()).then(j => setCount((j as any).value as number)).catch(() => {})
   }, [])
   return { count, setCount }
 }
@@ -114,18 +111,30 @@ function WaitlistForm({ onSuccess }: { onSuccess?: () => void }) {
   if (status === 'done') {
     return (
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 12,
         padding: '16px 22px',
         background: `${C.green}12`, border: `1px solid ${C.green}30`,
         borderRadius: 12, ...sans,
       }}>
-        <span style={{ color: C.green, fontSize: 20 }}>✓</span>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: C.green }}>You're on the list</div>
-          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-            {count ? `#${count} in line — ` : ''}We'll reach out when team access opens.
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <span style={{ color: C.green, fontSize: 20 }}>✓</span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.green }}>You're on the list</div>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+              {count ? `#${count} in line — ` : ''}We'll reach out when team access opens.
+            </div>
           </div>
         </div>
+        <a href="?demo=1" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 7,
+          fontSize: 13, fontWeight: 700, color: C.blue,
+          textDecoration: 'none', padding: '8px 16px',
+          background: `${C.blue}12`, border: `1px solid ${C.blue}30`,
+          borderRadius: 8, transition: 'opacity 0.15s',
+        }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
+          <span style={{ opacity: 0.8 }}>▶</span> Try the live demo while you wait
+        </a>
       </div>
     )
   }
