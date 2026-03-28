@@ -4,8 +4,49 @@ Set up Drift in this project from scratch. Detect what already exists, ask targe
 questions, then do all the work — no manual steps.
 
 ## Arguments: `$ARGUMENTS`
-- *(no args)* — full interactive setup
+- *(no args)* — full interactive setup inside the current project
 - `--check` — audit existing setup, report what's missing without changing anything
+- `<path>` — bootstrap Drift into another project, e.g. `/drift-setup ~/projects/my-app`
+
+---
+
+## Step 0 — Bootstrap into another project (if a path was given)
+
+If `$ARGUMENTS` is a file path (starts with `/`, `./`, or `~`, or looks like a directory name):
+
+1. Treat it as `TARGET_DIR`. Resolve `~` if needed.
+2. Verify `TARGET_DIR` exists and has a `package.json`. If not, stop:
+   ```
+   No package.json found at <path>. Is this a React project?
+   ```
+3. Copy the Drift source files from this repo into the target:
+   ```bash
+   cp -r src/ds-coverage/     {TARGET_DIR}/src/ds-coverage/
+   cp -r .claude/             {TARGET_DIR}/.claude/
+   mkdir -p {TARGET_DIR}/scripts
+   cp scripts/drift-check.mjs  {TARGET_DIR}/scripts/
+   cp scripts/drift-mcp.mjs    {TARGET_DIR}/scripts/
+   cp scripts/figma-sync.mjs   {TARGET_DIR}/scripts/
+   ```
+4. Check if `@modelcontextprotocol/sdk` is in `{TARGET_DIR}/package.json` devDependencies.
+   If not: `cd {TARGET_DIR} && npm install --save-dev @modelcontextprotocol/sdk`
+
+5. Report what was installed:
+   ```
+   ## Drift files copied to <TARGET_DIR>
+
+   ✅  src/ds-coverage/    — overlay + fiber scanner
+   ✅  .claude/commands/   — /drift, /drift-sync, /drift-push slash commands
+   ✅  scripts/            — drift-check, drift-mcp, figma-sync
+   ✅  @modelcontextprotocol/sdk installed
+
+   Now continuing setup inside <TARGET_DIR>…
+   ```
+
+6. Continue the rest of this setup (Steps 1–10) as if running inside `TARGET_DIR`.
+   All file reads/writes from this point forward target `TARGET_DIR`.
+
+If no path argument: assume already running inside the target project and go straight to Step 1.
 
 ---
 

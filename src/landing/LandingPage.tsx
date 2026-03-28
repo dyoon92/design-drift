@@ -301,7 +301,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
           <Chip color={C.blue}>React fiber scanner</Chip>
-          <Chip color={C.purple}>UX governance layer</Chip>
+          <Chip color={C.purple}>Browser · IDE · CI</Chip>
           <Chip color={C.green}>PR drift delta</Chip>
         </div>
 
@@ -489,6 +489,88 @@ function SocialProof() {
       ))}
       <div style={{ width: '100%', textAlign: 'center', marginTop: -8 }}>
         <span style={{ ...sans, fontSize: 10, color: C.border2 }}>* Dan Mall, Design System Coverage</span>
+      </div>
+    </div>
+  )
+}
+
+// ─── Works Everywhere Strip ────────────────────────────────────────────────────
+function WorksEverywhereStrip() {
+  const items = [
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="1" y="3" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M6 14v1.5M12 14v1.5M4.5 15.5h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      label: 'In the browser',
+      desc: 'Press D in your running app. No install needed beyond adding the overlay.',
+      color: C.blue,
+    },
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="1" y="1" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M5 7l3 2-3 2M10 13h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      label: 'In your IDE',
+      desc: 'MCP server connects Drift to Claude Code, Cursor, and Windsurf. Ask about gaps without leaving your editor.',
+      color: claudeOrange,
+    },
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="1" y="3" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M5 7.5h8M5 10.5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      label: 'In the terminal',
+      desc: '/drift-setup, /drift-sync, /drift-push — Claude Code slash commands that do the work for you.',
+      color: C.purple,
+    },
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M5.5 9.5l2.5 2.5 4.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      label: 'In CI',
+      desc: 'GitHub Action posts a drift delta on every PR. No extra tooling — just a YAML file.',
+      color: C.green,
+    },
+  ]
+
+  return (
+    <div style={{
+      borderBottom: `1px solid ${C.border}`,
+      padding: '0 48px',
+      background: C.surface,
+    }}>
+      <div style={{
+        maxWidth: 1200, margin: '0 auto',
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+      }} className="works-grid">
+        {items.map((item, i) => (
+          <div key={item.label} style={{
+            padding: '28px 24px',
+            borderRight: i < items.length - 1 ? `1px solid ${C.border}` : 'none',
+            display: 'flex', flexDirection: 'column', gap: 10,
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 9,
+              background: `${item.color}15`, border: `1px solid ${item.color}28`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: item.color, flexShrink: 0,
+            }}>
+              {item.icon}
+            </div>
+            <div style={{ ...display, fontSize: 13, fontWeight: 700, color: C.text }}>{item.label}</div>
+            <div style={{ ...sans, fontSize: 12, color: C.muted, lineHeight: 1.7 }}>{item.desc}</div>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -1096,18 +1178,23 @@ export function LandingPage() {
       <style>{`
         /* ── Responsive breakpoints ── */
         @media (max-width: 960px) {
-          .hero-grid  { grid-template-columns: 1fr !important; padding: 0 40px !important; }
-          .hero-mock  { display: none !important; }
-          .aiera-flow { grid-template-columns: 1fr 1fr !important; }
+          .hero-grid   { grid-template-columns: 1fr !important; padding: 0 40px !important; }
+          .hero-mock   { display: none !important; }
+          .aiera-flow  { grid-template-columns: 1fr 1fr !important; }
           .aiera-bottom { grid-template-columns: 1fr 1fr !important; }
-          .how-grid   { grid-template-columns: 1fr 1fr !important; }
+          .how-grid    { grid-template-columns: 1fr 1fr !important; }
+          .works-grid  { grid-template-columns: 1fr 1fr !important; }
         }
         @media (max-width: 640px) {
-          .how-grid   { grid-template-columns: 1fr !important; }
-          .hero-grid  { padding: 0 24px !important; }
-          .nav-links  { gap: 16px !important; }
+          .how-grid    { grid-template-columns: 1fr !important; }
+          .works-grid  { grid-template-columns: 1fr 1fr !important; }
+          .hero-grid   { padding: 0 24px !important; }
+          .nav-links   { gap: 16px !important; }
           .nav-links a { display: none !important; }
-          .aiera-flow { grid-template-columns: 1fr !important; }
+          .aiera-flow  { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .works-grid  { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 480px) {
           .hero-grid  { padding: 0 20px !important; }
@@ -1117,6 +1204,7 @@ export function LandingPage() {
       <Nav onOpenModal={openModal} />
       <Hero onOpenModal={openModal} />
       <SocialProof />
+      <WorksEverywhereStrip />
       <AIEraSection />
       <Features />
       <PRDeltaCallout />
