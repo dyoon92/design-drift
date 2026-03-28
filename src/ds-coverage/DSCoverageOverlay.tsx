@@ -3118,7 +3118,7 @@ function injectGradientStyle() {
 
 // ─── Main overlay ─────────────────────────────────────────────────────────────
 
-export function DSCoverageOverlay() {
+export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
   const [theme,          setTheme]          = useState<Theme>(() => (localStorage.getItem(THEME_KEY) as Theme) ?? 'dark')
   const [visible,        setVisible]        = useState(false)
   const [isClosing,      setIsClosing]      = useState(false)
@@ -3342,6 +3342,14 @@ export function DSCoverageOverlay() {
   useEffect(() => {
     injectGradientStyle()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-open when parent signals (e.g. after StoryModal completes)
+  useEffect(() => {
+    if (autoOpen) {
+      const t = setTimeout(() => setVisible(true), 400)
+      return () => clearTimeout(t)
+    }
+  }, [autoOpen])
 
   // Click-outside to close — uses a document listener so the backdrop
   // div doesn't block page scrolling

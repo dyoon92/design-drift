@@ -440,6 +440,7 @@ export default function App() {
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null)
   const [darkMode, setDarkMode]           = useState(false)
   const [showTour, setShowTour]           = useState(() => !localStorage.getItem('drift-story-seen'))
+  const [openOverlay, setOpenOverlay]     = useState(false)
 
   const isMobile = useWindowWidth() < 768
 
@@ -476,9 +477,9 @@ export default function App() {
         </main>
       </div>
 
-      {(import.meta.env.DEV || import.meta.env.VITE_SHOW_OVERLAY === 'true') && <DSCoverageOverlay />}
+      {(import.meta.env.DEV || import.meta.env.VITE_SHOW_OVERLAY === 'true') && <DSCoverageOverlay autoOpen={openOverlay} />}
 
-      {showTour && <StoryModal onDone={() => { localStorage.setItem('drift-story-seen', '1'); setShowTour(false) }} />}
+      {showTour && <StoryModal onDone={() => { localStorage.setItem('drift-story-seen', '1'); setShowTour(false); setOpenOverlay(true) }} />}
 
       <div style={{
         position: 'fixed', bottom: 16, left: 16, zIndex: 99995,
