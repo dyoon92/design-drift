@@ -221,3 +221,4 @@ export const UnitDetailsCard: React.FC<UnitDetailsCardProps> = ({
 }
 
 export default UnitDetailsCard
+UnitDetailsCard.displayName = 'UnitDetailsCard'

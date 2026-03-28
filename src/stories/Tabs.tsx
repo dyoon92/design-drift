@@ -82,3 +82,4 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeKey, onTabChange }) => {
 }
 
 export default Tabs
+Tabs.displayName = 'Tabs'

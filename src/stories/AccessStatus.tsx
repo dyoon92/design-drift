@@ -51,3 +51,4 @@ export const AccessStatus: React.FC<AccessStatusProps> = ({ status }) => {
 }
 
 export default AccessStatus
+AccessStatus.displayName = 'AccessStatus'

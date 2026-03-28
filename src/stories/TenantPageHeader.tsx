@@ -337,3 +337,4 @@ export const TenantPageHeader: React.FC<TenantPageHeaderProps> = ({
 }
 
 export default TenantPageHeader
+TenantPageHeader.displayName = 'TenantPageHeader'

@@ -233,3 +233,4 @@ export const TenantInfoCard: React.FC<TenantInfoCardProps> = ({
 }
 
 export default TenantInfoCard
+TenantInfoCard.displayName = 'TenantInfoCard'

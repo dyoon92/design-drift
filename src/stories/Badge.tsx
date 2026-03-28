@@ -220,3 +220,4 @@ export const CommBadge: React.FC<CommBadgeProps> = ({ status, size = 'lg', contr
 }
 
 export default Badge
+Badge.displayName = 'Badge'

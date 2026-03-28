@@ -406,7 +406,7 @@ export default function App() {
         </main>
       </div>
 
-      <DSCoverageOverlay />
+      {(import.meta.env.DEV || import.meta.env.VITE_SHOW_OVERLAY === 'true') && <DSCoverageOverlay />}
 
       {showTour && <GuidedTour onDismiss={() => setShowTour(false)} />}
 

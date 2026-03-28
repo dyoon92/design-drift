@@ -356,3 +356,4 @@ export const CommunicationsPanel: React.FC<CommunicationsPanelProps> = ({
 }
 
 export default CommunicationsPanel
+CommunicationsPanel.displayName = 'CommunicationsPanel'

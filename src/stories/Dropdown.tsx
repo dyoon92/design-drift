@@ -76,3 +76,4 @@ export const Dropdown: React.FC<DropdownProps> = ({ items, onClose }) => (
 )
 
 export default Dropdown
+Dropdown.displayName = 'Dropdown'

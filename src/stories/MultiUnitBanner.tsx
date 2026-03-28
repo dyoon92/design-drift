@@ -281,3 +281,4 @@ export const MultiUnitBanner: React.FC<MultiUnitBannerProps> = ({
 }
 
 export default MultiUnitBanner
+MultiUnitBanner.displayName = 'MultiUnitBanner'

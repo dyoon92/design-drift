@@ -510,3 +510,4 @@ export const TenantsTable: React.FC<TenantsTableProps> = ({
 }
 
 export default TenantsTable
+TenantsTable.displayName = 'TenantsTable'

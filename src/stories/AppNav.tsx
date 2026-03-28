@@ -731,3 +731,5 @@ export const Sidebar: React.FC<AppNavProps> = ({
 }
 
 export default Sidebar
+Navbar.displayName = 'Navbar'
+Sidebar.displayName = 'Sidebar'

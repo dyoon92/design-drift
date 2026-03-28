@@ -78,3 +78,4 @@ export const TenantStatsWidget: React.FC<TenantStatsWidgetProps> = ({
 }
 
 export default TenantStatsWidget
+TenantStatsWidget.displayName = 'TenantStatsWidget'

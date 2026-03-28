@@ -710,3 +710,11 @@ export const ECRIWidget = () => (
     />
   </div>
 )
+OccupancyWidget.displayName = 'OccupancyWidget'
+RevenueWidget.displayName = 'RevenueWidget'
+NetMoveInsWidget.displayName = 'NetMoveInsWidget'
+LeadsWidget.displayName = 'LeadsWidget'
+PastDueWidget.displayName = 'PastDueWidget'
+UnitStatusWidget.displayName = 'UnitStatusWidget'
+ProtectionAutopayWidget.displayName = 'ProtectionAutopayWidget'
+ECRIWidget.displayName = 'ECRIWidget'

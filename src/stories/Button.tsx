@@ -95,3 +95,4 @@ export const Button: React.FC<ButtonProps> = ({
 }
 
 export default Button
+Button.displayName = 'Button'

@@ -294,3 +294,4 @@ export const PaymentBanner: React.FC<PaymentBannerProps> = ({
 }
 
 export default PaymentBanner
+PaymentBanner.displayName = 'PaymentBanner'

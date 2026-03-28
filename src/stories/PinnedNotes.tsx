@@ -152,3 +152,4 @@ export const PinnedNotes: React.FC<PinnedNotesProps> = ({
 }
 
 export default PinnedNotes
+PinnedNotes.displayName = 'PinnedNotes'
