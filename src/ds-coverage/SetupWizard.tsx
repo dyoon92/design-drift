@@ -259,18 +259,6 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
     >{label}</button>
   )
 
-  const ghostBtn = (label: string, onClick: () => void): React.ReactElement => (
-    <button
-      onClick={onClick}
-      style={{
-        background: 'transparent', color: C.muted,
-        border: `1px solid ${C.border}`, borderRadius: 8,
-        padding: '8px 18px', fontSize: 12, fontWeight: 600,
-        cursor: 'pointer', fontFamily: 'system-ui, sans-serif',
-      }}
-    >{label}</button>
-  )
-
   const numericStep = typeof step === 'number' ? step : 4
 
   const stepDot = (n: number): React.ReactElement => (
@@ -296,37 +284,68 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
     </div>
   )
 
-  // ─── Step 1 — Welcome ─────────────────────────────────────────────────────
+  // ─── Step 1 — Welcome (persona split) ────────────────────────────────────
+
+  const [showDesignerNote, setShowDesignerNote] = useState(false)
 
   const Step1 = () => (
     <div style={panelStyle}>
       <div style={headerStyle}>
-        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>
-          Let's set up Drift
-        </div>
+        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Set up Drift</div>
         <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
-          Takes 2 minutes. We'll auto-discover your design system components.
+          Who's setting this up?
         </div>
       </div>
       <Progress />
-      <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{
-          background: C.surface, borderRadius: 10, padding: '14px',
-          border: `1px solid ${C.border}`,
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.green, marginBottom: 6 }}>
-            What Drift does
-          </div>
-          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6 }}>
-            Scans your React app to see which components are from your design system
-            and which are custom one-offs. Helps you track design coverage and catch drift.
-          </div>
-        </div>
+      <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-          {primaryBtn('Connect Storybook →', () => setStep(2))}
-          {ghostBtn('Enter components manually →', () => setStep('manual'))}
-        </div>
+        {/* Developer path */}
+        <button onClick={() => { setShowDesignerNote(false); setStep(2) }} style={{
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
+          padding: '14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'system-ui, sans-serif',
+          transition: 'border-color 0.15s',
+        }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = C.blue)}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 4 }}>⚡ I'm a developer</div>
+          <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>Connect Storybook or enter component names. Takes 2 minutes.</div>
+        </button>
+
+        {/* Designer / PM path */}
+        <button onClick={() => setShowDesignerNote(true)} style={{
+          background: C.surface, border: `1px solid ${showDesignerNote ? C.blue : C.border}`, borderRadius: 10,
+          padding: '14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'system-ui, sans-serif',
+          transition: 'border-color 0.15s',
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 4 }}>◈ I'm a designer or PM</div>
+          <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>See what Drift shows you once a developer sets it up.</div>
+        </button>
+
+        {showDesignerNote && (
+          <div style={{ background: `${C.blue}10`, border: `1px solid ${C.blue}25`, borderRadius: 10, padding: '14px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>
+              Good news — you don't need to touch any code.
+            </div>
+            <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.7, marginBottom: 10 }}>
+              Ask your developer to complete this setup (2 min). Once it's done:<br/>
+              • Every PR shows a drift score — how much the UI matches your design system<br/>
+              • You'll see which AI-generated components weren't from the DS<br/>
+              • Coverage drops are blocked before they merge
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.blue }}>
+              Forward them to: github.com/dyoon92/design-drift
+            </div>
+          </div>
+        )}
+
+        {!showDesignerNote && (
+          <button onClick={() => setStep('manual')} style={{
+            background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0',
+            fontSize: 11, color: C.muted, fontFamily: 'system-ui, sans-serif', textAlign: 'left',
+          }}>
+            No Storybook yet? Enter component names manually →
+          </button>
+        )}
       </div>
     </div>
   )
@@ -370,6 +389,7 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
             onChange={e => { setSbUrl(e.target.value); setFetchErr(null) }}
             onKeyDown={e => e.key === 'Enter' && handleDiscover()}
             placeholder="http://localhost:6006"
+            aria-describedby="sb-url-hint"
             style={{
               width: '100%', boxSizing: 'border-box',
               background: C.surface, border: `1px solid ${fetchErr ? C.red : C.border}`,
@@ -378,6 +398,10 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
               outline: 'none',
             }}
           />
+          <div id="sb-url-hint" style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.5 }}>
+            Local Storybook or a hosted URL. Running on Chromatic? Paste your Chromatic preview URL.
+          </div>
+
           {fetchErr && (
             <div style={{ fontSize: 11, color: C.red, marginTop: 6, lineHeight: 1.5 }}>
               {fetchErr}

@@ -672,10 +672,10 @@ function HowItWorks() {
       <div style={{ textAlign: 'center', marginBottom: 56 }}>
         <Chip color={C.purple}>Get started</Chip>
         <h2 style={{ ...display, fontSize: 44, fontWeight: 800, color: C.text, margin: '20px 0 12px', letterSpacing: -1 }}>
-          Up and running in 2 minutes.
+          A developer sets it up once.
         </h2>
-        <p style={{ ...sans, fontSize: 15, color: C.muted, fontWeight: 300, maxWidth: 440, margin: '0 auto', lineHeight: 1.7 }}>
-          No account. No config. No AST transforms.
+        <p style={{ ...sans, fontSize: 15, color: C.muted, fontWeight: 300, maxWidth: 480, margin: '0 auto', lineHeight: 1.7 }}>
+          After that, designers and PMs see coverage in every PR — no code, no tools, no meetings.
         </p>
       </div>
 
