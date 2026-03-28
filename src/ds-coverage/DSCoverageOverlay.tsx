@@ -2818,37 +2818,33 @@ export function DSCoverageOverlay() {
           />
         ))}
 
-        {/* Token violation hover — grayscale backdrop with holes over matched elements */}
+        {/* Token violation hover — desaturate page, highlight matched elements in their actual color */}
         {visible && hoveredViolation && (() => {
-          const pad = 4
-          const vw  = window.innerWidth
-          const vh  = window.innerHeight
+          const pad   = 3
+          const color = hoveredViolation.value
           const rects = hoveredViolation.elements
             .map(el => el.getBoundingClientRect())
             .filter(r => r.width > 0 || r.height > 0)
-          // evenodd clip-path: full viewport minus a cutout per element rect
-          const outer = `0px 0px, ${vw}px 0px, ${vw}px ${vh}px, 0px ${vh}px`
-          const holes = rects.map(r =>
-            `${r.left - pad}px ${r.top - pad}px, ${r.right + pad}px ${r.top - pad}px, ${r.right + pad}px ${r.bottom + pad}px, ${r.left - pad}px ${r.bottom + pad}px`
-          ).join(', ')
           return (
             <>
-              {/* Grayscale layer — covers viewport, holes reveal elements in color */}
+              {/* Desaturate layer: white div with mix-blend-mode:saturation drains color
+                  from everything below (z<99991). Our rings at 99993 are above it → full color. */}
               <div style={{
                 position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 99991,
-                backdropFilter: 'grayscale(1)',
-                WebkitBackdropFilter: 'grayscale(1)',
-                clipPath: rects.length > 0 ? `polygon(evenodd, ${outer}, ${holes})` : undefined,
+                background: 'white',
+                mixBlendMode: 'saturation',
+                opacity: 0.92,
               }} />
-              {/* Red ring overlays on each matched element */}
+              {/* Colored ring overlays — above the desaturate layer, render in the violation color */}
               {rects.map((r, i) => (
                 <div key={i} style={{
                   position: 'fixed',
-                  top: r.top - 2, left: r.left - 2,
-                  width: r.width + 4, height: r.height + 4,
-                  outline: `2px solid ${C.red}`,
+                  top: r.top - pad, left: r.left - pad,
+                  width: r.width + pad * 2, height: r.height + pad * 2,
+                  outline: `2px solid ${color}`,
                   outlineOffset: '-1px',
-                  background: 'rgba(239,68,68,0.06)',
+                  background: `${color}18`,
+                  boxShadow: `0 0 0 4px ${color}30`,
                   borderRadius: 4,
                   pointerEvents: 'none',
                   zIndex: 99993,
@@ -2869,6 +2865,7 @@ export function DSCoverageOverlay() {
             onMouseMove={handleCaptureMove}
             onMouseLeave={() => { setHoverComp(null); setHoverPos(null) }}
             onClick={handleCaptureClick}
+            onWheel={e => window.scrollBy({ left: e.deltaX, top: e.deltaY, behavior: 'instant' as ScrollBehavior })}
             style={{
               position: 'fixed', inset: 0,
               zIndex: 99992,
