@@ -19,6 +19,8 @@ import { DS_STORY_PATHS, DS_FIGMA_LINKS, DS_COMPONENTS, STORYBOOK_URL, config } 
 import { scanTokenViolations, getColorViolationsInSubtree, type TokenViolation, type DriftViolation, type DriftViolationType } from './tokenChecker'
 import { SetupWizard } from './SetupWizard'
 import { PromotePanel } from './PromotePanel'
+import figmaLogoUrl from './figma-logo.svg'
+import jiraLogoUrl from './jira-logo.png'
 
 const SB_BASE         = STORYBOOK_URL
 const BADGE_H         = 19
@@ -1185,31 +1187,11 @@ function CodeBlock({ code, C }: { code: string; C: Colors }) {
 // ─── Brand icons ──────────────────────────────────────────────────────────────
 
 const FigmaIcon = ({ size = 18 }: { size?: number }) => (
-  <svg width={size} height={size * (1.5)} viewBox="0 0 38 57" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M19 28.5A9.5 9.5 0 1 1 28.5 19 9.51 9.51 0 0 1 19 28.5Z" fill="#1ABCFE"/>
-    <path d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19v9.5a9.5 9.5 0 0 1-19 0Z" fill="#0ACF83"/>
-    <path d="M19 0v19h9.5a9.5 9.5 0 0 0 0-19Z" fill="#FF7262"/>
-    <path d="M0 9.5a9.5 9.5 0 0 0 9.5 9.5H19V0H9.5A9.5 9.5 0 0 0 0 9.5Z" fill="#F24E1E"/>
-    <path d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5Z" fill="#FF7262"/>
-  </svg>
+  <img src={figmaLogoUrl} alt="Figma" width={size * (2/3)} height={size} style={{ display: 'block', objectFit: 'contain' }} />
 )
 
 const JiraIcon = ({ size = 18 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="jira-a" x1="17.16" y1="15.17" x2="11.18" y2="21.26" gradientUnits="userSpaceOnUse">
-        <stop offset="0.18" stopColor="#0052CC"/>
-        <stop offset="1" stopColor="#2684FF"/>
-      </linearGradient>
-      <linearGradient id="jira-b" x1="14.84" y1="16.83" x2="20.82" y2="10.74" gradientUnits="userSpaceOnUse">
-        <stop offset="0.18" stopColor="#0052CC"/>
-        <stop offset="1" stopColor="#2684FF"/>
-      </linearGradient>
-    </defs>
-    <path d="M16.002 2.4 2.4 16.002l8.468 8.468L16.002 19.34l5.13-5.13-5.13-5.134 5.134-5.13L16.002 2.4z" fill="url(#jira-a)"/>
-    <path d="M16.002 19.34l-5.134 5.13 5.134 5.13 13.598-13.598L16.002 2.4l-5.13 5.134 5.13 5.134-5.13 5.13 5.13 1.542z" fill="url(#jira-b)"/>
-    <path d="M16.002 29.6 29.6 16.002 16.002 2.4l-5.134 5.134 5.134 5.13-5.134 5.134 5.134 5.13-5.134 5.134L16.002 29.6z" fill="#2684FF"/>
-  </svg>
+  <img src={jiraLogoUrl} alt="Jira" width={size} height={size} style={{ display: 'block', objectFit: 'contain' }} />
 )
 
 // ─── Gap action panel (replaces "No props" for non-DS components) ─────────────
