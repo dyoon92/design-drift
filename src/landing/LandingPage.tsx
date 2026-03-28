@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
@@ -48,22 +48,42 @@ function Chip({ color, children }: { color: string; children: React.ReactNode })
 }
 
 
+// ─── Waitlist counter (countapi.xyz — free, no auth) ─────────────────────────
+const COUNTER_HIT = 'https://api.countapi.xyz/hit/design-drift.dev/waitlist'
+const COUNTER_GET = 'https://api.countapi.xyz/get/design-drift.dev/waitlist'
+
+async function incrementCounter(): Promise<number> {
+  const r = await fetch(COUNTER_HIT)
+  const j = await r.json()
+  return j.value as number
+}
+
+function useWaitlistCount() {
+  const [count, setCount] = useState<number | null>(null)
+  useEffect(() => {
+    fetch(COUNTER_GET).then(r => r.json()).then(j => setCount(j.value as number)).catch(() => {})
+  }, [])
+  return { count, setCount }
+}
+
 // ─── Waitlist form (reusable) ─────────────────────────────────────────────────
 function WaitlistForm({ size = 'lg' }: { size?: 'lg' | 'sm' }) {
-  const [email, setEmail]     = useState('')
-  const [status, setStatus]   = useState<'idle' | 'loading' | 'done'>('idle')
+  const [email, setEmail]   = useState('')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done'>('idle')
+  const { count, setCount } = useWaitlistCount()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim()) return
     setStatus('loading')
-    // POST to Formspree (replace with your form ID) or your own endpoint
     try {
-      await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+      await fetch('https://formspree.io/f/xjgpgovz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ email }),
       })
+      const n = await incrementCounter()
+      setCount(n)
     } catch { /* fire-and-forget */ }
     setStatus('done')
   }
@@ -79,13 +99,16 @@ function WaitlistForm({ size = 'lg' }: { size?: 'lg' | 'sm' }) {
         <span style={{ color: C.green, fontSize: 18 }}>✓</span>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.green }}>You're on the list</div>
-          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>We'll reach out when team access opens.</div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+            {count ? `#${count} in line — ` : ''}We'll reach out when team access opens.
+          </div>
         </div>
       </div>
     )
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
       <input
         type="email"
@@ -125,6 +148,12 @@ function WaitlistForm({ size = 'lg' }: { size?: 'lg' | 'sm' }) {
         {status === 'loading' ? 'Joining…' : 'Join waitlist'}
       </button>
     </form>
+    {count !== null && (
+      <div style={{ textAlign: 'center', marginTop: 10, ...sans, fontSize: 12, color: C.muted }}>
+        <span style={{ color: C.green, fontWeight: 700 }}>{count}</span> {count === 1 ? 'team' : 'teams'} on the waitlist
+      </div>
+    )}
+    </>
   )
 }
 
