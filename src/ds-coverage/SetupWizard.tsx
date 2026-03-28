@@ -32,7 +32,7 @@ interface DiscoveredComponent {
   storyPath: string
 }
 
-type WizardStep = 1 | 2 | 3 | 4
+type WizardStep = 1 | 2 | 3 | 4 | 'manual'
 type ExportTab = 'config' | 'claude'
 
 // ─── Color palette (matches overlay dark theme) ───────────────────────────────
@@ -143,10 +143,31 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
     setFetchErr(null)
     try {
       const url = sbUrl.replace(/\/$/, '')
-      const res = await fetch(`${url}/index.json`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      let res: Response
+      try {
+        res = await fetch(`${url}/index.json`)
+      } catch {
+        // Network error — connection refused or CORS preflight blocked
+        setFetchErr(
+          `Can't reach ${url}. Check that Storybook is running and accessible from this page. ` +
+          `If Storybook is on a different port or domain, CORS may be blocking the request — use manual setup instead.`
+        )
+        return
+      }
+      if (res.status === 401 || res.status === 403) {
+        setFetchErr(`Storybook returned ${res.status} — it appears to be protected. Use manual setup to enter component names directly.`)
+        return
+      }
+      if (!res.ok) {
+        setFetchErr(`Storybook returned HTTP ${res.status}. Check the URL and try again, or use manual setup.`)
+        return
+      }
       const data: StorybookIndex = await res.json()
       const entries = data.entries ?? data.stories ?? {}
+      if (Object.keys(entries).length === 0) {
+        setFetchErr(`Connected to Storybook but found no stories. Make sure your stories are registered and the server has finished loading.`)
+        return
+      }
 
       // Group by title to get one entry per component
       const byTitle = new Map<string, string>() // title → first storyId
@@ -162,11 +183,10 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
       }))
 
       setDiscovered(comps)
-      // Default: all selected
       setSelected(new Set(comps.map(c => c.displayName)))
       setStep(3)
     } catch {
-      setFetchErr("Couldn't reach Storybook — is it running?")
+      setFetchErr(`Something went wrong parsing the Storybook response. Try manual setup.`)
     } finally {
       setFetching(false)
     }
@@ -251,12 +271,14 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
     >{label}</button>
   )
 
-  const stepDot = (n: WizardStep): React.ReactElement => (
+  const numericStep = typeof step === 'number' ? step : 4
+
+  const stepDot = (n: number): React.ReactElement => (
     <div style={{
       width: 20, height: 20, borderRadius: '50%',
-      background: step >= n ? C.blue : C.border,
+      background: numericStep >= n ? C.blue : C.border,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 10, fontWeight: 700, color: step >= n ? '#fff' : C.muted,
+      fontSize: 10, fontWeight: 700, color: numericStep >= n ? '#fff' : C.muted,
       transition: 'background 0.2s',
     }}>{n}</div>
   )
@@ -264,20 +286,11 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
   // ─── Step progress bar ────────────────────────────────────────────────────
 
   const Progress = () => (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 4,
-      padding: '0 16px 10px',
-    }}>
-      {([1, 2, 3, 4] as WizardStep[]).map((n, i) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 16px 10px' }}>
+      {[1, 2, 3, 4].map((n, i) => (
         <React.Fragment key={n}>
           {stepDot(n)}
-          {i < 3 && (
-            <div style={{
-              flex: 1, height: 2,
-              background: step > n ? C.blue : C.border,
-              transition: 'background 0.2s',
-            }} />
-          )}
+          {i < 3 && <div style={{ flex: 1, height: 2, background: numericStep > n ? C.blue : C.border, transition: 'background 0.2s' }} />}
         </React.Fragment>
       ))}
     </div>
@@ -312,9 +325,7 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
           {primaryBtn('Connect Storybook →', () => setStep(2))}
-          {ghostBtn('Set up manually (edit config.ts)', () => {
-            window.open('https://github.com/design-drift/docs/config', '_blank')
-          })}
+          {ghostBtn('Enter components manually →', () => setStep('manual'))}
         </div>
       </div>
     </div>
@@ -368,8 +379,15 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
             }}
           />
           {fetchErr && (
-            <div style={{ fontSize: 11, color: C.red, marginTop: 6, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 11, color: C.red, marginTop: 6, lineHeight: 1.5 }}>
               {fetchErr}
+              <button onClick={() => setStep('manual')} style={{
+                display: 'block', marginTop: 8, background: 'none', border: 'none',
+                color: C.blue, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                padding: 0, fontFamily: 'system-ui, sans-serif', textDecoration: 'underline',
+              }}>
+                Enter components manually instead →
+              </button>
             </div>
           )}
         </div>
@@ -606,16 +624,70 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
     </div>
   )
 
+  // ─── Manual entry step ───────────────────────────────────────────────────
+
+  const [manualText, setManualText] = useState('')
+
+  const ManualStep = () => {
+    const names = manualText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+    const valid = names.length > 0
+
+    const handleConfirm = () => {
+      const comps: DiscoveredComponent[] = names.map(n => ({
+        displayName: n,
+        storyPath: n.toLowerCase().replace(/\s+/g, '-') + '--default',
+      }))
+      setDiscovered(comps)
+      setSelected(new Set(comps.map(c => c.displayName)))
+      setStep(4)
+    }
+
+    return (
+      <div style={panelStyle}>
+        <div style={headerStyle}>
+          <button onClick={() => setStep(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.muted, marginBottom: 8, fontFamily: 'system-ui, sans-serif' }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L3.5 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            Back
+          </button>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>Enter components manually</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
+            One component name per line (or comma-separated). Use exact React display names — the same names you'd see in React DevTools.
+          </div>
+        </div>
+        <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <textarea
+            value={manualText}
+            onChange={e => setManualText(e.target.value)}
+            placeholder={'Button\nModal\nNavbar\nTenantsTable\n...'}
+            rows={8}
+            style={{
+              width: '100%', boxSizing: 'border-box', resize: 'vertical',
+              background: C.surface, border: `1px solid ${C.border}`,
+              borderRadius: 8, padding: '10px 12px', color: C.text,
+              fontSize: 12, fontFamily: 'monospace', lineHeight: 1.7, outline: 'none',
+            }}
+          />
+          {valid && (
+            <div style={{ fontSize: 11, color: C.muted }}>
+              {names.length} component{names.length !== 1 ? 's' : ''} — storyPaths will be best-guess placeholders, edit <code style={{ color: C.orange }}>config.ts</code> to fix them.
+            </div>
+          )}
+          {primaryBtn(`Generate config for ${valid ? names.length : '…'} components →`, handleConfirm, !valid)}
+        </div>
+      </div>
+    )
+  }
+
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <>
-      {/* Inline keyframe for spinner — injected once */}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      {step === 1 && <Step1 />}
-      {step === 2 && <Step2 />}
-      {step === 3 && <Step3 />}
-      {step === 4 && <Step4 />}
+      {step === 1        && <Step1 />}
+      {step === 2        && <Step2 />}
+      {step === 3        && <Step3 />}
+      {step === 4        && <Step4 />}
+      {step === 'manual' && <ManualStep />}
     </>
   )
 }

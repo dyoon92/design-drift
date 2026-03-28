@@ -483,7 +483,7 @@ function AIEraSection() {
             <span style={{ color: C.amber }}>Now it needs to hold</span> every sprint.
           </h2>
           <p style={{ ...sans, fontSize: 16, color: C.sub, maxWidth: 540, lineHeight: 1.75, fontWeight: 300 }}>
-            AI doesn't know you already have a <code style={{ ...mono, fontSize: 14, background: C.border, padding: '1px 7px', borderRadius: 4 }}>PaymentBanner</code>. It invents one. Every sprint adds a little more. Drift catches it before it compounds.
+            AI doesn't know you already have a <span style={{ ...mono, fontSize: 14, color: C.amber, fontWeight: 600 }}>PaymentBanner</span>. It invents one. Every sprint adds a little more. Drift catches it before it compounds.
           </p>
         </div>
 
