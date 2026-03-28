@@ -50,6 +50,9 @@ function resolveName(fiber: any): string | null {
   // Must start with uppercase A-Z
   const first = name.charCodeAt(0)
   if (first < 65 || first > 90) return null
+  // Filter out minified names from third-party libraries (e.g. "Ut", "Kt").
+  // No real component has a name shorter than 3 characters.
+  if (name.length < 3) return null
   if (REACT_INTERNALS.has(name)) return null
   if (name.includes('Provider') || name.includes('Consumer')) return null
 
