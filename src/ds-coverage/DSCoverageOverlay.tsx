@@ -3093,11 +3093,12 @@ export function DSCoverageOverlay() {
   const [hoverPos,        setHoverPos]        = useState<{ x: number; y: number } | null>(null)
   const [hoveredViolation, setHoveredViolation] = useState<TokenViolation | null>(null)
 
-  const rafRef        = useRef<number>(0)
-  const scanningRef   = useRef(false)
-  const surfaceRef    = useRef(surfaceMode)
-  const modeInitRef   = useRef(false)   // skip the initial mount firing of the surfaceMode effect
-  const hoverClearRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const rafRef          = useRef<number>(0)
+  const scanningRef     = useRef(false)
+  const surfaceRef      = useRef(surfaceMode)
+  const modeInitRef     = useRef(false)   // skip the initial mount firing of the surfaceMode effect
+  const hoverClearRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const scannedRouteRef = useRef<string | null>(null)  // pathname of last completed scan
   surfaceRef.current = surfaceMode
 
   // Debounced hover: entering a card cancels a pending clear so rapidly moving
@@ -3200,6 +3201,7 @@ export function DSCoverageOverlay() {
       setScanned(true)
       setScanning(false)
       scanningRef.current = false
+      scannedRouteRef.current = route
     }))
   }, [])
 
@@ -3299,6 +3301,15 @@ export function DSCoverageOverlay() {
     }
     setHistory(loadHistory())
     setInspectMode(true)
+    // If we navigated away while the panel was closed, stale results are showing —
+    // clear them and re-scan for the current page.
+    if (scanned && scannedRouteRef.current !== window.location.pathname) {
+      setComponents([])
+      setScanned(false)
+      scannedRouteRef.current = null
+      scan()
+      return
+    }
     if (!scanned) scan()
   }, [visible]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -3345,16 +3356,17 @@ export function DSCoverageOverlay() {
       clearTimeout(mutTimer)
       mutTimer = setTimeout(() => {
         const newPath = window.location.pathname
-        const routeChanged = newPath !== lastPath
-        lastPath = newPath
-        clearScanCache(newPath)
-        setInspected(null)
-        if (routeChanged) {
+        if (newPath !== lastPath) {
           // Route changed — clear stale boxes, require user to re-scan
+          lastPath = newPath
+          clearScanCache(newPath)
+          setInspected(null)
           setComponents([])
           setScanned(false)
         } else {
-          scan(true)
+          // Same route — use hash comparison so only real component-tree
+          // changes cause a re-render (transient mutations won't flicker)
+          scan()
         }
       }, 400)
     })
