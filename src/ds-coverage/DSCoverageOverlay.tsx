@@ -13,6 +13,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback, useContext, createContext } from 'react'
+import html2canvas from 'html2canvas'
 import { scanFiberTree, hashComponents, type ScannedComponent } from './fiberScanner'
 import { DS_STORY_PATHS, DS_FIGMA_LINKS, DS_COMPONENTS, STORYBOOK_URL, config } from './manifest'
 import { scanTokenViolations, getColorViolationsInSubtree, type TokenViolation, type DriftViolation, type DriftViolationType } from './tokenChecker'
@@ -1181,96 +1182,256 @@ function CodeBlock({ code, C }: { code: string; C: Colors }) {
   )
 }
 
+// ─── Brand icons ──────────────────────────────────────────────────────────────
+
+const FigmaIcon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size * (1.5)} viewBox="0 0 38 57" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19 28.5A9.5 9.5 0 1 1 28.5 19 9.51 9.51 0 0 1 19 28.5Z" fill="#1ABCFE"/>
+    <path d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19v9.5a9.5 9.5 0 0 1-19 0Z" fill="#0ACF83"/>
+    <path d="M19 0v19h9.5a9.5 9.5 0 0 0 0-19Z" fill="#FF7262"/>
+    <path d="M0 9.5a9.5 9.5 0 0 0 9.5 9.5H19V0H9.5A9.5 9.5 0 0 0 0 9.5Z" fill="#F24E1E"/>
+    <path d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5Z" fill="#FF7262"/>
+  </svg>
+)
+
+const JiraIcon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="jira-a" x1="17.16" y1="15.17" x2="11.18" y2="21.26" gradientUnits="userSpaceOnUse">
+        <stop offset="0.18" stopColor="#0052CC"/>
+        <stop offset="1" stopColor="#2684FF"/>
+      </linearGradient>
+      <linearGradient id="jira-b" x1="14.84" y1="16.83" x2="20.82" y2="10.74" gradientUnits="userSpaceOnUse">
+        <stop offset="0.18" stopColor="#0052CC"/>
+        <stop offset="1" stopColor="#2684FF"/>
+      </linearGradient>
+    </defs>
+    <path d="M16.002 2.4 2.4 16.002l8.468 8.468L16.002 19.34l5.13-5.13-5.13-5.134 5.134-5.13L16.002 2.4z" fill="url(#jira-a)"/>
+    <path d="M16.002 19.34l-5.134 5.13 5.134 5.13 13.598-13.598L16.002 2.4l-5.13 5.134 5.13 5.134-5.13 5.13 5.13 1.542z" fill="url(#jira-b)"/>
+    <path d="M16.002 29.6 29.6 16.002 16.002 2.4l-5.134 5.134 5.134 5.13-5.134 5.134 5.134 5.13-5.134 5.134L16.002 29.6z" fill="#2684FF"/>
+  </svg>
+)
+
 // ─── Gap action panel (replaces "No props" for non-DS components) ─────────────
 
-function buildFigmaMcpPrompt(name: string): string {
-  const figmaKey = config.figmaFileKey || '<your-figma-file-key>'
-  return `Using the Figma MCP, create a new component called "${name}" in the design file (key: ${figmaKey}).
-
-Steps:
-1. Open the Figma file and navigate to the component library page
-2. Create a new component frame named "${name}"
-3. Design it using our design tokens:
-   - Colors: use variables from the existing color styles (ds-color-*)
-   - Spacing: 8px grid (8, 12, 16, 20, 24, 32, 40px)
-   - Border radius: 4px (sm), 8px (md), 12px (lg)
-   - Typography: Inter, weights 400/500/600/700
-4. Add a description: "DS component for ${name} — promoted from detected drift"
-5. Add it to the component library so it appears in Storybook next sync
-
-Once created in Figma, implement it in src/stories/${name}.tsx following the existing component patterns, add a .stories.ts file, and register it in src/ds-coverage/config.ts.`
+interface CapturedStyles {
+  width: number; height: number
+  backgroundColor: string; color: string
+  padding: string; borderRadius: string
+  fontSize: string; fontWeight: string
+  display: string; flexDirection: string; gap: string
+  border: string; boxShadow: string
 }
 
-function buildJiraTicket(name: string): string {
-  return `Summary: [Design System] Add ${name} component
+function extractStyles(el: Element): CapturedStyles {
+  const s = window.getComputedStyle(el)
+  const rect = el.getBoundingClientRect()
+  return {
+    width:           Math.round(rect.width),
+    height:          Math.round(rect.height),
+    backgroundColor: s.backgroundColor,
+    color:           s.color,
+    padding:         s.padding,
+    borderRadius:    s.borderRadius,
+    fontSize:        s.fontSize,
+    fontWeight:      s.fontWeight,
+    display:         s.display,
+    flexDirection:   s.flexDirection,
+    gap:             s.gap,
+    border:          s.border,
+    boxShadow:       s.boxShadow,
+  }
+}
+
+function buildFigmaMcpPrompt(name: string, styles: CapturedStyles | null, screenshotDataUrl: string | null): string {
+  const figmaKey = config.figmaFileKey || '<your-figma-file-key>'
+
+  const styleBlock = styles ? `
+Measured from the live rendered component:
+  - Size:             ${styles.width}px × ${styles.height}px
+  - Background:       ${styles.backgroundColor}
+  - Text color:       ${styles.color}
+  - Padding:          ${styles.padding}
+  - Border radius:    ${styles.borderRadius}
+  - Font:             ${styles.fontSize} / weight ${styles.fontWeight}
+  - Layout:           display: ${styles.display}${styles.display === 'flex' ? `, flex-direction: ${styles.flexDirection}, gap: ${styles.gap}` : ''}
+  - Border:           ${styles.border !== 'none' ? styles.border : 'none'}
+  - Shadow:           ${styles.boxShadow !== 'none' ? styles.boxShadow : 'none'}` : ''
+
+  const screenshotNote = screenshotDataUrl
+    ? `\nA screenshot of the rendered component is attached — use it as the visual reference.\n`
+    : ''
+
+  return `Using the Figma MCP, create a new component called "${name}" in the design file (key: ${figmaKey}).
+${screenshotNote}${styleBlock}
+
+Instructions:
+1. Navigate to the component library page in the Figma file
+2. Create a new component frame named "${name}" with the exact dimensions above
+3. Recreate the visual layout using the measured styles as a starting point
+4. Replace raw CSS values with the nearest design tokens:
+   - Map background/text colors → ds-color-* variables
+   - Map padding/gap values → ds-spacing-* tokens (8px grid)
+   - Map border-radius → ds-border-radius-* tokens
+5. Add component description: "Promoted from Drift — was a custom gap component"
+6. Publish to the component library
+
+After Figma is done:
+- Implement in src/stories/${name}.tsx using the Figma component as spec
+- Add src/stories/${name}.stories.ts
+- Register in src/ds-coverage/config.ts so Drift tracks it`
+}
+
+function buildJiraTicket(name: string, styles: CapturedStyles | null): string {
+  const sizeNote = styles ? ` (${styles.width}×${styles.height}px, detected live in the app)` : ''
+  return `Summary: [Design System] Promote ${name} to DS component
 
 Type: Design Task
 Priority: Medium
-Labels: design-system, drift
+Labels: design-system, drift, needs-design
 
 Description:
-The component \`${name}\` was detected by Drift as a custom component not in the design system. It is currently rendering in the app as a one-off and should be promoted to a proper DS component.
+Drift detected \`${name}\`${sizeNote} as a custom component not in the design system. It is rendering as a one-off and needs to be properly designed and added to the component library.
+
+Measured styles (from live render):
+${styles ? `  background: ${styles.backgroundColor}
+  color: ${styles.color}
+  size: ${styles.width}×${styles.height}px
+  padding: ${styles.padding}
+  border-radius: ${styles.borderRadius}` : '  (attach screenshot)'}
 
 Steps:
-1. Design \`${name}\` in Figma following DS tokens and guidelines
+1. Design \`${name}\` in Figma using DS tokens and the measured values above
 2. Implement in src/stories/${name}.tsx
 3. Add Storybook story (${name}.stories.ts)
 4. Register in src/ds-coverage/config.ts
-5. Verify Drift coverage increases on next scan
+5. Verify Drift coverage improves on next PR scan
 
 Acceptance Criteria:
-- [ ] Component designed in Figma with design tokens
-- [ ] Component built and documented in Storybook
-- [ ] Registered in Drift — coverage impact confirmed
-- [ ] PR passes drift-check CI`
+- [ ] Component designed in Figma with proper DS tokens
+- [ ] Storybook story added and published
+- [ ] Registered in Drift — coverage delta confirmed in PR comment
+- [ ] drift-check CI passes`
 }
 
 const GapActionPanel = ({ component }: { component: ScannedComponent }) => {
   const C = useC()
-  const [copied, setCopied] = useState<'figma' | 'jira' | null>(null)
+  const [captureState, setCaptureState] = useState<'idle' | 'capturing' | 'ready'>('idle')
+  const [screenshot, setScreenshot]     = useState<string | null>(null)
+  const [styles, setStyles]             = useState<CapturedStyles | null>(null)
+  const [copied, setCopied]             = useState<'figma' | 'jira' | null>(null)
+  const [showPreview, setShowPreview]   = useState(false)
+
+  const capture = useCallback(async () => {
+    const el = component.element as HTMLElement | null
+    if (!el) return
+    setCaptureState('capturing')
+    try {
+      const extracted = extractStyles(el)
+      setStyles(extracted)
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+      })
+      setScreenshot(canvas.toDataURL('image/png'))
+      setCaptureState('ready')
+      setShowPreview(true)
+    } catch {
+      setCaptureState('ready') // still show prompt with styles even if screenshot fails
+    }
+  }, [component.element])
+
+  // Auto-capture on mount
+  useEffect(() => {
+    capture()
+  }, [capture])
 
   const copy = (text: string, type: 'figma' | 'jira') => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(type)
-      setTimeout(() => setCopied(null), 2000)
+      setTimeout(() => setCopied(null), 2200)
     })
   }
 
-  const actions: { key: 'figma' | 'jira'; icon: string; label: string; sub: string; color: string; bg: string; border: string; text: () => string }[] = [
-    {
-      key: 'figma',
-      icon: '◈',
-      label: 'Create in Figma',
-      sub: 'Copy MCP prompt → paste into Cursor or Claude',
-      color: '#7c3aed',
-      bg: 'rgba(124,58,237,0.08)',
-      border: 'rgba(124,58,237,0.25)',
-      text: () => buildFigmaMcpPrompt(component.name),
-    },
-    {
-      key: 'jira',
-      icon: '🎟',
-      label: 'Create Jira ticket',
-      sub: 'Copy pre-filled design request for your UX team',
-      color: '#4f8ef7',
-      bg: 'rgba(79,142,247,0.08)',
-      border: 'rgba(79,142,247,0.25)',
-      text: () => buildJiraTicket(component.name),
-    },
-  ]
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 0 8px' }}>
-      <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>
-        This component isn't in the design system yet. Choose how to track it:
+      <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>
+        Not in the design system — choose how to track it:
       </div>
-      {actions.map(a => (
+
+      {/* Screenshot preview */}
+      {captureState === 'capturing' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0', fontSize: 11, color: C.muted }}>
+          <span style={{ animation: 'dd-spin 1s linear infinite', display: 'inline-block' }}>⟳</span>
+          Capturing component…
+        </div>
+      )}
+      {screenshot && showPreview && (
+        <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: `1px solid ${C.panelBorder}` }}>
+          <img src={screenshot} alt={component.name} style={{ width: '100%', display: 'block', maxHeight: 140, objectFit: 'cover', objectPosition: 'top' }} />
+          <div style={{
+            position: 'absolute', top: 6, right: 6,
+            background: 'rgba(0,0,0,0.55)', borderRadius: 4, padding: '2px 6px',
+            fontSize: 10, color: '#fff', fontFamily: 'Inter, sans-serif',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}>
+            <span style={{ opacity: 0.7 }}>live capture</span>
+            <button
+              onClick={() => { const a = document.createElement('a'); a.href = screenshot!; a.download = `${component.name}.png`; a.click() }}
+              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 0, fontSize: 10, opacity: 0.8 }}
+              title="Download screenshot"
+            >⬇</button>
+          </div>
+          {styles && (
+            <div style={{
+              padding: '6px 10px',
+              background: C.panel,
+              fontSize: 10, color: C.muted, fontFamily: 'monospace',
+              display: 'flex', gap: 12, flexWrap: 'wrap',
+            }}>
+              <span>{styles.width}×{styles.height}px</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: styles.backgroundColor, border: `1px solid ${C.panelBorder}`, display: 'inline-block' }} />
+                bg
+              </span>
+              <span>r:{styles.borderRadius}</span>
+              <span>p:{styles.padding}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Action buttons */}
+      {([
+        {
+          key: 'figma' as const,
+          Icon: () => <FigmaIcon size={16} />,
+          label: 'Create in Figma',
+          sub: captureState === 'ready' ? 'Prompt includes live dimensions + colors' : 'Copy MCP prompt → paste into Cursor or Claude',
+          color: '#7c3aed',
+          bg: 'rgba(124,58,237,0.08)',
+          border: 'rgba(124,58,237,0.25)',
+          text: () => buildFigmaMcpPrompt(component.name, styles, screenshot),
+        },
+        {
+          key: 'jira' as const,
+          Icon: () => <JiraIcon size={16} />,
+          label: 'Create Jira ticket',
+          sub: captureState === 'ready' ? 'Includes measured size + colors for the UX brief' : 'Copy pre-filled design request for your UX team',
+          color: '#2684FF',
+          bg: 'rgba(38,132,255,0.08)',
+          border: 'rgba(38,132,255,0.25)',
+          text: () => buildJiraTicket(component.name, styles),
+        },
+      ] as const).map(a => (
         <button
           key={a.key}
           onClick={() => copy(a.text(), a.key)}
           style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
+            padding: '9px 12px', borderRadius: 8, cursor: 'pointer',
             background: copied === a.key ? a.bg : 'transparent',
             border: `1px solid ${copied === a.key ? a.border : C.panelBorder}`,
             textAlign: 'left', width: '100%',
@@ -1280,7 +1441,7 @@ const GapActionPanel = ({ component }: { component: ScannedComponent }) => {
           onMouseEnter={e => { if (copied !== a.key) { (e.currentTarget as HTMLButtonElement).style.background = a.bg; (e.currentTarget as HTMLButtonElement).style.borderColor = a.border } }}
           onMouseLeave={e => { if (copied !== a.key) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = C.panelBorder } }}
         >
-          <span style={{ fontSize: 18, lineHeight: 1, color: a.color, flexShrink: 0 }}>{a.icon}</span>
+          <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}><a.Icon /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: copied === a.key ? a.color : C.text }}>
               {copied === a.key ? '✓ Copied to clipboard' : a.label}
