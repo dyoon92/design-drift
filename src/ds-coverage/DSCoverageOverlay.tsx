@@ -3740,7 +3740,7 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const inInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target as HTMLElement)?.isContentEditable
-      if (e.key === 'Escape') { setInspectMode(false); setInspected(null); return }
+      if (e.key === 'Escape') { if (inspected) { setInspected(null) } else { handleClosePanel() } return }
       if (inInput || e.ctrlKey || e.metaKey || e.altKey) return
       if (e.key === 'd' || e.key === 'D') { e.preventDefault(); setVisible(v => !v) }
     }
@@ -4042,7 +4042,7 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
                 onPromoted={handlePromoted}
               />
             ) : inspected ? (
-              <PropsPanel component={inspected} onClose={() => { setInspected(null); setInspectMode(false) }} apiKey={apiKey} />
+              <PropsPanel component={inspected} onClose={() => setInspected(null)} apiKey={apiKey} />
             ) : (
               <SummaryPanel
                 components={components} tokenViolations={tokenViolations} history={history}

@@ -247,7 +247,8 @@ jobs:
       # ── Fail CI if below absolute threshold (when DRIFT_STRICT=true) ───────────
       - name: Fail if below threshold
         if: vars.DRIFT_STRICT == 'true'
-        run: node -e "const r=require('./drift-report.json'); process.exit(r.passed ? 0 : 1)"
+        run: |
+          node -e "const r=require('./drift-report.json'); process.exit(r.passed ? 0 : 1)"
 
       # ── Fail CI if PR drops coverage more than DRIFT_MAX_DROP ────────────────
       # DRIFT_MAX_DROP=5  → block any PR that drops coverage by more than 5%
