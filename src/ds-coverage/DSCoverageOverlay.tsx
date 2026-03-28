@@ -1359,6 +1359,7 @@ const GapActionPanel = ({ component }: { component: ScannedComponent }) => {
     const el = component.element as HTMLElement | null
     if (!el) return
     setCaptureState('capturing')
+    document.body.setAttribute('data-dd-capturing', 'true')
     try {
       const extracted = extractStyles(el)
       setStyles(extracted)
@@ -1373,6 +1374,8 @@ const GapActionPanel = ({ component }: { component: ScannedComponent }) => {
       setShowPreview(true)
     } catch {
       setCaptureState('ready') // still show prompt with styles even if screenshot fails
+    } finally {
+      document.body.removeAttribute('data-dd-capturing')
     }
   }, [component.element])
 
@@ -1389,7 +1392,7 @@ const GapActionPanel = ({ component }: { component: ScannedComponent }) => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 0 8px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 16px 12px', borderTop: `1px solid ${C.panelBorder}` }}>
       <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>
         Not in the design system — choose how to track it:
       </div>
@@ -1501,9 +1504,11 @@ const ComponentActionsBar = ({ component }: { component: ScannedComponent }) => 
     if (!el) { setCapturing(false); return }
     const extracted = extractStyles(el)
     setStyles(extracted)
+    document.body.setAttribute('data-dd-capturing', 'true')
     html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null, logging: false })
       .then(canvas => { setScreenshot(canvas.toDataURL('image/png')); setCapturing(false) })
       .catch(() => setCapturing(false))
+      .finally(() => document.body.removeAttribute('data-dd-capturing'))
   }, [component.element])
 
   const copyJira = () => {
@@ -3832,6 +3837,8 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
       // re-rendering the overlay boxes triggers another scan → infinite loop.
       // Must check instanceof Element first: text nodes don't have .closest(),
       // and optional chaining returns undefined → !undefined = true (false positive).
+      // Ignore mutations triggered by html2canvas DOM cloning
+      if (document.body.hasAttribute('data-dd-capturing')) return
       const appMutation = mutations.some(m => {
         const el = m.target instanceof Element ? m.target : (m.target as Node).parentElement
         return !el?.closest('[data-ds-overlay]')
