@@ -3889,7 +3889,7 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
                 onPromoted={handlePromoted}
               />
             ) : inspected ? (
-              <PropsPanel component={inspected} onClose={() => setInspected(null)} apiKey={apiKey} />
+              <PropsPanel component={inspected} onClose={() => { setInspected(null); setInspectMode(false) }} apiKey={apiKey} />
             ) : (
               <SummaryPanel
                 components={components} tokenViolations={tokenViolations} history={history}
