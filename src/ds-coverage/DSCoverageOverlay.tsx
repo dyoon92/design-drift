@@ -17,6 +17,7 @@ import { scanFiberTree, hashComponents, type ScannedComponent } from './fiberSca
 import { DS_STORY_PATHS, DS_FIGMA_LINKS, DS_COMPONENTS, STORYBOOK_URL, config } from './manifest'
 import { scanTokenViolations, getColorViolationsInSubtree, type TokenViolation, type DriftViolation, type DriftViolationType } from './tokenChecker'
 import { SetupWizard } from './SetupWizard'
+import { PromotePanel } from './PromotePanel'
 
 const SB_BASE         = STORYBOOK_URL
 const BADGE_H         = 19
@@ -1634,10 +1635,13 @@ interface PanelProps {
   onDriftFix: (name: string, violations: DriftViolation[]) => void
   onClose: () => void
   onSetup: () => void
+  promotedComponents: Set<string>
+  onPromote: (name: string, count: number) => void
 }
 
 const SummaryPanel = (p: PanelProps) => {
-  const C            = useC()
+  const C                    = useC()
+  const { promotedComponents, onPromote } = p
   const [tab,        setTab]       = useState<Tab>('overview')
   const [exported,   setExported]  = useState(false)
   const [mdCopied,   setMdCopied]  = useState(false)
@@ -2611,10 +2615,12 @@ const SummaryPanel = (p: PanelProps) => {
                     }}
                   />
                   {gaps.filter(([name]) => !p.gapFilter || name.toLowerCase().includes(p.gapFilter.toLowerCase())).map(([name, count]) => {
-                    const suggestion = p.suggestions[name]
-                    const gapProps   = p.components.find(c => c.name === name)?.fiber?.memoizedProps ?? {}
-                    const isFrequent = count >= PROMOTE_MIN
-                    const isHovered  = p.hoveredGap === name
+                    const suggestion   = p.suggestions[name]
+                    const gapProps     = p.components.find(c => c.name === name)?.fiber?.memoizedProps ?? {}
+                    const isFrequent   = count >= PROMOTE_MIN
+                    const isPromotable = count >= 3
+                    const isPromoted   = promotedComponents.has(name)
+                    const isHovered    = p.hoveredGap === name
                     return (
                       <div key={name}
                         onMouseEnter={() => p.onHoverGap(name)}
@@ -2629,6 +2635,9 @@ const SummaryPanel = (p: PanelProps) => {
                         <div style={{ padding: '10px 12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                              {isFrequent && (
+                                <span title="High frequency — strong DS candidate" style={{ fontSize: 10, color: '#f59e0b', flexShrink: 0 }}>⬆</span>
+                              )}
                               <span style={{ fontSize: 12, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
                               {isFrequent && (
                                 <span title={`Used ${count} times — worth adding to your design system`}
@@ -2637,14 +2646,40 @@ const SummaryPanel = (p: PanelProps) => {
                                 </span>
                               )}
                             </div>
-                            <span title={`Renders ${count} time${count !== 1 ? 's' : ''} on this page`}
-                              style={{
-                                fontSize: 10, fontWeight: 600, fontFamily: 'monospace',
-                                color: C.red, background: `${C.red}14`,
-                                padding: '2px 8px', borderRadius: 4, flexShrink: 0,
-                              }}>
-                              ×{count}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                              {isPromotable && !isPromoted && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); onPromote(name, count) }}
+                                  title="Promote to design system"
+                                  style={{
+                                    fontSize: 10, padding: '2px 7px', borderRadius: 4,
+                                    background: 'transparent', border: `1px solid ${C.blue}`,
+                                    color: C.blue, cursor: 'pointer',
+                                    fontFamily: 'Inter, sans-serif', fontWeight: 600,
+                                    lineHeight: 1.4,
+                                  }}
+                                >
+                                  ↑ Promote
+                                </button>
+                              )}
+                              {isPromoted && (
+                                <span style={{
+                                  fontSize: 10, padding: '2px 7px', borderRadius: 4,
+                                  color: '#34d399', fontWeight: 600,
+                                  fontFamily: 'Inter, sans-serif',
+                                }}>
+                                  ✓ in DS
+                                </span>
+                              )}
+                              <span title={`Renders ${count} time${count !== 1 ? 's' : ''} on this page`}
+                                style={{
+                                  fontSize: 10, fontWeight: 600, fontFamily: 'monospace',
+                                  color: C.red, background: `${C.red}14`,
+                                  padding: '2px 8px', borderRadius: 4,
+                                }}>
+                                ×{count}
+                              </span>
+                            </div>
                           </div>
                           <div style={{ fontSize: 10, color: C.muted, marginTop: 5 }}>
                             Not in your design system
@@ -3103,6 +3138,25 @@ export function DSCoverageOverlay() {
   const [driftFixes,     setDriftFixes]     = useState<Record<string, Suggestion>>({})
   const [isCached,       setIsCached]       = useState(false)
 
+  // ─── Promote-to-DS state ─────────────────────────────────────────────────
+  const [promotingComponent, setPromotingComponent] = useState<{ name: string; count: number } | null>(null)
+  const [promotedComponents, setPromotedComponents] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('drift-promoted-components')
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set()
+    } catch { return new Set() }
+  })
+
+  const handlePromoted = useCallback((name: string) => {
+    setPromotedComponents(prev => {
+      const next = new Set(prev)
+      next.add(name)
+      localStorage.setItem('drift-promoted-components', JSON.stringify([...next]))
+      return next
+    })
+    setPromotingComponent(null)
+  }, [])
+
   const [hoverComp,       setHoverComp]       = useState<ScannedComponent | null>(null)
   const [hoverPos,        setHoverPos]        = useState<{ x: number; y: number } | null>(null)
   const [hoveredViolation, setHoveredViolation] = useState<TokenViolation | null>(null)
@@ -3549,6 +3603,15 @@ export function DSCoverageOverlay() {
           }}>
             {showSetup ? (
               <SetupWizard onDone={() => setShowSetup(false)} />
+            ) : promotingComponent ? (
+              <PromotePanel
+                componentName={promotingComponent.name}
+                count={promotingComponent.count}
+                figmaFileKey={config.figmaFileKey ?? ''}
+                storybookUrl={config.storybookUrl ?? 'http://localhost:6006'}
+                onClose={() => setPromotingComponent(null)}
+                onPromoted={handlePromoted}
+              />
             ) : inspected ? (
               <PropsPanel component={inspected} onClose={() => setInspected(null)} apiKey={apiKey} />
             ) : (
@@ -3571,6 +3634,8 @@ export function DSCoverageOverlay() {
                 onDriftFix={handleDriftFix}
                 onClose={handleClosePanel}
                 onSetup={() => setShowSetup(true)}
+                promotedComponents={promotedComponents}
+                onPromote={(name, count) => setPromotingComponent({ name, count })}
               />
             )}
           </div>

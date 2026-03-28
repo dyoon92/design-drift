@@ -543,6 +543,7 @@ const FEATURES = [
   { icon: '⚡', color: C.purple, title: 'PR drift delta',             body: 'Every PR shows what drifted in that change — before anyone reviews.' },
   { icon: '✦', color: C.green,  title: 'AI rules export',            body: 'Generates CLAUDE.md and .cursorrules from your component registry — tells Cursor and Claude what exists and which tokens to use.' },
   { icon: '⬚', color: C.pink,   title: 'Page scaffold generator',    body: 'Describe a screen. Get React built from only your registered DS components — zero drift on day one.' },
+  { icon: '↑',  color: C.amber, title: 'Promote to DS',               body: 'Component appeared 8× but isn\'t in your system? One click generates the Cursor prompt to build it properly from Figma — then Drift tracks it.' },
   { icon: '⟳', color: C.orange, title: 'Token violation flagging',   body: 'Catches hardcoded hex before it ships. Every violation is flagged with the correct CSS variable.' },
 ]
 
