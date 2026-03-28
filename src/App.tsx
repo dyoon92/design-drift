@@ -1,6 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import './tokens/variables.css'
 import { DSCoverageOverlay } from './ds-coverage/DSCoverageOverlay'
 import { GuidedTour } from './landing/GuidedTour'
+import { Tabs } from './stories/Tabs'
+import { OccupancyWidget, RevenueWidget, NetMoveInsWidget, LeadsWidget, PastDueWidget, UnitStatusWidget, ProtectionAutopayWidget, ECRIWidget } from './stories/DashboardWidgets'
+import { FMKPIRow, PriorityTasksPanel, RecentCommunicationsPanel, GoalTrackerPanel, DelinquenciesPanel, GoogleReviewsPanel, PromotionsPanel } from './stories/FMDashboardWidgets'
+import { TenantsTable } from './stories/TenantsTable'
+import { TenantPageHeader } from './stories/TenantPageHeader'
+import { PaymentBanner } from './stories/PaymentBanner'
+import { TenantInfoCard } from './stories/TenantInfoCard'
+import { CommunicationsPanel } from './stories/CommunicationsPanel'
+import { UnitDetailsCard } from './stories/UnitDetailsCard'
+import { Navbar, Sidebar } from './stories/AppNav'
+import type { NavId } from './stories/AppNav'
+
+// ─── Hooks ────────────────────────────────────────────────────────────────────
 
 function useWindowWidth() {
   const [width, setWidth] = useState(window.innerWidth)
@@ -11,10 +25,8 @@ function useWindowWidth() {
   }, [])
   return width
 }
-import { Tabs } from './stories/Tabs'
 
 // ─── Placeholder ──────────────────────────────────────────────────────────────
-// Used when a component has not yet been designed in Figma + added to src/stories/
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -35,17 +47,6 @@ function Placeholder({ name }: { name: string }) {
     </div>
   )
 }
-import '../src/tokens/variables.css'
-import { OccupancyWidget, RevenueWidget, NetMoveInsWidget, LeadsWidget, PastDueWidget, UnitStatusWidget, ProtectionAutopayWidget, ECRIWidget } from './stories/DashboardWidgets'
-import { FMKPIRow, PriorityTasksPanel, RecentCommunicationsPanel, GoalTrackerPanel, DelinquenciesPanel, GoogleReviewsPanel, PromotionsPanel } from './stories/FMDashboardWidgets'
-import { TenantsTable } from './stories/TenantsTable'
-import { TenantPageHeader } from './stories/TenantPageHeader'
-import { PaymentBanner } from './stories/PaymentBanner'
-import { TenantInfoCard } from './stories/TenantInfoCard'
-import { CommunicationsPanel } from './stories/CommunicationsPanel'
-import { UnitDetailsCard } from './stories/UnitDetailsCard'
-import { Navbar, Sidebar } from './stories/AppNav'
-import type { NavId } from './stories/AppNav'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,6 +70,7 @@ interface TenantRecord {
 }
 
 // ─── Sample data ──────────────────────────────────────────────────────────────
+// TODO: replace with API call — GET /api/tenants
 
 const TENANTS: TenantRecord[] = [
   {
@@ -147,20 +149,21 @@ const TENANTS: TenantRecord[] = [
   },
 ]
 
-
-
-
 // ─── Tenant detail view ───────────────────────────────────────────────────────
 
-function TenantDetail({ tenant, onBack }: { tenant: TenantRecord; onBack: () => void }) {
+const TENANT_TABS: { key: ActiveTab; label: string }[] = [
+  { key: 'overview',   label: 'Overview'   },
+  { key: 'billing',    label: 'Billing'    },
+  { key: 'documents',  label: 'Documents'  },
+  { key: 'access',     label: 'Access'     },
+  { key: 'renewal',    label: 'Renewal'    },
+]
+
+function TenantDetail({ tenant, onBack, isMobile }: { tenant: TenantRecord; onBack: () => void; isMobile: boolean }) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
-  const tabs: ActiveTab[] = ['overview', 'billing', 'documents', 'access', 'renewal']
-  const width = useWindowWidth()
-  const isMobile = width < 768
 
   return (
     <div style={{ padding: isMobile ? '12px 12px 20px' : '20px 20px 24px' }}>
-      {/* Header card */}
       <TenantPageHeader
         name={tenant.name}
         email={tenant.email}
@@ -174,16 +177,14 @@ function TenantDetail({ tenant, onBack }: { tenant: TenantRecord; onBack: () => 
         onBack={onBack}
       />
 
-      {/* Tab bar — Tabs component from Figma node 8107-365538 */}
       <div style={{ margin: '16px 0', overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
         <Tabs
-          tabs={tabs.map(t => ({ key: t, label: t.charAt(0).toUpperCase() + t.slice(1) }))}
+          tabs={TENANT_TABS}
           activeKey={activeTab}
           onTabChange={key => setActiveTab(key as ActiveTab)}
         />
       </div>
 
-      {/* PaymentBanner */}
       {activeTab !== 'renewal' && (
         <div style={{ marginBottom: 16 }}>
           <PaymentBanner
@@ -198,7 +199,6 @@ function TenantDetail({ tenant, onBack }: { tenant: TenantRecord; onBack: () => 
         </div>
       )}
 
-      {/* Content */}
       <div>
         {activeTab === 'overview' && (
           <div style={{
@@ -207,7 +207,6 @@ function TenantDetail({ tenant, onBack }: { tenant: TenantRecord; onBack: () => 
             gap: 20,
             alignItems: 'flex-start',
           }}>
-            {/* Left column */}
             <div style={{
               flex: isMobile ? 'none' : '0 0 520px',
               width: isMobile ? '100%' : undefined,
@@ -223,35 +222,22 @@ function TenantDetail({ tenant, onBack }: { tenant: TenantRecord; onBack: () => 
               />
               <TenantInfoCard
                 details={[
-                  { label: 'Name', value: tenant.name },
-                  { label: 'Email', value: tenant.email },
-                  { label: 'Phone', value: tenant.phone },
-                  { label: 'Lease end', value: tenant.leaseEnd },
+                  { label: 'Name',      value: tenant.name      },
+                  { label: 'Email',     value: tenant.email     },
+                  { label: 'Phone',     value: tenant.phone     },
+                  { label: 'Lease end', value: tenant.leaseEnd  },
                 ]}
               />
             </div>
-            {/* Right column — Communications */}
             <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined }}>
               <CommunicationsPanel />
             </div>
           </div>
         )}
 
-        {activeTab === 'billing' && (
+        {(activeTab === 'billing' || activeTab === 'documents' || activeTab === 'access') && (
           <div style={{ padding: 24, background: 'white', borderRadius: 'var(--ds-border-radius-lg)', border: '1px solid var(--ds-color-border)', color: 'var(--ds-color-text-muted)', fontSize: 14 }}>
-            Billing history coming soon
-          </div>
-        )}
-
-        {activeTab === 'documents' && (
-          <div style={{ padding: 24, background: 'white', borderRadius: 'var(--ds-border-radius-lg)', border: '1px solid var(--ds-color-border)', color: 'var(--ds-color-text-muted)', fontSize: 14 }}>
-            Documents coming soon
-          </div>
-        )}
-
-        {activeTab === 'access' && (
-          <div style={{ padding: 24, background: 'white', borderRadius: 'var(--ds-border-radius-lg)', border: '1px solid var(--ds-color-border)', color: 'var(--ds-color-text-muted)', fontSize: 14 }}>
-            Access log coming soon
+            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} coming soon
           </div>
         )}
 
@@ -271,33 +257,34 @@ const ChevronDownIcon = () => (
 
 type DashMode = 'portfolio' | 'facility'
 
-function DashboardView() {
-  const width = useWindowWidth()
-  const isMobile = width < 768
+const DASH_MODES: { value: DashMode; label: string }[] = [
+  { value: 'portfolio', label: 'Portfolio Owner'   },
+  { value: 'facility',  label: 'Facility Manager'  },
+]
+
+function DashboardView({ isMobile }: { isMobile: boolean }) {
   const gap = 20
   const [mode, setMode] = useState<DashMode>('portfolio')
 
   return (
     <div style={{ padding: isMobile ? '12px 12px 32px' : '20px 20px 40px', fontFamily: 'Inter, system-ui, sans-serif' }}>
-      {/* Page header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--ds-color-text-primary)' }}>Dashboard</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Role toggle — segmented control matching Figma node 8104-364225 */}
           <div style={{ display: 'flex', gap: 1, background: 'var(--ds-color-border)', borderRadius: 8, padding: 1 }}>
-            {(['portfolio', 'facility'] as DashMode[]).map((m) => (
+            {DASH_MODES.map(({ value, label }) => (
               <button
-                key={m}
-                onClick={() => setMode(m)}
+                key={value}
+                onClick={() => setMode(value)}
                 style={{
                   padding: '5px 16px', border: 'none', borderRadius: 7, cursor: 'pointer',
                   fontFamily: 'Inter, sans-serif', fontSize: 12,
-                  fontWeight: mode === m ? 600 : 500,
-                  color: mode === m ? 'var(--ds-color-primary)' : 'var(--ds-color-text-muted)',
-                  background: mode === m ? 'var(--ds-color-primary-light)' : 'var(--ds-color-surface)',
+                  fontWeight: mode === value ? 600 : 500,
+                  color: mode === value ? 'var(--ds-color-primary)' : 'var(--ds-color-text-muted)',
+                  background: mode === value ? 'var(--ds-color-primary-light)' : 'var(--ds-color-surface)',
                   whiteSpace: 'nowrap', letterSpacing: 0.24,
                 }}
-              >{m === 'portfolio' ? 'Portfolio Owner' : 'Facility Manager'}</button>
+              >{label}</button>
             ))}
           </div>
           <button style={{
@@ -314,20 +301,15 @@ function DashboardView() {
 
       {mode === 'portfolio' ? (
         <>
-          {/* Row 1: Occupancy + Revenue (equal width) */}
           <div style={{ display: 'flex', gap, marginBottom: gap, flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch' }}>
             <div style={{ flex: 1, minWidth: 0 }}><OccupancyWidget /></div>
             <div style={{ flex: 1, minWidth: 0 }}><RevenueWidget /></div>
           </div>
-
-          {/* Row 2: Net Move-Ins | Leads | Past Due */}
           <div style={{ display: 'flex', gap, marginBottom: gap, flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch' }}>
             <div style={{ flex: 1, minWidth: 0 }}><NetMoveInsWidget /></div>
             <div style={{ flex: 1, minWidth: 0 }}><LeadsWidget /></div>
             <div style={{ flex: 1, minWidth: 0 }}><PastDueWidget /></div>
           </div>
-
-          {/* Row 3: Unit Status | Protection+Autopay stacked | ECRI stacked */}
           <div style={{ display: 'flex', gap, flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch' }}>
             <div style={{ flex: 1, minWidth: 0 }}><UnitStatusWidget /></div>
             <div style={{ flex: 1, minWidth: 0 }}><ProtectionAutopayWidget /></div>
@@ -336,18 +318,13 @@ function DashboardView() {
         </>
       ) : (
         <>
-          {/* FM: KPI row */}
           <FMKPIRow />
-
-          {/* FM: Two-column content */}
           <div style={{ display: 'flex', gap, flexDirection: isMobile ? 'column' : 'row', alignItems: 'flex-start' }}>
-            {/* Left column */}
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap }}>
               <PriorityTasksPanel />
               <RecentCommunicationsPanel />
               <GoalTrackerPanel />
             </div>
-            {/* Right column */}
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap }}>
               <DelinquenciesPanel />
               <GoogleReviewsPanel />
@@ -363,23 +340,23 @@ function DashboardView() {
 // ─── Tenants list view ────────────────────────────────────────────────────────
 
 function TenantsView({ onSelectTenant }: { onSelectTenant: (id: string) => void }) {
-  const mappedTenants = TENANTS.map(t => ({
+  const rows = useMemo(() => TENANTS.map(t => ({
     id: t.id,
     name: t.name,
     unit: t.unit,
-    status: (t.paymentStatus === 'balance-due' || t.paymentStatus === 'updated'
-      ? 'overdue'
-      : t.paymentStatus === 'move-out'
-      ? 'move-out'
-      : 'good-standing') as 'overdue' | 'good-standing' | 'move-out' | 'past',
+    status: (
+      t.paymentStatus === 'balance-due' || t.paymentStatus === 'updated' ? 'overdue'
+      : t.paymentStatus === 'move-out' ? 'move-out'
+      : 'good-standing'
+    ) as 'overdue' | 'good-standing' | 'move-out' | 'past',
     moveInDate: t.moveInDate,
     balance: t.balance,
     recServices: t.autopay,
-  }))
+  })), [])
 
   return (
     <TenantsTable
-      tenants={mappedTenants}
+      tenants={rows}
       onRowClick={onSelectTenant}
       onAddTenant={() => {}}
     />
@@ -389,26 +366,24 @@ function TenantsView({ onSelectTenant }: { onSelectTenant: (id: string) => void 
 // ─── App shell ────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [nav, setNav] = useState<NavId>('dashboard')
+  const [nav, setNav]                     = useState<NavId>('dashboard')
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null)
-  const [darkMode, setDarkMode] = useState(false)
-  const [showTour, setShowTour] = useState(true)
-  const width = useWindowWidth()
-  const isMobile = width < 768
+  const [darkMode, setDarkMode]           = useState(false)
+  const [showTour, setShowTour]           = useState(true)
 
-  const selectedTenant = TENANTS.find(t => t.id === selectedTenantId)
+  const isMobile = useWindowWidth() < 768
 
-  const handleNav = (id: NavId) => {
+  const selectedTenant = TENANTS.find(t => t.id === selectedTenantId) ?? null
+
+  const handleNav = useCallback((id: NavId) => {
     setNav(id)
     setSelectedTenantId(null)
-  }
+  }, [])
 
   return (
     <div data-theme={darkMode ? 'dark' : undefined} style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', fontFamily: 'Inter, system-ui, sans-serif', overflow: 'hidden' }}>
-      {/* Top navbar */}
       <Navbar facilityName="Sunrise Self Storage" userName="DY" tasksCount={24} darkMode={darkMode} onToggleDarkMode={() => setDarkMode(d => !d)} />
 
-      {/* Below navbar: sidebar + content — fills remaining height */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {!isMobile && (
           <Sidebar activeNav={nav} onNav={handleNav} userName="Dave Yoon" userEmail="dave@monumentai.com" />
@@ -416,13 +391,13 @@ export default function App() {
 
         <main style={{ flex: 1, minWidth: 0, background: 'var(--ds-color-page-bg)', overflowY: 'auto' }}>
           {selectedTenant ? (
-            <TenantDetail tenant={selectedTenant} onBack={() => setSelectedTenantId(null)} />
+            <TenantDetail tenant={selectedTenant} onBack={() => setSelectedTenantId(null)} isMobile={isMobile} />
           ) : nav === 'tenants' ? (
             <div style={{ padding: '20px 20px 24px' }}>
               <TenantsView onSelectTenant={setSelectedTenantId} />
             </div>
           ) : nav === 'dashboard' ? (
-            <DashboardView />
+            <DashboardView isMobile={isMobile} />
           ) : (
             <div style={{ color: 'var(--ds-color-text-muted)', fontSize: 14, marginTop: 40, textAlign: 'center' }}>
               Select <strong>Tenants</strong> or <strong>Dashboard</strong> from the sidebar to see the demo
@@ -435,7 +410,6 @@ export default function App() {
 
       {showTour && <GuidedTour onDismiss={() => setShowTour(false)} />}
 
-      {/* Bottom-left controls: back link + tour trigger */}
       <div style={{
         position: 'fixed', bottom: 16, left: 16, zIndex: 99995,
         display: 'flex', alignItems: 'center', gap: 8,

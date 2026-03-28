@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useId } from 'react'
 
 // ─── Animation keyframes (injected once) ──────────────────────────────────────
 const ANIM_CSS = `
@@ -151,11 +151,11 @@ const tooltipStyle: React.CSSProperties = {
 
 // Full line chart with y-axis + x-axis
 // NOTE: CSS custom properties do NOT resolve inside SVG gradient stopColor — use literal hex only
-let _chartCounter = 0
 const LineChart = ({ data, color, hexColor, yLabels, format }: {
   data: number[]; color: string; hexColor: string; yLabels: string[]; format?: (v: number) => string
 }) => {
-  const gradId = `lg-${++_chartCounter}`
+  const uid = useId()
+  const gradId = `lg-${uid}`
   const yW = 30, chartH = 100
   const [hovIdx, setHovIdx] = useState<number | null>(null)
   const pts = normalize(data, 500, chartH)
@@ -223,12 +223,12 @@ const LineChart = ({ data, color, hexColor, yLabels, format }: {
 }
 
 // Mini sparkline (no axes) — hexColor required for SVG gradient
-let _sparkCounter = 0
 const VB_H = 44
 const Sparkline = ({ data, color, hexColor, format }: {
   data: number[]; color: string; hexColor: string; format?: (v: number) => string
 }) => {
-  const gradId = `sp-${++_sparkCounter}`
+  const uid = useId()
+  const gradId = `sp-${uid}`
   const [hovIdx, setHovIdx] = useState<number | null>(null)
   const pts = normalize(data, 200, VB_H)
 
