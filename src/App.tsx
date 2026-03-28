@@ -47,6 +47,7 @@ function Placeholder({ name }: { name: string }) {
     </div>
   )
 }
+Placeholder.displayName = 'Placeholder'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -246,6 +247,7 @@ function TenantDetail({ tenant, onBack, isMobile }: { tenant: TenantRecord; onBa
     </div>
   )
 }
+TenantDetail.displayName = 'TenantDetail'
 
 // ─── Dashboard view ───────────────────────────────────────────────────────────
 
@@ -254,6 +256,7 @@ const ChevronDownIcon = () => (
     <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
+ChevronDownIcon.displayName = 'ChevronDownIcon'
 
 type DashMode = 'portfolio' | 'facility'
 
@@ -337,6 +340,7 @@ function DashboardView({ isMobile }: { isMobile: boolean }) {
     </div>
   )
 }
+DashboardView.displayName = 'DashboardView'
 
 // ─── Drift demo: intentional custom (non-DS) components ──────────────────────
 // These components were written by AI and are NOT in the design system.
@@ -432,6 +436,7 @@ function TenantsView({ onSelectTenant }: { onSelectTenant: (id: string) => void 
     </div>
   )
 }
+TenantsView.displayName = 'TenantsView'
 
 // ─── App shell ────────────────────────────────────────────────────────────────
 

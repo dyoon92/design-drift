@@ -69,7 +69,7 @@ type Colors = typeof THEMES['dark'] | typeof THEMES['light']
 
 const THEMES = {
   dark: {
-    green: '#22c55e', red: '#ef4444', yellow: '#f59e0b', blue: '#3b82f6', purple: '#a855f7', orange: '#f97316',
+    green: '#22c55e', red: '#ef4444', yellow: '#f59e0b', blue: '#3b82f6', purple: '#a855f7', orange: '#f59e0b',
     panel:          'rgba(13,16,25,0.97)',
     panelBorder:    'rgba(255,255,255,0.10)',
     text:           '#f1f5f9',
@@ -94,7 +94,7 @@ const THEMES = {
     inspectBorder:  '#3b82f6',
   },
   light: {
-    green: '#16a34a', red: '#dc2626', yellow: '#b45309', blue: '#2563eb', purple: '#7c3aed', orange: '#ea580c',
+    green: '#16a34a', red: '#dc2626', yellow: '#b45309', blue: '#2563eb', purple: '#7c3aed', orange: '#d97706',
     panel:          'rgba(253,250,245,0.98)',   // warm cream — stands out from white-bg apps
     panelBorder:    'rgba(120,90,40,0.10)',
     text:           '#1a1207',
@@ -3878,7 +3878,7 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
               : 'drift-slide-up 0.22s ease-out',
           }}>
             {showSetup ? (
-              <SetupWizard onDone={() => setShowSetup(false)} />
+              <SetupWizard onDone={() => setShowSetup(false)} onClose={() => setShowSetup(false)} theme={theme} />
             ) : promotingComponent ? (
               <PromotePanel
                 componentName={promotingComponent.name}

@@ -1,12 +1,8 @@
 /**
  * SetupWizard — first-run configuration wizard for Drift
- * ───────────────────────────────────────────────────────
- * Renders inside the overlay panel when 0 components are registered.
- * Guides the user through:
- *   1. Welcome
- *   2. Connect Storybook (auto-discover component names)
- *   3. Select which components are DS components
- *   4. Export config.ts snippet + CLAUDE.md content
+ * Supports two paths:
+ *   Designer/PM: Figma file key → MCP setup → Dev handoff
+ *   Developer:   Storybook URL → select components → export config
  */
 
 import React, { useState, useCallback } from 'react'
@@ -17,7 +13,6 @@ interface StorybookEntry {
   id: string
   title: string
   name: string
-  importPath?: string
 }
 
 interface StorybookIndex {
@@ -26,56 +21,65 @@ interface StorybookIndex {
 }
 
 interface DiscoveredComponent {
-  /** Display title, e.g. "Primitives/Button" → "Button" */
   displayName: string
-  /** Best-guess story ID for this component */
   storyPath: string
 }
 
-type WizardStep = 1 | 2 | 3 | 4 | 'manual'
+// Developer steps: 1=persona, 2=storybook, 3=select, 4=export, 'manual'=manual entry
+// Designer steps:  1=persona, 'd1'=figma, 'd2'=mcp, 'd3'=handoff
+type WizardStep = 1 | 2 | 3 | 4 | 'manual' | 'd1' | 'd2' | 'd3'
 type ExportTab = 'config' | 'claude'
 
-// ─── Color palette (matches overlay dark theme) ───────────────────────────────
+// ─── Theme-aware colors ───────────────────────────────────────────────────────
 
-const C = {
-  bg:      '#09090f',
-  surface: '#0f0f18',
-  border:  '#1e1e2e',
-  text:    '#eeeef4',
-  muted:   '#6b6b82',
-  blue:    '#4f8ef7',
-  green:   '#34d399',
-  orange:  '#fb923c',
-  red:     '#ef4444',
-} as const
+function makeColors(theme: 'dark' | 'light') {
+  if (theme === 'light') {
+    return {
+      bg:      'rgba(253,250,245,0.98)',
+      surface: '#f5f0e8',
+      border:  'rgba(120,90,40,0.13)',
+      text:    '#1a1207',
+      muted:   '#7a6a55',
+      blue:    '#2563eb',
+      green:   '#16a34a',
+      orange:  '#d97706',
+      red:     '#dc2626',
+      purple:  '#7c3aed',
+    }
+  }
+  return {
+    bg:      '#09090f',
+    surface: '#0f0f18',
+    border:  '#1e1e2e',
+    text:    '#eeeef4',
+    muted:   '#6b6b82',
+    blue:    '#4f8ef7',
+    green:   '#34d399',
+    orange:  '#f59e0b',
+    red:     '#ef4444',
+    purple:  '#a855f7',
+  }
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function extractDisplayName(title: string): string {
-  // "Primitives/Button" → "Button", "Shell/Navbar" → "Navbar", "Button" → "Button"
   const parts = title.split('/')
   return parts[parts.length - 1].trim()
 }
 
 function toIdentifier(name: string): string {
-  // "My Component" → "MyComponent"
   return name.replace(/[^a-zA-Z0-9]+(.)/g, (_, c: string) => c.toUpperCase())
-             .replace(/^[^a-zA-Z]/, '')
-             || name
+             .replace(/^[^a-zA-Z]/, '') || name
 }
 
-function buildConfigSnippet(
-  storybookUrl: string,
-  figmaFileKey: string,
-  selected: DiscoveredComponent[],
-): string {
+function buildConfigSnippet(storybookUrl: string, figmaFileKey: string, selected: DiscoveredComponent[]): string {
   const compLines = selected.map(c =>
     `    ${toIdentifier(c.displayName)}: { storyPath: '${c.storyPath}' },`
   ).join('\n')
-
   return `const config: DesignDriftConfig = {
   storybookUrl: '${storybookUrl}',
-  figmaFileKey: '${figmaFileKey}', // optional — add your Figma file key
+  figmaFileKey: '${figmaFileKey}', // optional — your Figma file key
   threshold: 80,
   components: {
     // Discovered from Storybook
@@ -90,7 +94,6 @@ function buildClaudeContent(selected: DiscoveredComponent[]): string {
   const tableRows = selected.map(c =>
     `| \`${toIdentifier(c.displayName)}\` | \`${c.storyPath}\` |`
   ).join('\n')
-
   return `# Design System Rules
 
 ## Available components (always use these — never invent custom UI)
@@ -108,35 +111,56 @@ ${tableRows}
 ## If a component is missing
 Use a \`<Placeholder>\` and output:
 ⚠️ Missing component: [ComponentName]
-This needs to be designed in Figma first before it can be built.
-Next step: file a design request so it can be added to the component library.`
+This needs to be designed in Figma first.`
+}
+
+function buildDevHandoff(figmaKey: string): string {
+  const figmaNote = figmaKey ? `\nFigma file key: ${figmaKey} (already added to config)` : ''
+  return `Hi! Can you set up Drift on our project? It tracks how much of our UI uses the design system — runs automatically on every PR.
+
+What you need to do:
+1. Copy src/ds-coverage/ into the project (or install via npm when available)
+2. Add to your app entry point (dev only):
+   import { DSCoverageOverlay } from './ds-coverage/DSCoverageOverlay'
+   {import.meta.env.DEV && <DSCoverageOverlay />}
+3. Connect Storybook URL in src/ds-coverage/config.ts${figmaNote}
+4. Push — the GitHub Action at .github/workflows/drift-check.yml runs automatically
+
+Takes about 5 minutes. Full docs: github.com/dyoon92/design-drift`
 }
 
 // ─── SetupWizard ─────────────────────────────────────────────────────────────
 
 export interface SetupWizardProps {
   onDone: () => void
+  onClose?: () => void
+  theme?: 'dark' | 'light'
 }
 
-export function SetupWizard({ onDone }: SetupWizardProps) {
+export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProps) {
+  const C = makeColors(theme)
   const [step, setStep] = useState<WizardStep>(1)
 
-  // Step 2
-  const [sbUrl, setSbUrl]       = useState('http://localhost:6006')
-  const [fetching, setFetching] = useState(false)
-  const [fetchErr, setFetchErr] = useState<string | null>(null)
+  // Developer path state
+  const [sbUrl, setSbUrl]           = useState('http://localhost:6006')
+  const [fetching, setFetching]     = useState(false)
+  const [fetchErr, setFetchErr]     = useState<string | null>(null)
   const [discovered, setDiscovered] = useState<DiscoveredComponent[]>([])
-
-  // Step 3
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-
-  // Step 4
-  const [figmaKey, setFigmaKey] = useState('')
-  const [activeTab, setActiveTab] = useState<ExportTab>('config')
+  const [selected, setSelected]     = useState<Set<string>>(new Set())
+  const [figmaKey, setFigmaKey]     = useState('')
+  const [activeTab, setActiveTab]   = useState<ExportTab>('config')
   const [configCopied, setConfigCopied] = useState(false)
   const [claudeCopied, setClaudeCopied] = useState(false)
 
-  // ─── Storybook discovery ──────────────────────────────────────────────────
+  // Designer path state
+  const [designerFigmaKey, setDesignerFigmaKey] = useState('')
+  const [mcpCopied, setMcpCopied]   = useState(false)
+  const [handoffCopied, setHandoffCopied] = useState(false)
+
+  // Manual entry
+  const [manualText, setManualText] = useState('')
+
+  // ─── Storybook discovery ────────────────────────────────────────────────
 
   const handleDiscover = useCallback(async () => {
     setFetching(true)
@@ -147,15 +171,14 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
       try {
         res = await fetch(`${url}/index.json`)
       } catch {
-        // Network error — connection refused or CORS preflight blocked
         setFetchErr(
-          `Can't reach ${url}. Check that Storybook is running and accessible from this page. ` +
-          `If Storybook is on a different port or domain, CORS may be blocking the request — use manual setup instead.`
+          `Can't reach ${url}. Make sure Storybook is running and accessible from this page. ` +
+          `If it's on a different port or domain, CORS may be blocking — use manual setup instead.`
         )
         return
       }
       if (res.status === 401 || res.status === 403) {
-        setFetchErr(`Storybook returned ${res.status} — it appears to be protected. Use manual setup to enter component names directly.`)
+        setFetchErr(`Storybook returned ${res.status} — it's protected. Use manual setup to enter component names directly.`)
         return
       }
       if (!res.ok) {
@@ -165,23 +188,17 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
       const data: StorybookIndex = await res.json()
       const entries = data.entries ?? data.stories ?? {}
       if (Object.keys(entries).length === 0) {
-        setFetchErr(`Connected to Storybook but found no stories. Make sure your stories are registered and the server has finished loading.`)
+        setFetchErr(`Connected but found no stories. Make sure your stories are registered and Storybook has finished loading.`)
         return
       }
-
-      // Group by title to get one entry per component
-      const byTitle = new Map<string, string>() // title → first storyId
+      const byTitle = new Map<string, string>()
       for (const [id, entry] of Object.entries(entries)) {
-        if (!byTitle.has(entry.title)) {
-          byTitle.set(entry.title, id)
-        }
+        if (!byTitle.has(entry.title)) byTitle.set(entry.title, id)
       }
-
       const comps: DiscoveredComponent[] = [...byTitle.entries()].map(([title, storyPath]) => ({
         displayName: extractDisplayName(title),
         storyPath,
       }))
-
       setDiscovered(comps)
       setSelected(new Set(comps.map(c => c.displayName)))
       setStep(3)
@@ -192,195 +209,311 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
     }
   }, [sbUrl])
 
-  // ─── Step 3 helpers ───────────────────────────────────────────────────────
-
-  const allSelected = discovered.length > 0 && selected.size === discovered.length
-  const toggleAll = () => {
-    if (allSelected) setSelected(new Set())
-    else setSelected(new Set(discovered.map(c => c.displayName)))
-  }
-
-  const toggleOne = (name: string) => {
-    setSelected(prev => {
-      const next = new Set(prev)
-      next.has(name) ? next.delete(name) : next.add(name)
-      return next
-    })
-  }
-
-  const selectedComponents = discovered.filter(c => selected.has(c.displayName))
-
-  // ─── Copy helpers ─────────────────────────────────────────────────────────
-
-  const handleCopyConfig = async () => {
-    const text = buildConfigSnippet(sbUrl, figmaKey, selectedComponents)
-    try { await navigator.clipboard.writeText(text) } catch { prompt('Copy config:', text) }
-    setConfigCopied(true)
-    setTimeout(() => setConfigCopied(false), 2000)
-  }
-
-  const handleCopyClaude = async () => {
-    const text = buildClaudeContent(selectedComponents)
-    try { await navigator.clipboard.writeText(text) } catch { prompt('Copy CLAUDE.md:', text) }
-    setClaudeCopied(true)
-    setTimeout(() => setClaudeCopied(false), 2000)
-  }
-
-  // ─── Shared styles ────────────────────────────────────────────────────────
+  // ─── Shared UI helpers ──────────────────────────────────────────────────
 
   const panelStyle: React.CSSProperties = {
     flex: 1, display: 'flex', flexDirection: 'column',
-    fontFamily: 'system-ui, sans-serif', color: C.text,
+    fontFamily: 'Inter, system-ui, sans-serif', color: C.text,
     background: C.bg, overflow: 'hidden',
   }
 
   const headerStyle: React.CSSProperties = {
-    padding: '14px 16px 12px',
+    padding: '12px 14px 10px',
     borderBottom: `1px solid ${C.border}`,
     flexShrink: 0,
+    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8,
   }
 
   const bodyStyle: React.CSSProperties = {
-    flex: 1, overflowY: 'auto', padding: '16px',
+    flex: 1, overflowY: 'auto', padding: '14px',
   }
 
   const primaryBtn = (label: string, onClick: () => void, disabled = false): React.ReactElement => (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        background: disabled ? C.muted : C.blue,
-        color: '#fff', border: 'none', borderRadius: 8,
-        padding: '8px 18px', fontSize: 12, fontWeight: 700,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.5 : 1,
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >{label}</button>
+    <button onClick={onClick} disabled={disabled} style={{
+      background: disabled ? C.muted : C.blue,
+      color: '#fff', border: 'none', borderRadius: 8,
+      padding: '8px 16px', fontSize: 12, fontWeight: 700,
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? 0.5 : 1,
+      fontFamily: 'Inter, system-ui, sans-serif',
+    }}>{label}</button>
   )
+
+  const BackBtn = ({ to }: { to: WizardStep }) => (
+    <button onClick={() => setStep(to)} style={{
+      background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      fontSize: 11, color: C.muted, marginBottom: 6,
+      fontFamily: 'Inter, system-ui, sans-serif',
+    }}>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M7.5 2L3.5 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      Back
+    </button>
+  )
+
+  const CloseBtn = () => onClose ? (
+    <button onClick={onClose} style={{
+      background: 'none', border: 'none', cursor: 'pointer',
+      color: C.muted, fontSize: 16, lineHeight: 1, padding: '2px 4px',
+      flexShrink: 0,
+    }} title="Close">×</button>
+  ) : null
 
   const numericStep = typeof step === 'number' ? step : 4
 
-  const stepDot = (n: number): React.ReactElement => (
-    <div style={{
-      width: 20, height: 20, borderRadius: '50%',
-      background: numericStep >= n ? C.blue : C.border,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 10, fontWeight: 700, color: numericStep >= n ? '#fff' : C.muted,
-      transition: 'background 0.2s',
-    }}>{n}</div>
-  )
-
-  // ─── Step progress bar ────────────────────────────────────────────────────
-
-  const Progress = () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 16px 10px' }}>
-      {[1, 2, 3, 4].map((n, i) => (
+  const Progress = ({ total = 4, current = numericStep }: { total?: number; current?: number }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 14px 10px' }}>
+      {Array.from({ length: total }, (_, i) => i + 1).map((n, i) => (
         <React.Fragment key={n}>
-          {stepDot(n)}
-          {i < 3 && <div style={{ flex: 1, height: 2, background: numericStep > n ? C.blue : C.border, transition: 'background 0.2s' }} />}
+          <div style={{
+            width: 18, height: 18, borderRadius: '50%',
+            background: current >= n ? C.blue : C.border,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 9, fontWeight: 700, color: current >= n ? '#fff' : C.muted,
+            transition: 'background 0.2s', flexShrink: 0,
+          }}>{n}</div>
+          {i < total - 1 && <div style={{ flex: 1, height: 2, background: current > n ? C.blue : C.border, transition: 'background 0.2s' }} />}
         </React.Fragment>
       ))}
     </div>
   )
 
-  // ─── Step 1 — Welcome (persona split) ────────────────────────────────────
-
-  const [showDesignerNote, setShowDesignerNote] = useState(false)
+  // ─── Step 1 — Persona split ─────────────────────────────────────────────
 
   const Step1 = () => (
     <div style={panelStyle}>
       <div style={headerStyle}>
-        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Set up Drift</div>
-        <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
-          Who's setting this up?
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 3 }}>Set up Drift</div>
+          <div style={{ fontSize: 12, color: C.muted }}>Who's setting this up?</div>
         </div>
+        <CloseBtn />
       </div>
-      <Progress />
+      <Progress total={4} current={1} />
       <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-        {/* Developer path */}
-        <button onClick={() => { setShowDesignerNote(false); setStep(2) }} style={{
+        {/* Designer / PM path — FIRST */}
+        <button onClick={() => setStep('d1')} style={{
           background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
-          padding: '14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'system-ui, sans-serif',
+          padding: '16px 14px', cursor: 'pointer', textAlign: 'center',
+          fontFamily: 'Inter, system-ui, sans-serif',
+          transition: 'border-color 0.15s',
+        }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = C.purple)}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}>
+          <div style={{ fontSize: 22, marginBottom: 6 }}>◈</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4 }}>I'm a designer or PM</div>
+          <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>Connect Figma, set up MCP for AI tools, and loop in your developer.</div>
+        </button>
+
+        {/* Developer path */}
+        <button onClick={() => setStep(2)} style={{
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
+          padding: '16px 14px', cursor: 'pointer', textAlign: 'center',
+          fontFamily: 'Inter, system-ui, sans-serif',
           transition: 'border-color 0.15s',
         }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = C.blue)}
           onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 4 }}>⚡ I'm a developer</div>
-          <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>Connect Storybook or enter component names. Takes 2 minutes.</div>
+          <div style={{ fontSize: 22, marginBottom: 6 }}>⚡</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4 }}>I'm a developer</div>
+          <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>Connect Storybook and register your DS components. Takes 2 minutes.</div>
         </button>
 
-        {/* Designer / PM path */}
-        <button onClick={() => setShowDesignerNote(true)} style={{
-          background: C.surface, border: `1px solid ${showDesignerNote ? C.blue : C.border}`, borderRadius: 10,
-          padding: '14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'system-ui, sans-serif',
-          transition: 'border-color 0.15s',
+        <button onClick={() => setStep('manual')} style={{
+          background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+          fontSize: 11, color: C.muted, fontFamily: 'Inter, system-ui, sans-serif', textAlign: 'center',
         }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 4 }}>◈ I'm a designer or PM</div>
-          <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>See what Drift shows you once a developer sets it up.</div>
+          No Storybook yet? Enter component names manually →
         </button>
-
-        {showDesignerNote && (
-          <div style={{ background: `${C.blue}10`, border: `1px solid ${C.blue}25`, borderRadius: 10, padding: '14px' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>
-              Good news — you don't need to touch any code.
-            </div>
-            <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.7, marginBottom: 10 }}>
-              Ask your developer to complete this setup (2 min). Once it's done:<br/>
-              • Every PR shows a drift score — how much the UI matches your design system<br/>
-              • You'll see which AI-generated components weren't from the DS<br/>
-              • Coverage drops are blocked before they merge
-            </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.blue }}>
-              Forward them to: github.com/dyoon92/design-drift
-            </div>
-          </div>
-        )}
-
-        {!showDesignerNote && (
-          <button onClick={() => setStep('manual')} style={{
-            background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0',
-            fontSize: 11, color: C.muted, fontFamily: 'system-ui, sans-serif', textAlign: 'left',
-          }}>
-            No Storybook yet? Enter component names manually →
-          </button>
-        )}
       </div>
     </div>
   )
 
-  // ─── Step 2 — Storybook URL ───────────────────────────────────────────────
+  // ─── Designer Step D1 — Figma file ──────────────────────────────────────
+
+  const StepD1 = () => (
+    <div style={panelStyle}>
+      <div style={headerStyle}>
+        <div><BackBtn to={1} />
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>Your Figma is the source of truth</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>Drift links every gap component back to Figma so your team knows exactly what needs to be designed.</div>
+        </div>
+        <CloseBtn />
+      </div>
+      <Progress total={3} current={1} />
+      <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`,
+          borderRadius: 10, padding: '12px 14px',
+          fontSize: 11, color: C.muted, lineHeight: 1.7,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 6 }}>◈ What Drift does with Figma</div>
+          • When a custom component is detected, Drift links to the Figma file so your developer can find the right design<br/>
+          • AI tools with Figma MCP can read your components and recreate them accurately<br/>
+          • The "Create in Figma" prompt uses your file as the target
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Figma file key <span style={{ color: C.muted, fontWeight: 400 }}>(optional but recommended)</span>
+          </label>
+          <input
+            type="text"
+            value={designerFigmaKey}
+            onChange={e => setDesignerFigmaKey(e.target.value)}
+            placeholder="e.g. yO7V6x2VhxuIhDyR24fQ2h"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              background: C.surface, border: `1px solid ${C.border}`,
+              borderRadius: 8, padding: '9px 12px', color: C.text,
+              fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', outline: 'none',
+            }}
+          />
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.5 }}>
+            Find it in your Figma URL: figma.com/design/<strong style={{ color: C.text }}>THIS_PART</strong>/your-file-name
+          </div>
+        </div>
+
+        {primaryBtn('Next: Set up MCP →', () => setStep('d2'))}
+      </div>
+    </div>
+  )
+
+  // ─── Designer Step D2 — MCP setup ───────────────────────────────────────
+
+  const mcpInstructions = `// Add to Cursor Settings → MCP Servers
+// or Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json
+
+{
+  "figma": {
+    "command": "npx",
+    "args": ["-y", "figma-developer-mcp", "--stdio"],
+    "env": {
+      "FIGMA_ACCESS_TOKEN": "your-figma-personal-access-token"
+    }
+  }
+}
+
+// Get your token:
+// figma.com → Profile picture → Settings → Security → Personal access tokens`
+
+  const StepD2 = () => (
+    <div style={panelStyle}>
+      <div style={headerStyle}>
+        <div><BackBtn to="d1" />
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>Connect AI tools to Figma</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>The Figma MCP lets Cursor and Claude read your components and create new ones directly in your file.</div>
+        </div>
+        <CloseBtn />
+      </div>
+      <Progress total={3} current={2} />
+      <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>What you get with MCP connected:</div>
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 8,
+          fontSize: 11, color: C.muted, lineHeight: 1.6,
+        }}>
+          {[
+            '◈  AI can read your Figma components as context when vibe-coding',
+            '✦  When Drift finds a gap, "Create in Figma" generates the component accurately using your real design tokens',
+            '⟳  Changes flow: Figma → Storybook → AI builds with it → Drift measures it',
+          ].map((line, i) => (
+            <div key={i} style={{ background: C.surface, borderRadius: 8, padding: '8px 10px', border: `1px solid ${C.border}` }}>{line}</div>
+          ))}
+        </div>
+
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>MCP config to add</div>
+          <pre style={{
+            background: C.surface, border: `1px solid ${C.border}`,
+            borderRadius: 8, padding: '10px 12px', margin: 0,
+            fontSize: 10, color: C.text, lineHeight: 1.6,
+            fontFamily: 'monospace', overflowX: 'auto', whiteSpace: 'pre',
+          }}>{mcpInstructions}</pre>
+        </div>
+
+        <button
+          onClick={() => { navigator.clipboard.writeText(mcpInstructions); setMcpCopied(true); setTimeout(() => setMcpCopied(false), 2000) }}
+          style={{
+            background: mcpCopied ? C.green : C.surface,
+            border: `1px solid ${mcpCopied ? C.green : C.border}`,
+            borderRadius: 8, padding: '7px 14px',
+            fontSize: 11, fontWeight: 600, color: mcpCopied ? '#fff' : C.text,
+            cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif',
+            transition: 'all 0.2s',
+          }}
+        >{mcpCopied ? '✓ Copied!' : 'Copy MCP config'}</button>
+
+        {primaryBtn('Next: Loop in your developer →', () => setStep('d3'))}
+      </div>
+    </div>
+  )
+
+  // ─── Designer Step D3 — Dev handoff ─────────────────────────────────────
+
+  const handoffText = buildDevHandoff(designerFigmaKey)
+
+  const StepD3 = () => (
+    <div style={panelStyle}>
+      <div style={headerStyle}>
+        <div><BackBtn to="d2" />
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>Loop in your developer</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>Send this to your developer — they'll connect Storybook and set up the CI check. Takes them about 5 minutes.</div>
+        </div>
+        <CloseBtn />
+      </div>
+      <Progress total={3} current={3} />
+      <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`,
+          borderRadius: 8, padding: '12px 14px',
+          fontSize: 11, color: C.text, lineHeight: 1.7,
+          whiteSpace: 'pre-wrap', fontFamily: 'Inter, system-ui, sans-serif',
+        }}>{handoffText}</div>
+
+        <button
+          onClick={() => { navigator.clipboard.writeText(handoffText); setHandoffCopied(true); setTimeout(() => setHandoffCopied(false), 2000) }}
+          style={{
+            background: handoffCopied ? C.green : C.blue,
+            border: 'none', borderRadius: 8, padding: '8px 16px',
+            fontSize: 12, fontWeight: 700, color: '#fff',
+            cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif',
+            transition: 'background 0.2s',
+          }}
+        >{handoffCopied ? '✓ Copied to clipboard!' : 'Copy message for developer'}</button>
+
+        <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.6, padding: '8px 10px', background: C.surface, borderRadius: 8, border: `1px solid ${C.border}` }}>
+          Once your developer connects Storybook, Drift will automatically post coverage scores on every PR — you'll see exactly which AI-generated components aren't from the design system.
+        </div>
+
+        <button onClick={onDone} style={{
+          background: 'none', border: `1px solid ${C.border}`,
+          borderRadius: 8, padding: '7px 14px',
+          fontSize: 11, fontWeight: 600, color: C.muted,
+          cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif',
+        }}>Done — explore Drift</button>
+      </div>
+    </div>
+  )
+
+  // ─── Developer Step 2 — Storybook URL ──────────────────────────────────
 
   const Step2 = () => (
     <div style={panelStyle}>
       <div style={headerStyle}>
-        <button
-          onClick={() => setStep(1)}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            fontSize: 11, color: C.muted, marginBottom: 8,
-            fontFamily: 'system-ui, sans-serif',
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M7.5 2L3.5 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          Back
-        </button>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>Connect Storybook</div>
-        <div style={{ fontSize: 12, color: C.muted }}>
-          Drift will fetch your story index to discover components automatically.
+        <div><BackBtn to={1} />
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>Connect Storybook</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>Drift fetches your story index to discover component names automatically.</div>
         </div>
+        <CloseBtn />
       </div>
-      <Progress />
+      <Progress total={4} current={2} />
       <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
-          <label style={{
-            display: 'block', fontSize: 11, fontWeight: 700,
-            color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5,
-          }}>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
             Storybook URL
           </label>
           <input
@@ -389,49 +522,35 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
             onChange={e => { setSbUrl(e.target.value); setFetchErr(null) }}
             onKeyDown={e => e.key === 'Enter' && handleDiscover()}
             placeholder="http://localhost:6006"
-            aria-describedby="sb-url-hint"
             style={{
               width: '100%', boxSizing: 'border-box',
               background: C.surface, border: `1px solid ${fetchErr ? C.red : C.border}`,
               borderRadius: 8, padding: '9px 12px', color: C.text,
-              fontSize: 13, fontFamily: 'system-ui, sans-serif',
-              outline: 'none',
+              fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', outline: 'none',
             }}
           />
-          <div id="sb-url-hint" style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.5 }}>
-            Local Storybook or a hosted URL. Running on Chromatic? Paste your Chromatic preview URL.
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.5 }}>
+            Storybook runs on port 6006 by default (<code style={{ fontFamily: 'monospace' }}>npm run storybook</code>). Also works with Chromatic preview URLs.
           </div>
-
           {fetchErr && (
             <div style={{ fontSize: 11, color: C.red, marginTop: 6, lineHeight: 1.5 }}>
               {fetchErr}
               <button onClick={() => setStep('manual')} style={{
                 display: 'block', marginTop: 8, background: 'none', border: 'none',
                 color: C.blue, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                padding: 0, fontFamily: 'system-ui, sans-serif', textDecoration: 'underline',
+                padding: 0, fontFamily: 'Inter, system-ui, sans-serif', textDecoration: 'underline',
               }}>
                 Enter components manually instead →
               </button>
             </div>
           )}
         </div>
-
         <div style={{ display: 'flex', gap: 8 }}>
-          {primaryBtn(
-            fetching ? 'Discovering…' : 'Discover components',
-            handleDiscover,
-            fetching,
-          )}
+          {primaryBtn(fetching ? 'Discovering…' : 'Discover components', handleDiscover, fetching)}
         </div>
-
         {fetching && (
           <div style={{ fontSize: 11, color: C.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{
-              width: 10, height: 10, borderRadius: '50%',
-              border: `2px solid ${C.blue}`,
-              borderTopColor: 'transparent',
-              animation: 'spin 0.8s linear infinite',
-            }} />
+            <div style={{ width: 10, height: 10, borderRadius: '50%', border: `2px solid ${C.blue}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
             Fetching story index…
           </div>
         )}
@@ -439,73 +558,33 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
     </div>
   )
 
-  // ─── Step 3 — Select components ───────────────────────────────────────────
+  // ─── Developer Step 3 — Select components ──────────────────────────────
+
+  const allSelected = discovered.length > 0 && selected.size === discovered.length
+  const toggleAll = () => { if (allSelected) setSelected(new Set()); else setSelected(new Set(discovered.map(c => c.displayName))) }
+  const toggleOne = (name: string) => { setSelected(prev => { const next = new Set(prev); next.has(name) ? next.delete(name) : next.add(name); return next }) }
+  const selectedComponents = discovered.filter(c => selected.has(c.displayName))
 
   const Step3 = () => (
     <div style={panelStyle}>
       <div style={headerStyle}>
-        <button
-          onClick={() => setStep(2)}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            fontSize: 11, color: C.muted, marginBottom: 8,
-            fontFamily: 'system-ui, sans-serif',
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M7.5 2L3.5 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          Back
-        </button>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
-          Which of these are your design system components?
+        <div><BackBtn to={2} />
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>Which are your DS components?</div>
+          <div style={{ fontSize: 12, color: C.muted }}>Discovered {discovered.length} from Storybook — select the ones that are part of your design system.</div>
         </div>
-        <div style={{ fontSize: 12, color: C.muted }}>
-          Discovered {discovered.length} component{discovered.length !== 1 ? 's' : ''} from Storybook.
-        </div>
+        <CloseBtn />
       </div>
-      <Progress />
-
-      {/* Select all / deselect all */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '6px 16px',
-        borderBottom: `1px solid ${C.border}`,
-        flexShrink: 0,
-      }}>
-        <span style={{ fontSize: 11, color: C.muted }}>
-          {selected.size} of {discovered.length} selected
-        </span>
-        <button
-          onClick={toggleAll}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 11, color: C.blue, fontFamily: 'system-ui, sans-serif',
-            fontWeight: 600, padding: 0,
-          }}
-        >
+      <Progress total={4} current={3} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+        <span style={{ fontSize: 11, color: C.muted }}>{selected.size} of {discovered.length} selected</span>
+        <button onClick={toggleAll} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: C.blue, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 600, padding: 0 }}>
           {allSelected ? 'Deselect all' : 'Select all'}
         </button>
       </div>
-
-      {/* Scrollable list */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
         {discovered.map(c => (
-          <label
-            key={c.displayName}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '7px 16px', cursor: 'pointer',
-              borderBottom: `1px solid ${C.border}`,
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={selected.has(c.displayName)}
-              onChange={() => toggleOne(c.displayName)}
-              style={{ accentColor: C.blue, width: 14, height: 14, flexShrink: 0 }}
-            />
+          <label key={c.displayName} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 14px', cursor: 'pointer', borderBottom: `1px solid ${C.border}` }}>
+            <input type="checkbox" checked={selected.has(c.displayName)} onChange={() => toggleOne(c.displayName)} style={{ accentColor: C.blue, width: 14, height: 14, flexShrink: 0 }} />
             <div>
               <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{c.displayName}</div>
               <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>{c.storyPath}</div>
@@ -513,22 +592,24 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
           </label>
         ))}
       </div>
-
-      <div style={{
-        padding: '12px 16px',
-        borderTop: `1px solid ${C.border}`,
-        flexShrink: 0,
-      }}>
-        {primaryBtn(
-          `Continue → (${selected.size} selected)`,
-          () => setStep(4),
-          selected.size === 0,
-        )}
+      <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+        {primaryBtn(`Continue (${selected.size} selected) →`, () => setStep(4), selected.size === 0)}
       </div>
     </div>
   )
 
-  // ─── Step 4 — Export ──────────────────────────────────────────────────────
+  // ─── Developer Step 4 — Export ──────────────────────────────────────────
+
+  const handleCopyConfig = async () => {
+    const text = buildConfigSnippet(sbUrl, figmaKey, selectedComponents)
+    try { await navigator.clipboard.writeText(text) } catch { prompt('Copy config:', text) }
+    setConfigCopied(true); setTimeout(() => setConfigCopied(false), 2000)
+  }
+  const handleCopyClaude = async () => {
+    const text = buildClaudeContent(selectedComponents)
+    try { await navigator.clipboard.writeText(text) } catch { prompt('Copy CLAUDE.md:', text) }
+    setClaudeCopied(true); setTimeout(() => setClaudeCopied(false), 2000)
+  }
 
   const configSnippet = buildConfigSnippet(sbUrl, figmaKey, selectedComponents)
   const claudeContent = buildClaudeContent(selectedComponents)
@@ -536,173 +617,66 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
   const Step4 = () => (
     <div style={panelStyle}>
       <div style={headerStyle}>
-        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>
-          You're all set! 🎉
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 3 }}>You're all set! 🎉</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>Copy these into your project to activate Drift.</div>
         </div>
-        <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
-          Copy these into your project to activate Drift.
-        </div>
+        <CloseBtn />
       </div>
-      <Progress />
-
-      {/* Optional Figma key */}
-      <div style={{
-        padding: '10px 16px',
-        borderBottom: `1px solid ${C.border}`,
-        flexShrink: 0,
-      }}>
-        <label style={{
-          display: 'block', fontSize: 10, fontWeight: 700,
-          color: C.muted, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4,
-        }}>
-          Figma file key (optional)
-        </label>
-        <input
-          type="text"
-          value={figmaKey}
-          onChange={e => setFigmaKey(e.target.value)}
-          placeholder="e.g. yO7V6x2VhxuIhDyR24fQ2h"
-          style={{
-            width: '100%', boxSizing: 'border-box',
-            background: C.surface, border: `1px solid ${C.border}`,
-            borderRadius: 6, padding: '7px 10px', color: C.text,
-            fontSize: 12, fontFamily: 'system-ui, sans-serif', outline: 'none',
-          }}
-        />
+      <Progress total={4} current={4} />
+      <div style={{ padding: '8px 14px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+        <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: C.muted, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 }}>Figma file key (optional)</label>
+        <input type="text" value={figmaKey} onChange={e => setFigmaKey(e.target.value)} placeholder="e.g. yO7V6x2VhxuIhDyR24fQ2h" style={{ width: '100%', boxSizing: 'border-box', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, padding: '7px 10px', color: C.text, fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif', outline: 'none' }} />
       </div>
-
-      {/* Tabs */}
-      <div style={{
-        display: 'flex', borderBottom: `1px solid ${C.border}`,
-        flexShrink: 0,
-      }}>
+      <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
         {(['config', 'claude'] as ExportTab[]).map(t => (
-          <button
-            key={t}
-            onClick={() => setActiveTab(t)}
-            style={{
-              flex: 1, padding: '8px 0', background: 'none',
-              border: 'none', cursor: 'pointer',
-              fontSize: 11, fontWeight: 700,
-              color: activeTab === t ? C.blue : C.muted,
-              borderBottom: `2px solid ${activeTab === t ? C.blue : 'transparent'}`,
-              fontFamily: 'system-ui, sans-serif',
-              transition: 'color 0.15s',
-            }}
-          >
+          <button key={t} onClick={() => setActiveTab(t)} style={{ flex: 1, padding: '8px 0', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: activeTab === t ? C.blue : C.muted, borderBottom: `2px solid ${activeTab === t ? C.blue : 'transparent'}`, fontFamily: 'Inter, system-ui, sans-serif', transition: 'color 0.15s' }}>
             {t === 'config' ? 'config.ts' : 'CLAUDE.md'}
           </button>
         ))}
       </div>
-
-      {/* Code block */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <pre style={{
-          background: C.surface, border: `1px solid ${C.border}`,
-          borderRadius: 8, padding: '12px', margin: 0,
-          fontSize: 10.5, color: C.text, lineHeight: 1.6,
-          fontFamily: "'Fira Code', 'Cascadia Code', 'Menlo', monospace",
-          overflowX: 'auto', whiteSpace: 'pre',
-          flex: 1,
-        }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <pre style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px', margin: 0, fontSize: 10.5, color: C.text, lineHeight: 1.6, fontFamily: 'monospace', overflowX: 'auto', whiteSpace: 'pre', flex: 1 }}>
           {activeTab === 'config' ? configSnippet : claudeContent}
         </pre>
-
-        <button
-          onClick={activeTab === 'config' ? handleCopyConfig : handleCopyClaude}
-          style={{
-            background: (activeTab === 'config' ? configCopied : claudeCopied) ? C.green : C.blue,
-            color: '#fff', border: 'none', borderRadius: 8,
-            padding: '8px 16px', fontSize: 12, fontWeight: 700,
-            cursor: 'pointer', fontFamily: 'system-ui, sans-serif',
-            transition: 'background 0.2s', flexShrink: 0,
-          }}
-        >
-          {(activeTab === 'config' ? configCopied : claudeCopied)
-            ? 'Copied!'
-            : `Copy ${activeTab === 'config' ? 'config.ts' : 'CLAUDE.md'}`}
+        <button onClick={activeTab === 'config' ? handleCopyConfig : handleCopyClaude} style={{ background: (activeTab === 'config' ? configCopied : claudeCopied) ? C.green : C.blue, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif', transition: 'background 0.2s', flexShrink: 0 }}>
+          {(activeTab === 'config' ? configCopied : claudeCopied) ? 'Copied!' : `Copy ${activeTab === 'config' ? 'config.ts' : 'CLAUDE.md'}`}
         </button>
-
-        <div style={{
-          fontSize: 10.5, color: C.muted, lineHeight: 1.5,
-          padding: '8px 10px',
-          background: C.surface, borderRadius: 6,
-          border: `1px solid ${C.border}`,
-        }}>
-          These are starting points — edit <code style={{ color: C.orange }}>config.ts</code> to
-          fine-tune storyPaths, then restart your dev server.
-        </div>
-
-        <button
-          onClick={onDone}
-          style={{
-            background: 'none', border: `1px solid ${C.border}`,
-            borderRadius: 8, padding: '7px 16px',
-            fontSize: 11, fontWeight: 600, color: C.muted,
-            cursor: 'pointer', fontFamily: 'system-ui, sans-serif',
-          }}
-        >
+        <button onClick={onDone} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, padding: '7px 14px', fontSize: 11, fontWeight: 600, color: C.muted, cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif' }}>
           Done — open Drift panel
         </button>
       </div>
     </div>
   )
 
-  // ─── Manual entry step ───────────────────────────────────────────────────
-
-  const [manualText, setManualText] = useState('')
+  // ─── Manual entry ───────────────────────────────────────────────────────
 
   const ManualStep = () => {
     const names = manualText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
     const valid = names.length > 0
-
     const handleConfirm = () => {
-      const comps: DiscoveredComponent[] = names.map(n => ({
-        displayName: n,
-        storyPath: n.toLowerCase().replace(/\s+/g, '-') + '--default',
-      }))
-      setDiscovered(comps)
-      setSelected(new Set(comps.map(c => c.displayName)))
-      setStep(4)
+      const comps: DiscoveredComponent[] = names.map(n => ({ displayName: n, storyPath: n.toLowerCase().replace(/\s+/g, '-') + '--default' }))
+      setDiscovered(comps); setSelected(new Set(comps.map(c => c.displayName))); setStep(4)
     }
-
     return (
       <div style={panelStyle}>
         <div style={headerStyle}>
-          <button onClick={() => setStep(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.muted, marginBottom: 8, fontFamily: 'system-ui, sans-serif' }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L3.5 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            Back
-          </button>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>Enter components manually</div>
-          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
-            One component name per line (or comma-separated). Use exact React display names — the same names you'd see in React DevTools.
+          <div><BackBtn to={1} />
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>Enter components manually</div>
+            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>One name per line — use exact React display names (same as React DevTools).</div>
           </div>
+          <CloseBtn />
         </div>
         <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <textarea
-            value={manualText}
-            onChange={e => setManualText(e.target.value)}
-            placeholder={'Button\nModal\nNavbar\nTenantsTable\n...'}
-            rows={8}
-            style={{
-              width: '100%', boxSizing: 'border-box', resize: 'vertical',
-              background: C.surface, border: `1px solid ${C.border}`,
-              borderRadius: 8, padding: '10px 12px', color: C.text,
-              fontSize: 12, fontFamily: 'monospace', lineHeight: 1.7, outline: 'none',
-            }}
-          />
-          {valid && (
-            <div style={{ fontSize: 11, color: C.muted }}>
-              {names.length} component{names.length !== 1 ? 's' : ''} — storyPaths will be best-guess placeholders, edit <code style={{ color: C.orange }}>config.ts</code> to fix them.
-            </div>
-          )}
+          <textarea value={manualText} onChange={e => setManualText(e.target.value)} placeholder={'Button\nModal\nNavbar\nTenantsTable\n...'} rows={8} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 12px', color: C.text, fontSize: 12, fontFamily: 'monospace', lineHeight: 1.7, outline: 'none' }} />
+          {valid && <div style={{ fontSize: 11, color: C.muted }}>{names.length} component{names.length !== 1 ? 's' : ''} — storyPaths will be best-guess placeholders.</div>}
           {primaryBtn(`Generate config for ${valid ? names.length : '…'} components →`, handleConfirm, !valid)}
         </div>
       </div>
     )
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // ─── Render ─────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -712,6 +686,9 @@ export function SetupWizard({ onDone }: SetupWizardProps) {
       {step === 3        && <Step3 />}
       {step === 4        && <Step4 />}
       {step === 'manual' && <ManualStep />}
+      {step === 'd1'     && <StepD1 />}
+      {step === 'd2'     && <StepD2 />}
+      {step === 'd3'     && <StepD3 />}
     </>
   )
 }
