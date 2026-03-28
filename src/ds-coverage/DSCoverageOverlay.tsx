@@ -26,6 +26,8 @@ const SB_BASE         = STORYBOOK_URL
 // True when storybookUrl points at localhost — links are only usable by the dev running the server locally.
 // When true we suppress external Storybook links so the demo doesn't show broken ↗ icons to visitors.
 const SB_IS_LOCAL     = SB_BASE.includes('localhost') || SB_BASE.includes('127.0.0.1')
+// True when the page is loaded with ?demo=1 — shows the waitlist CTA in the panel footer.
+const IS_DEMO         = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('demo')
 const BADGE_H         = 19
 const PROMOTE_MIN     = 5
 const HISTORY_KEY     = 'ds-coverage-history'
@@ -3446,6 +3448,26 @@ const SummaryPanel = (p: PanelProps) => {
               <div style={{ fontSize: 10, color: C.muted, fontFamily: 'Inter, sans-serif' }}>One-click fixes for drift and custom components</div>
             </div>
           </button>
+        )}
+        {/* Demo-only waitlist CTA */}
+        {IS_DEMO && (
+          <a
+            href="/"
+            onClick={e => { e.preventDefault(); window.location.href = '/#waitlist' }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: 10, padding: '8px 12px',
+              background: 'linear-gradient(135deg, #4f8ef710, #a78bfa10)',
+              border: '1px solid #4f8ef730',
+              borderRadius: 8, textDecoration: 'none', cursor: 'pointer',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.text, fontFamily: 'Inter, sans-serif' }}>Like what you see?</div>
+              <div style={{ fontSize: 10, color: C.muted, fontFamily: 'Inter, sans-serif', marginTop: 1 }}>Join the waitlist for team access</div>
+            </div>
+            <span style={{ fontSize: 12, color: '#4f8ef7', fontWeight: 700, fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>Join →</span>
+          </a>
         )}
         {/* Keyboard shortcuts */}
         <div style={{ fontSize: 10, color: C.muted, textAlign: 'center', lineHeight: 1.7 }}>
