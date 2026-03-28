@@ -2747,11 +2747,15 @@ export function DSCoverageOverlay() {
 
   useEffect(() => {
     if (!visible) return
-    // Watch the full body subtree so React SPA route changes (deep DOM swaps)
-    // are caught, not just direct-child mutations of <main>.
     let mutTimer: ReturnType<typeof setTimeout>
     let lastPath = window.location.pathname
-    const obs = new MutationObserver(() => {
+    const obs = new MutationObserver((mutations) => {
+      // Ignore mutations that originate inside our own overlay — otherwise
+      // re-rendering the overlay boxes triggers another scan → infinite loop.
+      const appMutation = mutations.some(
+        m => !(m.target as Element).closest?.('[data-ds-overlay]')
+      )
+      if (!appMutation) return
       clearTimeout(mutTimer)
       mutTimer = setTimeout(() => {
         const newPath = window.location.pathname
