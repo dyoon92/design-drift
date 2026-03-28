@@ -1181,6 +1181,119 @@ function CodeBlock({ code, C }: { code: string; C: Colors }) {
   )
 }
 
+// ─── Gap action panel (replaces "No props" for non-DS components) ─────────────
+
+function buildFigmaMcpPrompt(name: string): string {
+  const figmaKey = config.figmaFileKey || '<your-figma-file-key>'
+  return `Using the Figma MCP, create a new component called "${name}" in the design file (key: ${figmaKey}).
+
+Steps:
+1. Open the Figma file and navigate to the component library page
+2. Create a new component frame named "${name}"
+3. Design it using our design tokens:
+   - Colors: use variables from the existing color styles (ds-color-*)
+   - Spacing: 8px grid (8, 12, 16, 20, 24, 32, 40px)
+   - Border radius: 4px (sm), 8px (md), 12px (lg)
+   - Typography: Inter, weights 400/500/600/700
+4. Add a description: "DS component for ${name} — promoted from detected drift"
+5. Add it to the component library so it appears in Storybook next sync
+
+Once created in Figma, implement it in src/stories/${name}.tsx following the existing component patterns, add a .stories.ts file, and register it in src/ds-coverage/config.ts.`
+}
+
+function buildJiraTicket(name: string): string {
+  return `Summary: [Design System] Add ${name} component
+
+Type: Design Task
+Priority: Medium
+Labels: design-system, drift
+
+Description:
+The component \`${name}\` was detected by Drift as a custom component not in the design system. It is currently rendering in the app as a one-off and should be promoted to a proper DS component.
+
+Steps:
+1. Design \`${name}\` in Figma following DS tokens and guidelines
+2. Implement in src/stories/${name}.tsx
+3. Add Storybook story (${name}.stories.ts)
+4. Register in src/ds-coverage/config.ts
+5. Verify Drift coverage increases on next scan
+
+Acceptance Criteria:
+- [ ] Component designed in Figma with design tokens
+- [ ] Component built and documented in Storybook
+- [ ] Registered in Drift — coverage impact confirmed
+- [ ] PR passes drift-check CI`
+}
+
+const GapActionPanel = ({ component }: { component: ScannedComponent }) => {
+  const C = useC()
+  const [copied, setCopied] = useState<'figma' | 'jira' | null>(null)
+
+  const copy = (text: string, type: 'figma' | 'jira') => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(type)
+      setTimeout(() => setCopied(null), 2000)
+    })
+  }
+
+  const actions: { key: 'figma' | 'jira'; icon: string; label: string; sub: string; color: string; bg: string; border: string; text: () => string }[] = [
+    {
+      key: 'figma',
+      icon: '◈',
+      label: 'Create in Figma',
+      sub: 'Copy MCP prompt → paste into Cursor or Claude',
+      color: '#7c3aed',
+      bg: 'rgba(124,58,237,0.08)',
+      border: 'rgba(124,58,237,0.25)',
+      text: () => buildFigmaMcpPrompt(component.name),
+    },
+    {
+      key: 'jira',
+      icon: '🎟',
+      label: 'Create Jira ticket',
+      sub: 'Copy pre-filled design request for your UX team',
+      color: '#4f8ef7',
+      bg: 'rgba(79,142,247,0.08)',
+      border: 'rgba(79,142,247,0.25)',
+      text: () => buildJiraTicket(component.name),
+    },
+  ]
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 0 8px' }}>
+      <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>
+        This component isn't in the design system yet. Choose how to track it:
+      </div>
+      {actions.map(a => (
+        <button
+          key={a.key}
+          onClick={() => copy(a.text(), a.key)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
+            background: copied === a.key ? a.bg : 'transparent',
+            border: `1px solid ${copied === a.key ? a.border : C.panelBorder}`,
+            textAlign: 'left', width: '100%',
+            transition: 'all 0.15s',
+            fontFamily: 'Inter, system-ui, sans-serif',
+          }}
+          onMouseEnter={e => { if (copied !== a.key) { (e.currentTarget as HTMLButtonElement).style.background = a.bg; (e.currentTarget as HTMLButtonElement).style.borderColor = a.border } }}
+          onMouseLeave={e => { if (copied !== a.key) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = C.panelBorder } }}
+        >
+          <span style={{ fontSize: 18, lineHeight: 1, color: a.color, flexShrink: 0 }}>{a.icon}</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: copied === a.key ? a.color : C.text }}>
+              {copied === a.key ? '✓ Copied to clipboard' : a.label}
+            </div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{a.sub}</div>
+          </div>
+          <span style={{ fontSize: 10, color: a.color, flexShrink: 0, opacity: 0.7 }}>copy</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponent; onClose: () => void; apiKey: string }) => {
   const C       = useC()
   const props   = component.fiber?.memoizedProps ?? {}
@@ -1523,7 +1636,10 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
             Props
           </div>
         )}
-        {entries.length === 0 && !component.drifted && (
+        {entries.length === 0 && !component.drifted && !component.inDS && (
+          <GapActionPanel component={component} />
+        )}
+        {entries.length === 0 && !component.drifted && component.inDS && (
           <div style={{ fontSize: 12, color: C.muted, textAlign: 'center', padding: '24px 0' }}>No props</div>
         )}
         {entries.map(([key, val]) => (
@@ -3119,7 +3235,7 @@ function injectGradientStyle() {
 // ─── Main overlay ─────────────────────────────────────────────────────────────
 
 export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
-  const [theme,          setTheme]          = useState<Theme>(() => (localStorage.getItem(THEME_KEY) as Theme) ?? 'dark')
+  const [theme,          setTheme]          = useState<Theme>(() => (localStorage.getItem(THEME_KEY) as Theme) ?? 'light')
   const [visible,        setVisible]        = useState(false)
   const [isClosing,      setIsClosing]      = useState(false)
   const [showSetup,      setShowSetup]      = useState(() => Object.keys(config.components).length === 0)
