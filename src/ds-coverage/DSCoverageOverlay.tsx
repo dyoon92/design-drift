@@ -1089,7 +1089,7 @@ function buildFixPrompt(component: ScannedComponent): string {
       : g.props.join(', ')
     return token
       ? `• \`${where}: ${g.value}\`  →  \`${token}\``
-      : `• \`${where}: ${g.value}\`  →  closest token in src/tokens/variables.css (no exact match)`
+      : `• \`${where}: ${g.value}\`  →  find the closest token in your design tokens file (no exact match)`
   }).join('\n')
 
   return [
@@ -1099,7 +1099,7 @@ function buildFixPrompt(component: ScannedComponent): string {
     lines,
     ``,
     `Find the \`${component.name}\` component file and make exactly those substitutions.`,
-    `Design tokens are defined in \`src/tokens/variables.css\`.`,
+    `Design tokens are defined in your project's CSS variables file (e.g. variables.css or tokens.css).`,
   ].join('\n')
 }
 
@@ -1257,9 +1257,9 @@ Instructions:
 6. Publish to the component library
 
 After Figma is done:
-- Implement in src/stories/${name}.tsx using the Figma component as spec
-- Add src/stories/${name}.stories.ts
-- Register in src/ds-coverage/config.ts so Drift tracks it`
+- Implement the component in your design system component directory
+- Add a Storybook story so it appears in the catalog
+- Register it in your Drift config.ts so it gets tracked`
 }
 
 function buildJiraTicket(name: string, styles: CapturedStyles | null): string {
@@ -1282,9 +1282,9 @@ ${styles ? `  background: ${styles.backgroundColor}
 
 Steps:
 1. Design \`${name}\` in Figma using DS tokens and the measured values above
-2. Implement in src/stories/${name}.tsx
-3. Add Storybook story (${name}.stories.ts)
-4. Register in src/ds-coverage/config.ts
+2. Implement in your component library directory
+3. Add a Storybook story
+4. Register in your Drift config.ts
 5. Verify Drift coverage improves on next PR scan
 
 Acceptance Criteria:
