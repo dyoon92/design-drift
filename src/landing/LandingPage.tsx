@@ -16,14 +16,7 @@ const C = {
   purple:   '#a78bfa',
   orange:   '#fb923c',
   pink:     '#f472b6',
-  // Cream palette — the AI era section
-  cream:        '#faf7f2',
-  creamSurface: '#f2ece2',
-  creamBorder:  'rgba(120,90,40,0.13)',
-  creamText:    '#1a1207',
-  creamSub:     '#4a3a25',
-  creamMuted:   '#8a7a65',
-  amber:        '#b45309',
+  amber:        '#f59e0b',
 }
 
 const mono: React.CSSProperties    = { fontFamily: '"JetBrains Mono","Fira Code",monospace' }
@@ -43,13 +36,12 @@ function WaveLogo({ size = 24, color = C.blue }: { size?: number; color?: string
 }
 
 // ─── Chip ─────────────────────────────────────────────────────────────────────
-function Chip({ color, children, onCream = false }: { color: string; children: React.ReactNode; onCream?: boolean }) {
+function Chip({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <span style={{
       ...sans, fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
       padding: '3px 10px', borderRadius: 999,
-      background: onCream ? `${color}18` : `${color}15`,
-      color, border: `1px solid ${color}${onCream ? '40' : '30'}`,
+      background: `${color}15`, color, border: `1px solid ${color}30`,
     }}>
       {children}
     </span>
@@ -287,7 +279,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
           <Chip color={C.blue}>React fiber scanner</Chip>
-          <Chip color={C.purple}>AI context export</Chip>
+          <Chip color={C.purple}>UX governance layer</Chip>
           <Chip color={C.green}>PR drift delta</Chip>
         </div>
 
@@ -295,19 +287,18 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           ...display, fontSize: 'clamp(34px, 3.8vw, 60px)', fontWeight: 800,
           color: C.text, margin: '0 0 20px', lineHeight: 1.06, letterSpacing: -2,
         }}>
-          Your UI is{' '}
+          AI ships fast.{' '}
           <span style={{
             background: `linear-gradient(95deg, ${C.blue} 0%, ${C.purple} 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>drifting</span>
-          {' '}from your<br/>design system.
+          }}>Stay drift-free.</span>
         </h1>
 
         <p style={{
           ...sans, fontSize: 17, color: C.sub, lineHeight: 1.8,
           margin: '0 0 10px', fontWeight: 300, maxWidth: 480,
         }}>
-          Drift reads the live React fiber tree, measures DS coverage per page, and flags every gap and token violation — before it merges.
+          Drift reads the live React fiber tree, measures DS coverage per page, and flags every component and token violation AI introduced — before it merges.
         </p>
         <p style={{ ...sans, fontSize: 13, color: C.muted, lineHeight: 1.6, margin: '0 0 36px' }}>
           Built by UX practitioners. Works with Cursor, Copilot, and Claude.
@@ -461,8 +452,8 @@ function SocialProof() {
     }}>
       {[
         { value: '77%', label: 'average DS coverage on first scan — 23% already drifted' },
-        { value: '38%', label: 'less rework time at 80%+ DS coverage*' },
-        { value: '0', label: 'other tools read the live React fiber tree' },
+        { value: '38%', label: 'less rework time at 80%+ DS coverage (Dan Mall, 2023)*' },
+        { value: '0', label: 'other tools measure drift from the live React fiber tree' },
       ].map(stat => (
         <div key={stat.value} style={{ textAlign: 'center' }}>
           <div style={{ ...display, fontSize: 30, fontWeight: 800, color: C.blue, letterSpacing: -1 }}>{stat.value}</div>
@@ -476,142 +467,69 @@ function SocialProof() {
   )
 }
 
-// ─── AI Era Section — CREAM ───────────────────────────────────────────────────
-// This section uses a warm cream background to visually break from the dark
-// and signal that Drift was built by designers, not just devs.
+// ─── AI Era Section ────────────────────────────────────────────────────────────
 function AIEraSection() {
   return (
-    <section style={{ background: C.cream, padding: '88px 64px', color: C.creamText }}>
+    <section style={{ background: C.surface, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, padding: '88px 64px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
-        {/* Header */}
-        <div style={{ marginBottom: 56, maxWidth: 800 }}>
-          <Chip color={C.amber} onCream>Built for the AI coding era</Chip>
+        <div style={{ marginBottom: 52, maxWidth: 700 }}>
+          <Chip color={C.amber}>Why Drift exists</Chip>
           <h2 style={{
-            ...display, fontSize: 'clamp(30px, 4vw, 54px)', fontWeight: 800,
-            color: C.creamText, margin: '20px 0 18px', letterSpacing: -1.5, lineHeight: 1.06,
+            ...display, fontSize: 'clamp(30px, 4vw, 50px)', fontWeight: 800,
+            color: C.text, margin: '20px 0 16px', letterSpacing: -1.5, lineHeight: 1.08,
           }}>
-            Vibe coding is here.<br/>
-            <span style={{ color: C.amber }}>Your design system</span> is the casualty.
+            The design system used to be built once.<br/>
+            <span style={{ color: C.amber }}>Now it needs to hold</span> every sprint.
           </h2>
-          <p style={{ ...sans, fontSize: 17, color: C.creamSub, maxWidth: 640, lineHeight: 1.85, fontWeight: 300 }}>
-            Cursor, Copilot, and Claude write components in seconds. But they don't know your Figma system, your token names, or your spacing scale. Every vibed component is a guess — and those guesses compound, sprint by sprint, into drift.
+          <p style={{ ...sans, fontSize: 16, color: C.sub, maxWidth: 540, lineHeight: 1.75, fontWeight: 300 }}>
+            AI doesn't know you already have a <code style={{ ...mono, fontSize: 14, background: C.border, padding: '1px 7px', borderRadius: 4 }}>PaymentBanner</code>. It invents one. Every sprint adds a little more. Drift catches it before it compounds.
           </p>
         </div>
 
-        {/* The flow: Figma → Storybook → AI → Gap */}
+        {/* Flow: Tokens → Constrain → Vibe → Drift */}
         <div className="aiera-flow" style={{
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-          background: '#fff', borderRadius: 18,
-          border: `1px solid ${C.creamBorder}`,
-          boxShadow: '0 2px 24px rgba(0,0,0,0.06)',
-          overflow: 'hidden', marginBottom: 56,
+          background: C.surface2, borderRadius: 16,
+          border: `1px solid ${C.border2}`,
+          overflow: 'hidden', marginBottom: 40,
         }}>
           {[
-            {
-              step: '01', label: 'DESIGN', color: '#7c3aed', icon: '◈',
-              title: 'Designer creates in Figma',
-              body: 'Components, tokens, spacing — all defined. Figma is the source of truth. Your design system is built with intention.',
-              note: null,
-            },
-            {
-              step: '02', label: 'BUILD', color: '#2563eb', icon: '⬡',
-              title: 'Shipped to Storybook',
-              body: 'Developers implement the system. Every component is catalogued, tested, and documented. This is the north star.',
-              note: null,
-            },
-            {
-              step: '03', label: 'VIBE', color: '#d97706', icon: '⚡',
-              title: 'AI helps ship fast',
-              body: 'Cursor builds a dashboard in 8 seconds. It looks right. But it invents its own card, hardcodes a color, skips your spacing tokens.',
-              note: null,
-            },
-            {
-              step: '04', label: 'DRIFT', color: '#dc2626', icon: '◎',
-              title: 'Gaps compound silently',
-              body: 'Nobody notices until the design team does a QA pass and 30% of the UI has never been through the design system.',
-              note: '← This is where Drift comes in',
-            },
+            { step: '01', label: 'TOKENS',    color: C.purple,  icon: '◈', title: 'Figma → token pipeline',  body: 'Tokens Studio → Style Dictionary → CSS vars. Fully automated — tokens stay in sync.' },
+            { step: '02', label: 'CONSTRAIN', color: C.blue,    icon: '⬡', title: 'Storybook + AI rules',     body: 'Components in Storybook. CLAUDE.md tells AI which to use and which tokens to reference.' },
+            { step: '03', label: 'VIBE',      color: C.orange,  icon: '⚡', title: 'AI ships fast',            body: 'Cursor builds a dashboard in 8 seconds. Mostly right — but one off-spec card, one hardcoded hex.' },
+            { step: '04', label: 'DRIFT',     color: '#ef4444', icon: '◎', title: 'Gaps compound silently',   body: 'Nobody notices until design QA finds 30% of the UI never went through the system.', note: '← Drift catches this' },
           ].map((s, i) => (
-            <div key={s.step} style={{
-              padding: '28px 24px',
-              borderRight: i < 3 ? `1px solid ${C.creamBorder}` : 'none',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14 }}>
-                <span style={{ ...mono, fontSize: 10, color: C.creamMuted }}>{s.step}</span>
+            <div key={s.step} style={{ padding: '24px 20px', borderRight: i < 3 ? `1px solid ${C.border}` : 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                <span style={{ ...mono, fontSize: 10, color: C.muted }}>{s.step}</span>
                 <span style={{ ...sans, fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: s.color }}>{s.label}</span>
               </div>
-              <div style={{ fontSize: 20, marginBottom: 12, color: s.color }}>{s.icon}</div>
-              <div style={{ ...display, fontSize: 14, fontWeight: 700, color: C.creamText, marginBottom: 8, lineHeight: 1.3 }}>{s.title}</div>
-              <div style={{ ...sans, fontSize: 12, color: C.creamSub, lineHeight: 1.75 }}>{s.body}</div>
+              <div style={{ fontSize: 18, marginBottom: 10, color: s.color }}>{s.icon}</div>
+              <div style={{ ...display, fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 6, lineHeight: 1.3 }}>{s.title}</div>
+              <div style={{ ...sans, fontSize: 12, color: C.muted, lineHeight: 1.7 }}>{s.body}</div>
               {s.note && (
-                <div style={{
-                  marginTop: 14, padding: '7px 11px', borderRadius: 7,
-                  background: '#fef2f2', border: '1px solid #fecaca',
-                  fontSize: 11, fontWeight: 600, color: '#dc2626', ...sans,
-                }}>{s.note}</div>
+                <div style={{ marginTop: 12, padding: '5px 10px', borderRadius: 6, background: `${'#ef4444'}15`, border: `1px solid ${'#ef4444'}30`, fontSize: 11, fontWeight: 600, color: '#ef4444', ...sans }}>
+                  {s.note}
+                </div>
               )}
             </div>
           ))}
         </div>
 
-        {/* Positioning + 3 audiences */}
-        <div className="aiera-bottom" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'start' }}>
-          <div>
-            <h3 style={{
-              ...display, fontSize: 28, fontWeight: 800,
-              color: C.creamText, margin: '0 0 16px', letterSpacing: -0.5, lineHeight: 1.25,
-            }}>
-              Drift is the bridge between{' '}
-              <span style={{ color: '#7c3aed' }}>what was designed</span>
-              {' '}and{' '}
-              <span style={{ color: '#2563eb' }}>what shipped.</span>
-            </h3>
-            <p style={{ ...sans, fontSize: 14, color: C.creamSub, lineHeight: 1.85, margin: '0 0 16px' }}>
-              Built by UX practitioners who live at the intersection of design systems and AI tooling. We've watched vibe coding quietly erode design systems at companies shipping fast — and built the guardrail that makes it safe.
-            </p>
-            <p style={{ ...sans, fontSize: 14, color: C.creamSub, lineHeight: 1.85 }}>
-              Drift gives every person on your team — designers, engineers, and PMs — a shared, measurable answer to: <strong style={{ color: C.creamText }}>"how much has our UI drifted from the system?"</strong>
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[
-              {
-                icon: '◈', color: '#7c3aed',
-                role: 'For design teams',
-                body: 'Your Figma components stay the source of truth. See exactly which components made it into production vs. got replaced by a vibed custom — without doing a manual QA.',
-              },
-              {
-                icon: '⚡', color: '#2563eb',
-                role: 'For engineers',
-                body: 'Vibe code at full speed. Drift surfaces what drifted in your PR so you fix it before review — not during a surprise design QA session two weeks later.',
-              },
-              {
-                icon: '◎', color: '#059669',
-                role: 'For PMs and leadership',
-                body: 'DS coverage is a metric now, not a feeling. Set a threshold, track it in CI, and ship knowing your product matches what was designed.',
-              },
-            ].map(card => (
-              <div key={card.role} style={{
-                display: 'flex', gap: 14, padding: '16px 18px',
-                background: '#fff', borderRadius: 12,
-                border: `1px solid ${C.creamBorder}`,
-                boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
-              }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-                  background: `${card.color}10`, border: `1px solid ${card.color}22`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 17, color: card.color,
-                }}>{card.icon}</div>
-                <div>
-                  <div style={{ ...display, fontSize: 13, fontWeight: 700, color: C.creamText, marginBottom: 5 }}>{card.role}</div>
-                  <div style={{ ...sans, fontSize: 12, color: C.creamSub, lineHeight: 1.7 }}>{card.body}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* 3 audiences */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }} className="aiera-bottom">
+          {[
+            { icon: '◈', color: C.purple, role: 'Designers', body: 'See what AI shipped vs. what you designed — without a manual QA.' },
+            { icon: '⚡', color: C.blue,   role: 'Engineers', body: 'Vibe code freely. Fix what drifted in your PR, not in a design review.' },
+            { icon: '◎', color: C.green,  role: 'PMs',        body: 'DS coverage is a KPI now. Set a threshold, enforce it in CI.' },
+          ].map(card => (
+            <div key={card.role} style={{ padding: '18px 20px', background: C.surface2, borderRadius: 12, border: `1px solid ${C.border}` }}>
+              <div style={{ fontSize: 18, color: card.color, marginBottom: 8 }}>{card.icon}</div>
+              <div style={{ ...display, fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 5 }}>{card.role}</div>
+              <div style={{ ...sans, fontSize: 12, color: C.muted, lineHeight: 1.65 }}>{card.body}</div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -620,12 +538,12 @@ function AIEraSection() {
 
 // ─── Features ─────────────────────────────────────────────────────────────────
 const FEATURES = [
-  { icon: '⬡', color: C.blue, title: 'Live fiber tree scanning', body: 'Reads the actual rendered React component tree — not static AST analysis. Sees what\'s drifted right now, not what\'s in source.' },
-  { icon: '◎', color: C.orange, title: 'Drift score per page', body: '"23% of this page has drifted from your design system." One number. Leadership gets a KPI, engineers get a target.' },
-  { icon: '⚡', color: C.purple, title: 'PR drift delta', body: 'Every pull request shows exactly what drifted in this change — before anyone reviews it.' },
-  { icon: '✦', color: C.green, title: 'AI context file export', body: 'Generates .cursorrules and CLAUDE.md from your live tokens. AI tools stop inventing hardcoded hex values.' },
-  { icon: '⬚', color: C.pink, title: 'Page scaffold generator', body: 'Describe a screen in plain English. Get a React file built from only your registered DS components — no drift on day one.' },
-  { icon: '⟳', color: C.orange, title: 'Token violation flagging', body: 'Catches color: #2563EB before it ships. Every hardcoded value is flagged with its correct CSS variable replacement.' },
+  { icon: '⬡', color: C.blue,   title: 'Live fiber tree scanning',  body: 'Reads the actual rendered component tree — not source. Sees drift as it runs, not as it\'s written.' },
+  { icon: '◎', color: C.orange, title: 'Drift score per page',       body: '"23% of this page has drifted." One number engineers and leadership can both act on.' },
+  { icon: '⚡', color: C.purple, title: 'PR drift delta',             body: 'Every PR shows what drifted in that change — before anyone reviews.' },
+  { icon: '✦', color: C.green,  title: 'AI rules export',            body: 'Generates CLAUDE.md and .cursorrules from your component registry — tells Cursor and Claude what exists and which tokens to use.' },
+  { icon: '⬚', color: C.pink,   title: 'Page scaffold generator',    body: 'Describe a screen. Get React built from only your registered DS components — zero drift on day one.' },
+  { icon: '⟳', color: C.orange, title: 'Token violation flagging',   body: 'Catches hardcoded hex before it ships. Every violation is flagged with the correct CSS variable.' },
 ]
 
 function Features() {
@@ -677,11 +595,8 @@ function PRDeltaCallout() {
           <h2 style={{ ...display, fontSize: 36, fontWeight: 800, color: C.text, margin: '20px 0 16px', letterSpacing: -0.8, lineHeight: 1.1 }}>
             Know exactly what drifted in every PR
           </h2>
-          <p style={{ ...sans, fontSize: 15, color: C.muted, lineHeight: 1.85, margin: '0 0 16px' }}>
-            The GitHub Action posts a drift delta to every pull request. Engineers see exactly what drifted — components, tokens, coverage change — before anyone hits review.
-          </p>
-          <p style={{ ...sans, fontSize: 15, color: C.muted, lineHeight: 1.85, margin: '0 0 28px' }}>
-            When a teammate asks "what's that Drift comment?" — that's your acquisition loop.
+          <p style={{ ...sans, fontSize: 15, color: C.muted, lineHeight: 1.8, margin: '0 0 28px' }}>
+            The GitHub Action posts a drift delta to every PR — components, tokens, coverage change — before anyone hits review. When a teammate asks "what's that Drift comment?" that's your acquisition loop.
           </p>
           <a href="https://github.com/dyoon92/design-drift/blob/main/.github/workflows/drift-check.yml"
             target="_blank" rel="noopener noreferrer"
@@ -901,7 +816,7 @@ function WaitlistSection({ onOpenModal }: { onOpenModal: () => void }) {
           Stop guessing.<br/>Start catching drift.
         </h2>
         <p style={{ ...sans, fontSize: 16, color: C.muted, lineHeight: 1.8, margin: '0 0 40px', fontWeight: 300 }}>
-          The local overlay is free today. PR drift comments are invite-only for the first 200 teams — grab your spot before it fills.
+          The overlay is free. PR drift comments are invite-only for the first 200 teams.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={onOpenModal} style={{
@@ -949,7 +864,7 @@ function Footer() {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <WaveLogo size={16} />
-        <span style={{ fontSize: 13, color: C.muted }}>Drift — built by UX practitioners, for teams shipping with AI.</span>
+        <span style={{ fontSize: 13, color: C.muted }}>Drift — the UX governance layer for teams shipping with AI.</span>
       </div>
       <div style={{ display: 'flex', gap: 24 }}>
         {[
@@ -985,7 +900,7 @@ export function LandingPage() {
           .hero-grid  { grid-template-columns: 1fr !important; padding: 0 40px !important; }
           .hero-mock  { display: none !important; }
           .aiera-flow { grid-template-columns: 1fr 1fr !important; }
-          .aiera-bottom { grid-template-columns: 1fr !important; }
+          .aiera-bottom { grid-template-columns: 1fr 1fr !important; }
           .how-grid   { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 640px) {

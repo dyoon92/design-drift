@@ -14,8 +14,9 @@
 
 import React, { useState, useEffect, useRef, useCallback, useContext, createContext } from 'react'
 import { scanFiberTree, hashComponents, type ScannedComponent } from './fiberScanner'
-import { DS_STORY_PATHS, DS_FIGMA_LINKS, DS_COMPONENTS, STORYBOOK_URL } from './manifest'
+import { DS_STORY_PATHS, DS_FIGMA_LINKS, DS_COMPONENTS, STORYBOOK_URL, config } from './manifest'
 import { scanTokenViolations, getColorViolationsInSubtree, type TokenViolation, type DriftViolation, type DriftViolationType } from './tokenChecker'
+import { SetupWizard } from './SetupWizard'
 
 const SB_BASE         = STORYBOOK_URL
 const BADGE_H         = 19
@@ -1632,6 +1633,7 @@ interface PanelProps {
   onSuggest: (name: string, count: number, props: Record<string, unknown>) => void
   onDriftFix: (name: string, violations: DriftViolation[]) => void
   onClose: () => void
+  onSetup: () => void
 }
 
 const SummaryPanel = (p: PanelProps) => {
@@ -2343,6 +2345,17 @@ const SummaryPanel = (p: PanelProps) => {
           }}>CACHED</span>
         )}
         <div style={{ flex: 1 }} />
+        {/* Setup wizard */}
+        <button onClick={p.onSetup} title="Run setup wizard" style={{
+          height: 24, display: 'flex', alignItems: 'center', gap: 4,
+          padding: '0 8px',
+          background: C.btnBg, border: `1px solid ${C.panelBorder}`,
+          borderRadius: 8, cursor: 'pointer',
+          fontSize: 10, fontWeight: 700, color: C.muted,
+          fontFamily: 'Inter, sans-serif', letterSpacing: 0.2,
+        }}>
+          ⚙ Setup
+        </button>
         {/* Settings */}
         <button onClick={() => setSettingsPage(true)} title="Settings" style={{
           width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -3073,6 +3086,7 @@ function injectGradientStyle() {
 export function DSCoverageOverlay() {
   const [theme,          setTheme]          = useState<Theme>(() => (localStorage.getItem(THEME_KEY) as Theme) ?? 'dark')
   const [visible,        setVisible]        = useState(false)
+  const [showSetup,      setShowSetup]      = useState(() => Object.keys(config.components).length === 0)
   const [components,     setComponents]     = useState<ScannedComponent[]>([])
   const [tokenViolations,setTokenViolations]= useState<TokenViolation[]>([])
   const [history,        setHistory]        = useState<HistoryEntry[]>([])
@@ -3533,7 +3547,9 @@ export function DSCoverageOverlay() {
             fontFamily: 'Inter, sans-serif',
             overflow: 'hidden',
           }}>
-            {inspected ? (
+            {showSetup ? (
+              <SetupWizard onDone={() => setShowSetup(false)} />
+            ) : inspected ? (
               <PropsPanel component={inspected} onClose={() => setInspected(null)} apiKey={apiKey} />
             ) : (
               <SummaryPanel
@@ -3554,6 +3570,7 @@ export function DSCoverageOverlay() {
                 onSuggest={handleSuggest}
                 onDriftFix={handleDriftFix}
                 onClose={handleClosePanel}
+                onSetup={() => setShowSetup(true)}
               />
             )}
           </div>
