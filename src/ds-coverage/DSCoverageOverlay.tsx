@@ -1935,7 +1935,7 @@ const SummaryPanel = (p: PanelProps) => {
             }} />
           ))}
           <div style={{ textAlign: 'center', marginTop: 10, fontSize: 11, color: C.muted }}>
-            Analysing screen…
+            Waiting for page to settle…
           </div>
         </div>
       )}
@@ -2741,9 +2741,15 @@ export function DSCoverageOverlay() {
       return
     }
     setHistory(loadHistory())
-    if (!scanned) scan()
-    // Auto-enter inspect mode so the user can immediately hover + click to explore
     setInspectMode(true)
+    if (!scanned) {
+      // Show skeleton immediately, then wait for the page to finish its initial
+      // render before scanning — avoids a two-step flicker (partial result →
+      // corrected result) caused by scanning before React has settled.
+      setScanning(true)
+      const timer = setTimeout(() => scan(), 700)
+      return () => clearTimeout(timer)
+    }
   }, [visible]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (visible && scanned) scan() }, [surfaceMode]) // eslint-disable-line react-hooks/exhaustive-deps
