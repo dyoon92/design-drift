@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import './tokens/variables.css'
 import { DSCoverageOverlay } from './ds-coverage/DSCoverageOverlay'
-import { GuidedTour } from './landing/GuidedTour'
+import { StoryModal } from './landing/StoryModal'
 import { Tabs } from './stories/Tabs'
 import { OccupancyWidget, RevenueWidget, NetMoveInsWidget, LeadsWidget, PastDueWidget, UnitStatusWidget, ProtectionAutopayWidget, ECRIWidget } from './stories/DashboardWidgets'
 import { FMKPIRow, PriorityTasksPanel, RecentCommunicationsPanel, GoalTrackerPanel, DelinquenciesPanel, GoogleReviewsPanel, PromotionsPanel } from './stories/FMDashboardWidgets'
@@ -301,6 +301,7 @@ function DashboardView({ isMobile }: { isMobile: boolean }) {
 
       {mode === 'portfolio' ? (
         <>
+          <OccupancySummaryCard />
           <div style={{ display: 'flex', gap, marginBottom: gap, flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch' }}>
             <div style={{ flex: 1, minWidth: 0 }}><OccupancyWidget /></div>
             <div style={{ flex: 1, minWidth: 0 }}><RevenueWidget /></div>
@@ -337,9 +338,74 @@ function DashboardView({ isMobile }: { isMobile: boolean }) {
   )
 }
 
+// ─── Drift demo: intentional custom (non-DS) components ──────────────────────
+// These components were written by AI and are NOT in the design system.
+// Drift surfaces them in the coverage panel as gaps to promote.
+
+function OverdueAlertBanner({ count }: { count: number }) {
+  if (count === 0) return null
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 10,
+      background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+      borderRadius: 8, padding: '10px 16px', marginBottom: 16,
+      fontFamily: 'Inter, system-ui, sans-serif',
+    }}>
+      <span style={{ fontSize: 14 }}>⚠️</span>
+      <span style={{ fontSize: 13, color: '#ef4444', fontWeight: 500 }}>
+        {count} tenant{count !== 1 ? 's' : ''} with overdue balance
+      </span>
+      <span style={{ fontSize: 12, color: '#9090aa', marginLeft: 'auto' }}>Review now</span>
+    </div>
+  )
+}
+OverdueAlertBanner.displayName = 'OverdueAlertBanner'
+
+function QuickActionsBar() {
+  return (
+    <div style={{
+      display: 'flex', gap: 8, marginBottom: 14,
+      fontFamily: 'Inter, system-ui, sans-serif',
+    }}>
+      {['Export CSV', 'Send Notices', 'Bulk Update'].map(label => (
+        <button key={label} style={{
+          padding: '6px 14px', fontSize: 12, fontWeight: 500,
+          background: 'var(--ds-color-surface)', color: 'var(--ds-color-text-primary)',
+          border: '1px solid var(--ds-color-border)', borderRadius: 6, cursor: 'pointer',
+        }}>{label}</button>
+      ))}
+    </div>
+  )
+}
+QuickActionsBar.displayName = 'QuickActionsBar'
+
+function OccupancySummaryCard() {
+  return (
+    <div style={{
+      display: 'flex', gap: 24, padding: '14px 18px',
+      background: 'var(--ds-color-surface)', border: '1px solid var(--ds-color-border)',
+      borderRadius: 10, marginBottom: 20, fontFamily: 'Inter, system-ui, sans-serif',
+      flexWrap: 'wrap',
+    }}>
+      {[
+        { label: 'Occupied', value: '86%', color: '#34d399' },
+        { label: 'Overdue',  value: '12%', color: '#ef4444' },
+        { label: 'Vacant',   value: '14%', color: '#9090aa' },
+      ].map(({ label, value, color }) => (
+        <div key={label}>
+          <div style={{ fontSize: 11, color: '#9090aa', marginBottom: 2 }}>{label}</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color }}>{value}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+OccupancySummaryCard.displayName = 'OccupancySummaryCard'
+
 // ─── Tenants list view ────────────────────────────────────────────────────────
 
 function TenantsView({ onSelectTenant }: { onSelectTenant: (id: string) => void }) {
+  const overdueCount = TENANTS.filter(t => t.balanceOverdue).length
   const rows = useMemo(() => TENANTS.map(t => ({
     id: t.id,
     name: t.name,
@@ -355,11 +421,15 @@ function TenantsView({ onSelectTenant }: { onSelectTenant: (id: string) => void 
   })), [])
 
   return (
-    <TenantsTable
-      tenants={rows}
-      onRowClick={onSelectTenant}
-      onAddTenant={() => {}}
-    />
+    <div>
+      <OverdueAlertBanner count={overdueCount} />
+      <QuickActionsBar />
+      <TenantsTable
+        tenants={rows}
+        onRowClick={onSelectTenant}
+        onAddTenant={() => {}}
+      />
+    </div>
   )
 }
 
@@ -369,7 +439,7 @@ export default function App() {
   const [nav, setNav]                     = useState<NavId>('dashboard')
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null)
   const [darkMode, setDarkMode]           = useState(false)
-  const [showTour, setShowTour]           = useState(true)
+  const [showTour, setShowTour]           = useState(() => !localStorage.getItem('drift-story-seen'))
 
   const isMobile = useWindowWidth() < 768
 
@@ -408,7 +478,7 @@ export default function App() {
 
       {(import.meta.env.DEV || import.meta.env.VITE_SHOW_OVERLAY === 'true') && <DSCoverageOverlay />}
 
-      {showTour && <GuidedTour onDismiss={() => setShowTour(false)} />}
+      {showTour && <StoryModal onDone={() => { localStorage.setItem('drift-story-seen', '1'); setShowTour(false) }} />}
 
       <div style={{
         position: 'fixed', bottom: 16, left: 16, zIndex: 99995,

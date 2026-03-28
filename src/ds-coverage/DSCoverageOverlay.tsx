@@ -3121,6 +3121,7 @@ function injectGradientStyle() {
 export function DSCoverageOverlay() {
   const [theme,          setTheme]          = useState<Theme>(() => (localStorage.getItem(THEME_KEY) as Theme) ?? 'dark')
   const [visible,        setVisible]        = useState(false)
+  const [isClosing,      setIsClosing]      = useState(false)
   const [showSetup,      setShowSetup]      = useState(() => Object.keys(config.components).length === 0)
   const [components,     setComponents]     = useState<ScannedComponent[]>([])
   const [tokenViolations,setTokenViolations]= useState<TokenViolation[]>([])
@@ -3442,7 +3443,10 @@ export function DSCoverageOverlay() {
     return () => { obs.disconnect(); clearTimeout(mutTimer) }
   }, [visible, scanned, scan])
 
-  const handleClosePanel = () => { setVisible(false) }
+  const handleClosePanel = () => {
+    setIsClosing(true)
+    setTimeout(() => { setIsClosing(false); setVisible(false) }, 220)
+  }
 
   const displayed = filter === 'gaps' ? components.filter(c => !c.inDS) : components
   // Filter out zero-size elements: these are either detached DOM nodes whose
@@ -3590,6 +3594,10 @@ export function DSCoverageOverlay() {
         )}
 
         {/* Floating panel — anchored bottom-right, capped height, above toggle button */}
+        <style>{`
+          @keyframes drift-slide-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes drift-slide-down { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(16px); } }
+        `}</style>
         {visible && (
           <div data-dd-panel style={{
             position: 'fixed', bottom: 80, right: 16,
@@ -3600,6 +3608,9 @@ export function DSCoverageOverlay() {
             zIndex: 99998, display: 'flex', flexDirection: 'column',
             fontFamily: 'Inter, sans-serif',
             overflow: 'hidden',
+            animation: isClosing
+              ? 'drift-slide-down 0.22s ease-in forwards'
+              : 'drift-slide-up 0.22s ease-out',
           }}>
             {showSetup ? (
               <SetupWizard onDone={() => setShowSetup(false)} />
