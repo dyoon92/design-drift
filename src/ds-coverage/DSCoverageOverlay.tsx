@@ -1262,16 +1262,21 @@ After Figma is done:
 - Register it in your Drift config.ts so it gets tracked`
 }
 
-function buildJiraTicket(name: string, styles: CapturedStyles | null): string {
-  const sizeNote = styles ? ` (${styles.width}×${styles.height}px, detected live in the app)` : ''
-  return `Summary: [Design System] Promote ${name} to DS component
+function buildJiraTicket(component: ScannedComponent, styles: CapturedStyles | null): string {
+  const name = component.name
+  const sizeNote = styles ? ` (${styles.width}×${styles.height}px, detected live)` : ''
+
+  if (!component.inDS) {
+    // Gap component — design request
+    return `Summary: [Design System] Promote ${name} to DS component
 
 Type: Design Task
 Priority: Medium
 Labels: design-system, drift, needs-design
 
 Description:
-Drift detected \`${name}\`${sizeNote} as a custom component not in the design system. It is rendering as a one-off and needs to be properly designed and added to the component library.
+Drift detected \`${name}\`${sizeNote} as a custom component not in the design system.
+It is rendering as a one-off and should be promoted to a proper DS component.
 
 Measured styles (from live render):
 ${styles ? `  background: ${styles.backgroundColor}
@@ -1282,16 +1287,64 @@ ${styles ? `  background: ${styles.backgroundColor}
 
 Steps:
 1. Design \`${name}\` in Figma using DS tokens and the measured values above
-2. Implement in your component library directory
+2. Implement in your component library
 3. Add a Storybook story
 4. Register in your Drift config.ts
 5. Verify Drift coverage improves on next PR scan
 
 Acceptance Criteria:
-- [ ] Component designed in Figma with proper DS tokens
+- [ ] Designed in Figma with proper DS tokens
 - [ ] Storybook story added and published
 - [ ] Registered in Drift — coverage delta confirmed in PR comment
 - [ ] drift-check CI passes`
+  }
+
+  if (component.drifted) {
+    // DS component with token violations — tech debt ticket
+    const violations = component.driftViolations ?? []
+    const violationList = violations.slice(0, 8).map(v => `  - \`${v.prop}: ${v.value}\``).join('\n')
+    return `Summary: [Token Fix] Replace hardcoded styles in ${name}
+
+Type: Tech Debt
+Priority: Medium
+Labels: design-system, drift, token-violation
+
+Description:
+Drift detected \`${name}\` is a DS component but has ${violations.length} hardcoded style value${violations.length !== 1 ? 's' : ''} that should use design tokens.
+
+Hardcoded values to fix:
+${violationList || '  (run Drift scan for full list)'}
+
+Steps:
+1. Open the \`${name}\` component file
+2. Replace each hardcoded value with the nearest DS token (var(--ds-color-*), var(--ds-spacing-*))
+3. Verify visually and re-run Drift scan
+4. PR should show token violations count drop to 0
+
+Acceptance Criteria:
+- [ ] All listed hardcoded values replaced with CSS variables
+- [ ] Drift scan shows 0 token violations for ${name}
+- [ ] PR passes drift-check CI`
+  }
+
+  // DS component in good standing — general tracking ticket
+  return `Summary: [Design Review] Track changes to ${name}
+
+Type: Design Task
+Priority: Low
+Labels: design-system, drift
+
+Description:
+\`${name}\` is a design system component${sizeNote}. This ticket is for tracking any proposed changes, reviews, or documentation updates.
+
+Component details:
+${styles ? `  size: ${styles.width}×${styles.height}px
+  background: ${styles.backgroundColor}` : '  (attach screenshot)'}
+
+Notes:
+- Any visual changes should go through the design review process
+- Update Storybook story after changes
+- Re-run Drift scan to confirm coverage is maintained`
 }
 
 const GapActionPanel = ({ component }: { component: ScannedComponent }) => {
@@ -1403,7 +1456,7 @@ const GapActionPanel = ({ component }: { component: ScannedComponent }) => {
           color: '#2684FF',
           bg: 'rgba(38,132,255,0.08)',
           border: 'rgba(38,132,255,0.25)',
-          text: () => buildJiraTicket(component.name, styles),
+          text: () => buildJiraTicket(component, styles),
         },
       ] as const).map(a => (
         <button
@@ -1431,6 +1484,104 @@ const GapActionPanel = ({ component }: { component: ScannedComponent }) => {
           <span style={{ fontSize: 10, color: a.color, flexShrink: 0, opacity: 0.7 }}>copy</span>
         </button>
       ))}
+    </div>
+  )
+}
+
+const ComponentActionsBar = ({ component }: { component: ScannedComponent }) => {
+  const C = useC()
+  const [screenshot, setScreenshot] = useState<string | null>(null)
+  const [styles, setStyles]         = useState<CapturedStyles | null>(null)
+  const [capturing, setCapturing]   = useState(true)
+  const [jiraCopied, setJiraCopied] = useState(false)
+  const [expanded, setExpanded]     = useState(false)
+
+  useEffect(() => {
+    const el = component.element as HTMLElement | null
+    if (!el) { setCapturing(false); return }
+    const extracted = extractStyles(el)
+    setStyles(extracted)
+    html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null, logging: false })
+      .then(canvas => { setScreenshot(canvas.toDataURL('image/png')); setCapturing(false) })
+      .catch(() => setCapturing(false))
+  }, [component.element])
+
+  const copyJira = () => {
+    const text = buildJiraTicket(component, styles)
+    navigator.clipboard.writeText(text).then(() => {
+      setJiraCopied(true)
+      setTimeout(() => setJiraCopied(false), 2200)
+    })
+  }
+
+  return (
+    <div style={{ borderTop: `1px solid ${C.panelBorder}`, paddingTop: 10, marginTop: 8, padding: '10px 16px 0' }}>
+      {/* Screenshot thumbnail */}
+      {capturing && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.muted, marginBottom: 8 }}>
+          <span style={{ animation: 'dd-spin 1s linear infinite', display: 'inline-block' }}>⟳</span>
+          Capturing…
+        </div>
+      )}
+      {screenshot && (
+        <div style={{ position: 'relative', borderRadius: 7, overflow: 'hidden', border: `1px solid ${C.panelBorder}`, marginBottom: 8 }}>
+          <img
+            src={screenshot}
+            alt={component.name}
+            style={{ width: '100%', display: 'block', maxHeight: expanded ? 300 : 90, objectFit: 'cover', objectPosition: 'top', cursor: 'pointer' }}
+            onClick={() => setExpanded(v => !v)}
+            title={expanded ? 'Click to collapse' : 'Click to expand'}
+          />
+          <div style={{
+            position: 'absolute', top: 5, right: 5,
+            background: 'rgba(0,0,0,0.55)', borderRadius: 4, padding: '2px 6px',
+            fontSize: 10, color: '#fff', fontFamily: 'Inter, sans-serif',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}>
+            <span style={{ opacity: 0.7 }}>live</span>
+            <button
+              onClick={e => { e.stopPropagation(); const a = document.createElement('a'); a.href = screenshot!; a.download = `${component.name}.png`; a.click() }}
+              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 0, fontSize: 10, opacity: 0.8 }}
+              title="Download"
+            >⬇</button>
+          </div>
+          {styles && (
+            <div style={{ padding: '4px 8px', background: C.panel, fontSize: 10, color: C.muted, fontFamily: 'monospace', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <span>{styles.width}×{styles.height}px</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: styles.backgroundColor, border: `1px solid ${C.panelBorder}`, display: 'inline-block' }} />bg
+              </span>
+              <span>r:{styles.borderRadius}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Jira button — always shown */}
+      <button
+        onClick={copyJira}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          width: '100%', padding: '8px 10px', borderRadius: 7, cursor: 'pointer',
+          background: jiraCopied ? 'rgba(38,132,255,0.10)' : 'transparent',
+          border: `1px solid ${jiraCopied ? 'rgba(38,132,255,0.35)' : C.panelBorder}`,
+          textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif',
+          transition: 'all 0.15s',
+        }}
+        onMouseEnter={e => { if (!jiraCopied) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(38,132,255,0.08)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(38,132,255,0.30)' } }}
+        onMouseLeave={e => { if (!jiraCopied) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = C.panelBorder } }}
+      >
+        <img src={jiraLogoUrl} alt="Jira" width={15} height={15} style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: jiraCopied ? '#2684FF' : C.text }}>
+            {jiraCopied ? '✓ Copied to clipboard' : 'Create Jira ticket'}
+          </div>
+          <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>
+            {component.inDS && !component.drifted ? 'General design review ticket' : component.drifted ? 'Token fix ticket' : 'Design request ticket'}
+          </div>
+        </div>
+        <span style={{ fontSize: 10, color: C.muted, flexShrink: 0 }}>copy</span>
+      </button>
     </div>
   )
 }
@@ -1777,11 +1928,11 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
             Props
           </div>
         )}
+        {entries.length === 0 && !component.drifted && component.inDS && (
+          <div style={{ fontSize: 12, color: C.muted, textAlign: 'center', padding: '12px 0 4px' }}>No props</div>
+        )}
         {entries.length === 0 && !component.drifted && !component.inDS && (
           <GapActionPanel component={component} />
-        )}
-        {entries.length === 0 && !component.drifted && component.inDS && (
-          <div style={{ fontSize: 12, color: C.muted, textAlign: 'center', padding: '24px 0' }}>No props</div>
         )}
         {entries.map(([key, val]) => (
           <div key={key} style={{
@@ -1797,8 +1948,10 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
         )}
       </div>
 
+      <ComponentActionsBar component={component} />
+
       <div style={{ padding: '8px 16px', borderTop: `1px solid ${C.panelBorder}`, flexShrink: 0 }}>
-        <div style={{ fontSize: 11, color: C.muted }}>Hover any element · click to switch · Esc to close</div>
+        <div style={{ fontSize: 11, color: C.muted }}>Hover · click to inspect · Esc to close</div>
       </div>
     </div>
   )
@@ -3439,8 +3592,9 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
   }, [])
   // Keep a ref so the capture-layer handlers can access latest rendered list
   // without needing to be re-registered on every render.
-  const renderedRef  = useRef<ScannedComponent[]>([])
-  const captureRef   = useRef<HTMLDivElement>(null)
+  const renderedRef    = useRef<ScannedComponent[]>([])
+  const inspectModeRef = useRef(false)
+  const captureRef     = useRef<HTMLDivElement>(null)
 
   // Forward wheel events from the capture div to the actual scrollable container
   // underneath. Briefly set pointer-events:none to hit-test through the div,
@@ -3589,7 +3743,6 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
       if (e.key === 'Escape') { setInspectMode(false); setInspected(null); return }
       if (inInput || e.ctrlKey || e.metaKey || e.altKey) return
       if (e.key === 'd' || e.key === 'D') { e.preventDefault(); setVisible(v => !v) }
-      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); setInspectMode(v => !v) }
     }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
@@ -3613,14 +3766,12 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
   useEffect(() => {
     if (!visible) return
     const handler = (e: MouseEvent) => {
+      // In inspect mode the capture layer owns all canvas clicks — never close
+      if (inspectModeRef.current) return
       const panel   = document.querySelector('[data-dd-panel]')
       const toggle  = document.querySelector('[data-dd-toggle]')
-      const capture = document.querySelector('[data-dd-capture]')
-      // Don't close when clicking the panel, toggle, or the capture layer
-      // (the capture layer handles its own click → inspect logic)
-      if (panel?.contains(e.target as Node))   return
-      if (toggle?.contains(e.target as Node))  return
-      if (capture?.contains(e.target as Node)) return
+      if (panel?.contains(e.target as Node))  return
+      if (toggle?.contains(e.target as Node)) return
       setVisible(false)
     }
     document.addEventListener('mousedown', handler)
@@ -3631,10 +3782,12 @@ export function DSCoverageOverlay({ autoOpen }: { autoOpen?: boolean } = {}) {
     if (!visible) {
       // Keep components/scanned so collapsed button keeps showing metrics
       setInspectMode(false); setInspected(null); setHoverComp(null); setHoverPos(null)
+      inspectModeRef.current = false
       return
     }
     setHistory(loadHistory())
     setInspectMode(true)
+    inspectModeRef.current = true
     // If we navigated away while the panel was closed, stale results are showing —
     // clear them and re-scan for the current page.
     if (scanned && scannedRouteRef.current !== window.location.pathname) {
