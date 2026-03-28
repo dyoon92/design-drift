@@ -1931,9 +1931,6 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
         {entries.length === 0 && !component.drifted && component.inDS && (
           <div style={{ fontSize: 12, color: C.muted, textAlign: 'center', padding: '12px 0 4px' }}>No props</div>
         )}
-        {entries.length === 0 && !component.drifted && !component.inDS && (
-          <GapActionPanel component={component} />
-        )}
         {entries.map(([key, val]) => (
           <div key={key} style={{
             display: 'flex', gap: 8, padding: '6px 0',
@@ -1948,7 +1945,7 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
         )}
       </div>
 
-      <ComponentActionsBar component={component} />
+      {component.inDS ? <ComponentActionsBar component={component} /> : <GapActionPanel component={component} />}
 
       <div style={{ padding: '8px 16px', borderTop: `1px solid ${C.panelBorder}`, flexShrink: 0 }}>
         <div style={{ fontSize: 11, color: C.muted }}>Hover · click to inspect · Esc to close</div>
