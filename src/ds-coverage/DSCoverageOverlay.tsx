@@ -2554,7 +2554,18 @@ export function DSCoverageOverlay() {
   surfaceRef.current = surfaceMode
   // Keep a ref so the capture-layer handlers can access latest rendered list
   // without needing to be re-registered on every render.
-  const renderedRef = useRef<ScannedComponent[]>([])
+  const renderedRef  = useRef<ScannedComponent[]>([])
+  const captureRef   = useRef<HTMLDivElement>(null)
+
+  // Passive wheel listener on the capture div so the browser can scroll
+  // immediately without waiting for JS (non-passive React onWheel blocks it).
+  useEffect(() => {
+    const el = captureRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => window.scrollBy(e.deltaX, e.deltaY)
+    el.addEventListener('wheel', onWheel, { passive: true })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [inspectMode])
 
   const C = THEMES[theme]
 
@@ -2736,22 +2747,27 @@ export function DSCoverageOverlay() {
 
   useEffect(() => {
     if (!visible) return
-    const main = document.querySelector('main')
-    if (!main) return
-    // DOM changed — invalidate cache and re-scan, but debounce so rapid React
-    // reconciliation passes (which fire many childList mutations in quick
-    // succession) don't trigger a storm of expensive re-scans.  The 400 ms
-    // window covers a full React render cycle comfortably.
+    // Watch the full body subtree so React SPA route changes (deep DOM swaps)
+    // are caught, not just direct-child mutations of <main>.
     let mutTimer: ReturnType<typeof setTimeout>
+    let lastPath = window.location.pathname
     const obs = new MutationObserver(() => {
       clearTimeout(mutTimer)
       mutTimer = setTimeout(() => {
-        clearScanCache(window.location.pathname)
+        const newPath = window.location.pathname
+        const routeChanged = newPath !== lastPath
+        lastPath = newPath
+        clearScanCache(newPath)
         setInspected(null)
+        if (routeChanged) {
+          // Clear stale component rects immediately so old boxes don't flash
+          setComponents([])
+          setScanned(false)
+        }
         scan(true)
       }, 400)
     })
-    obs.observe(main, { childList: true })
+    obs.observe(document.body, { childList: true, subtree: true })
     return () => { obs.disconnect(); clearTimeout(mutTimer) }
   }, [visible, scan])
 
@@ -2859,13 +2875,13 @@ export function DSCoverageOverlay() {
             hover to highlight any component and click to inspect it without
             having to toggle inspect mode manually. The panel/toggle are excluded
             from interception so the UI stays clickable. */}
-        {visible && (
+        {visible && inspectMode && (
           <div
+            ref={captureRef}
             data-dd-capture
             onMouseMove={handleCaptureMove}
             onMouseLeave={() => { setHoverComp(null); setHoverPos(null) }}
             onClick={handleCaptureClick}
-            onWheel={e => window.scrollBy({ left: e.deltaX, top: e.deltaY, behavior: 'instant' as ScrollBehavior })}
             style={{
               position: 'fixed', inset: 0,
               zIndex: 99992,
