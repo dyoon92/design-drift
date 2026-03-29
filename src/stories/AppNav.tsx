@@ -251,8 +251,9 @@ export const Navbar: React.FC<Pick<AppNavProps, 'facilityName' | 'userName'> & {
     zIndex: 50,
   }}>
     {/* Logo */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-      <DriftLogo size={24} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+      <DriftLogo size={22} />
+      <span style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif', fontWeight: 800, fontSize: 15, color: 'var(--ds-color-text-primary)', letterSpacing: -0.3 }}>Drift</span>
     </div>
 
     {/* Facility dropdown */}

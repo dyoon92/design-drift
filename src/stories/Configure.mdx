@@ -2,63 +2,59 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 <Meta title="Design System / Welcome" />
 
-# Design AI with Dave — Component Library
+# Welcome to Drift
 
-This Storybook documents the UI components imported from the **Design AI with Dave** Figma file.
-Each component is live, interactive, and built to match the Figma designs exactly.
+This Storybook is the living component library for **StorageOS** — and the integration point for [Drift](https://catchdrift.ai), the design system coverage layer built for teams shipping with AI.
+
+Every component here is tracked by Drift. When AI builds a new page, Drift checks what it produced against this library, gives it a coverage score, and flags anything that drifted.
 
 ---
 
-## What is Storybook?
+## How Drift + Storybook fit together
 
-Storybook is a sandbox where you can **view, test, and tweak UI components in isolation** — without needing to run the full app. Think of it as a living style guide.
+Storybook is where your components live. Drift is what keeps AI honest about using them.
 
-**Left sidebar** — browse components by category
+When a developer or AI tool builds a screen, Drift scans the rendered component tree in real time — it doesn't read source code, it reads what's actually on the page. Any component that isn't in this Storybook registry gets flagged as a gap.
+
+The result: a coverage score per page, a list of what drifted, and a one-click path to fix it or promote it into the design system.
+
+---
+
+## What's in this library
+
+**Left sidebar** — browse all components by category
 **Canvas tab** — interact with the live component
-**Docs tab** — see all variants + auto-generated prop documentation
-**Controls panel** (bottom) — change props in real-time and see the component update instantly
-**Actions panel** (bottom) — see when buttons/callbacks are triggered
+**Docs tab** — see all variants and prop documentation
+**Controls panel** — tweak props in real-time
+**Actions panel** — see when callbacks fire
+
+Key components to explore:
+
+- **TenantPageHeader** — full page header with tabs, balance, and access status
+- **UnitDetailsCard** — unit list + detail panel with status badges
+- **TenantsTable** — tenant list with Current/Past tabs
+- **CommunicationsPanel** — message feed with pinned notes
+- **Button, Input, Badge, Modal, Toast** — base UI primitives
+- **Tabs, Dropdown, PinnedNotes** — interaction patterns
 
 ---
 
-## Components in this library
+## The design token layer
 
-### DesignAI / LineTab
-A tab navigation bar. Supports an active tab indicator (purple underline), optional badge counts, and click callbacks.
+Design tokens (colors, spacing, typography, radii) live in `src/tokens/variables.css` and are synced directly from Figma via `npm run figma-sync`. Every component in this library uses `var(--ds-color-*)` and `var(--ds-spacing-*)` — never hardcoded values.
 
-**Try it:** Open `DesignAI → LineTab → Default`, then use the **Controls** panel at the bottom to change `activeTab` to `"billing"`.
-
----
-
-### DesignAI / TenantPageHeader
-The full page header for a tenant profile. Includes the tenant name, colored status badges, contact meta-info row, action buttons, and the LineTab component embedded at the bottom.
-
-**Try it:** Open `DesignAI → TenantPageHeader → Default`, then in **Controls** toggle `accessStatus` between `active` and `inactive` to see the access dot change color.
+When Drift finds a component using `#7d52f7` instead of `var(--ds-color-primary)`, it flags it as a token violation. Same component, same pixel value — but the design system doesn't own it yet.
 
 ---
 
-### DesignAI / TenantInfoCard
-A detail card showing tenant information as label/value rows. Has a collapsible "Additional Details" section with alternate contact, beneficiary, and military info.
+## Running Drift on this app
 
-**Try it:** Open `DesignAI → TenantInfoCard → Default` and click **Additional Details** inside the component to expand the accordion. Then switch to the **Docs** tab to see all three story variants side by side.
+```bash
+npm run dev        # start the app on :5173
+                   # press D to open the Drift overlay
+npm run storybook  # this catalog on :6006
+npm run figma-sync # pull latest tokens from Figma
+npm run drift-check # CI coverage check
+```
 
----
-
-### DesignAI / UnitDetailsCard
-A two-panel card — a scrollable unit list on the left and a detail panel on the right. Supports status badges (Overdue / Active / Move Out) and dismissible alert banners.
-
-**Try it:** Open `DesignAI → UnitDetailsCard → Overdue`, then click different units in the left sidebar to select them. Use **Controls** to change `unitStatus` and watch the badge update.
-
----
-
-## Design tokens used
-
-| Token | Value | Usage |
-|---|---|---|
-| Primary purple | `#7d52f7` | Active tab, links, buttons |
-| Dark purple | `#5d1dd6` | Unit numbers |
-| Text | `#161616` | All body text |
-| Error red | `#e02c3b` | Overdue badges, warnings |
-| Success green | `#17d797` | Active access indicator |
-| Border | `#e1e5ef` | Card borders, dividers |
-| Font | Inter | All components |
+Press **D** in the running app to see the coverage overlay — green borders for DS components, red for gaps.

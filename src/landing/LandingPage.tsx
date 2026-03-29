@@ -777,17 +777,17 @@ function AIEraSection() {
           overflow: 'hidden', marginBottom: 40,
         }}>
           {[
-            { step: '01', label: 'TOKENS',    color: C.purple,  icon: '◈', title: 'Figma → token pipeline',  body: 'Tokens Studio → Style Dictionary → CSS vars. Fully automated — tokens stay in sync.' },
-            { step: '02', label: 'CONSTRAIN', color: C.blue,    icon: '⬡', title: 'Storybook + AI rules',     body: 'Components in Storybook. CLAUDE.md tells AI which to use and which tokens to reference.' },
-            { step: '03', label: 'VIBE',      color: C.orange,  icon: '⚡', title: 'AI ships fast',            body: 'Cursor builds a dashboard in 8 seconds. Mostly right — but one off-spec card, one hardcoded hex.' },
-            { step: '04', label: 'DRIFT',     color: '#ef4444', icon: '◎', title: 'Gaps compound silently',   body: 'Nobody notices until design QA finds 30% of the UI never went through the system.', note: '← Drift catches this' },
+            { step: '01', label: 'TOKENS',    color: C.purple,  icon: <img src="/figma-logo.svg" style={{ width: 22, height: 22, display: 'block' }} alt="Figma" />, title: 'Figma → token pipeline',  body: 'Tokens Studio → Style Dictionary → CSS vars. Fully automated — tokens stay in sync.' },
+            { step: '02', label: 'CONSTRAIN', color: C.blue,    icon: <img src="/storybook-icon.webp" style={{ width: 22, height: 22, display: 'block' }} alt="Storybook" />, title: 'Storybook + AI rules',     body: 'Components in Storybook. CLAUDE.md tells AI which to use and which tokens to reference.' },
+            { step: '03', label: 'VIBE',      color: C.orange,  icon: <span style={{ fontSize: 20 }}>⚡</span>, title: 'AI ships fast',            body: 'Cursor builds a dashboard in 8 seconds. Mostly right — but one off-spec card, one hardcoded hex.' },
+            { step: '04', label: 'DRIFT',     color: '#ef4444', icon: <WaveLogo size={22} color="#ef4444" />, title: 'Gaps compound silently',   body: 'Nobody notices until design QA finds 30% of the UI never went through the system.', note: '← Drift catches this' },
           ].map((s, i) => (
             <div key={s.step} style={{ padding: '24px 20px', borderRight: i < 3 ? `1px solid ${C.border}` : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                 <span style={{ ...mono, fontSize: 10, color: C.muted }}>{s.step}</span>
                 <span style={{ ...sans, fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: s.color }}>{s.label}</span>
               </div>
-              <div style={{ fontSize: 18, marginBottom: 10, color: s.color }}>{s.icon}</div>
+              <div style={{ marginBottom: 10 }}>{s.icon}</div>
               <div style={{ ...display, fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 6, lineHeight: 1.3 }}>{s.title}</div>
               <div style={{ ...sans, fontSize: 12, color: C.muted, lineHeight: 1.7 }}>{s.body}</div>
               {s.note && (

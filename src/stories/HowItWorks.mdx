@@ -1,150 +1,112 @@
 import { Meta } from "@storybook/addon-docs/blocks";
 
-<Meta title="Design System / How This Works" />
+<Meta title="Design System / How Drift Works" />
 
-# From Figma to Code — How This Works
+# The End-to-End Drift Flow
 
-This page explains the workflow that built this component library,
-and why it matters for how your team ships product.
-
----
-
-## The old way
-
-Traditionally, getting a design into code looks like this:
-
-```
-Designer finishes in Figma
-        ↓
-PM writes a ticket describing the component
-        ↓
-Engineer reads the ticket, opens Figma, manually translates it to code
-        ↓
-Engineer sends it back for design review
-        ↓
-Designer redlines it ("the padding is off", "wrong font weight")
-        ↓
-Engineer fixes it
-        ↓  (repeat 2–4 more times)
-Component ships — 1–2 weeks later
-```
-
-**The pain points:**
-- Engineers spend time on translation, not logic
-- PMs can't prototype ideas without engineering time
-- Designs drift from code over time — what's in Figma ≠ what's in the app
-- Feedback loops are slow
+This page explains how Drift fits into the full design → build → ship cycle — and why each step matters.
 
 ---
 
-## The new way (what you're looking at)
+## The problem Drift solves
 
-```
-Designer finishes in Figma
-        ↓
-Claude reads the Figma file directly via MCP (Model Context Protocol)
-        ↓
-Claude generates React components that match the design pixel-for-pixel
-        ↓
-Components land in Storybook — interactive, documented, ready to use
-        ↓
-Engineers drop them into the real app
-```
+AI coding tools are fast. Really fast. In the time it takes to write a ticket, Cursor or Claude Code has already built the screen. But speed without guardrails means components get invented from scratch, tokens get hardcoded, and the design system stops being the source of truth.
 
-**What is MCP?**
-MCP (Model Context Protocol) is a connection that lets Claude talk directly
-to external tools — in this case, the Figma API. Claude reads the actual
-design file: every color, font size, spacing value, text label, and component
-structure. No screenshots. No copy-paste. The real data.
-
-**Total time to generate this library from the Figma file: ~10 minutes.**
+Drift is the layer that catches it — in the browser, in the IDE, and in CI — before it ships.
 
 ---
 
-## Why Storybook?
+## Step 1 — Figma stays the design source of truth
 
-Storybook is the bridge between design and engineering. It's a living,
-interactive catalog of every UI component — isolated from the app.
+Designers define components, colors, spacing, and typography in Figma. Tokens Studio syncs those values to the codebase automatically via Style Dictionary.
 
-| What you can do | Why it matters |
-|---|---|
-| See every component variant in one place | No more hunting through the app to find "the button with the warning state" |
-| Change props with sliders/dropdowns | PMs and designers can explore states without writing code |
-| Check accessibility automatically | Catch a11y issues before they reach users |
-| Share a URL to a specific component state | "Here's exactly what I mean" — no more annotated screenshots |
-| Write tests against stories | QA knows exactly what to test |
+```bash
+npm run figma-sync   # Figma → src/tokens/variables.css
+```
+
+Every color, spacing value, and radius in this component library comes from that sync. Nothing is hardcoded.
 
 ---
 
-## What this means for Product Managers
+## Step 2 — Components live in Storybook
 
-This is the big one.
+Every reusable component is documented here. When AI tools build new screens, this catalog is what they're supposed to reference.
 
-**Before:** A PM has an idea. They mock it up in a slide or draw it in Figma.
-Then they wait for engineering bandwidth to see it as a real thing.
+`CLAUDE.md` in the repo root makes that explicit — it lists every available component, where it lives, and which tokens to use. Claude Code, Cursor, and Windsurf all read it before generating code.
 
-**Now:** A PM can describe what they want in plain English to Claude —
-*"build me a page that uses the TenantPageHeader with the UnitDetailsCard
-below it, and make the active tab 'Billing'"* — and get a working prototype
-in minutes, using the **real components** from the design system.
+If a component doesn't exist in Storybook yet, the AI is instructed to output a `⚠️ Missing component` warning instead of inventing one from scratch. That warning becomes a design request.
 
-This is "vibe coding" — moving at the speed of thought, with guardrails.
+---
 
-### The guardrails matter
+## Step 3 — AI ships fast (and introduces drift)
 
-Vibe coding without a design system = spaghetti prototypes that engineers
-have to throw away. The PM builds something in `v0` or `Bolt`, it looks
-great in the demo, and then engineering says "we can't use any of this."
+A developer or PM describes a screen. The AI builds it in seconds. Most of it is correct — but somewhere in there, a custom card got invented, a hex color got hardcoded, or a spacing value was eyeballed.
 
-Vibe coding **with** a design system = prototypes built from the same
-components that are already in production. When engineering picks it up,
-the heavy lifting is done. The colors, spacing, typography, and interactions
-are already correct. They're wiring logic, not rebuilding UI.
+This is normal. The goal isn't to stop AI from moving fast. It's to know exactly what it got wrong.
 
-### Concrete example
+---
 
-A PM wants to prototype a new "Lease Renewal" flow:
+## Step 4 — Press D, see what drifted
 
-```
-PM: "Build a page with TenantPageHeader for Stephanie Anderson,
-     a new tab called 'Renewal', and a card below showing
-     renewal date, new rate, and an Accept/Decline button row."
-```
+In the running app (`npm run dev`), press **D** to open the Drift overlay. Every component on the page gets a border:
 
-Claude uses the components already in this Storybook,
-composes them into the new page, and the PM has something
-they can click through and share with stakeholders in 5 minutes.
-Engineering sees it and says: *"We can ship this — it's already
-using our components."*
+- **Green** — registered in your design system
+- **Red** — custom or unknown (a gap)
+- **Orange** — present in the DS but a token is hardcoded somewhere
+
+The coverage score for that page appears in the top-right panel. A score of 100% means every component is from the system. A score of 60% means 40% of the page was built outside it.
+
+---
+
+## Step 5 — Fix gaps from the browser or IDE
+
+From the overlay, you can:
+
+- **Promote** a custom component — generates a Cursor prompt to rebuild it from Figma, then Drift tracks it
+- **Create a Figma brief** — generates a structured spec (props, states, token requirements) so a designer knows exactly what to build next
+- **File a Jira ticket** — pre-filled with component name, screenshot, and occurrence count
+- **Queue a fix for Claude Code** — the MCP server surfaces `drift_gaps` and `drift_suggest` directly in Claude Code or Cursor, so you can apply fixes without leaving the editor
+
+---
+
+## Step 6 — CI enforces the threshold
+
+The GitHub Action runs `npm run drift-check` on every PR. It posts a coverage delta as a PR comment — what percentage was in the DS before, what it is now, and what changed.
+
+If coverage drops below your configured threshold, the check fails. Drift becomes part of the definition of done.
 
 ---
 
 ## The full picture
 
 ```
-┌─────────────┐     MCP      ┌─────────────┐   generates   ┌──────────────┐
-│   Figma     │ ──────────▶  │   Claude    │ ────────────▶ │  Storybook   │
-│  (design    │              │  (AI that   │               │  (component  │
-│   source    │              │  reads &    │               │   library +  │
-│   of truth) │              │  writes     │               │   docs)      │
-└─────────────┘              │   code)     │               └──────┬───────┘
-                             └─────────────┘                      │
-                                   ▲                              │ reuses
-                                   │ PMs describe                 ▼
-                                   │ new features        ┌──────────────┐
-                                   └──────────────────── │  Prototypes  │
-                                                         │  & new pages │
-                                                         └──────────────┘
+Figma (source of truth)
+    │
+    │  npm run figma-sync
+    ▼
+CSS tokens → Storybook components → CLAUDE.md
+                                        │
+                                        │  AI reads rules, builds screens
+                                        ▼
+                               Running app (npm run dev)
+                                        │
+                                        │  press D
+                                        ▼
+                               Drift overlay — coverage score, gap list
+                                        │
+                          ┌─────────────┴─────────────┐
+                          ▼                           ▼
+                    Fix in IDE                 Promote to DS
+                  (MCP tools)             (Figma brief + Jira ticket)
+                          │                           │
+                          └─────────────┬─────────────┘
+                                        ▼
+                                   PR + CI check
+                              (drift-check GitHub Action)
 ```
-
-**Figma** stays the design source of truth.
-**Claude + MCP** eliminates the translation layer.
-**Storybook** is the shared language between design, PM, and engineering.
 
 ---
 
 ## The pitch in one sentence
 
-> *"Instead of designs living in Figma and code living somewhere else,
-> this workflow keeps them in sync — and lets anyone on the team
-> build with real components at the speed of an idea."*
+> *"Drift is the coverage layer between what your design system says and what AI actually shipped — caught before it merges."*
