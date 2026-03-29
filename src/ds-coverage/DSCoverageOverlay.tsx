@@ -3577,7 +3577,7 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
   const [theme,          setTheme]          = useState<Theme>(() => (localStorage.getItem(THEME_KEY) as Theme) ?? 'dark')
   const [visible,        setVisible]        = useState(false)
   const [isClosing,      setIsClosing]      = useState(false)
-  const [showSetup,      setShowSetup]      = useState(() => Object.keys(config.components).length === 0)
+  const [showSetup,      setShowSetup]      = useState(() => !IS_DEMO && Object.keys(config.components).length === 0)
   const [components,     setComponents]     = useState<ScannedComponent[]>([])
   const [tokenViolations,setTokenViolations]= useState<TokenViolation[]>([])
   const [history,        setHistory]        = useState<HistoryEntry[]>([])
