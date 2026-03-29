@@ -10,13 +10,14 @@ function useWindowWidth() {
   return width
 }
 
-// ─── Monument Logo ─────────────────────────────────────────────────────────────
+// ─── Drift Logo ────────────────────────────────────────────────────────────────
 
-const MonumentLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M17.1592 11.7899L25.3745 3.50002V24.3542H17.1592V11.7899Z" fill="#7D52F8"/>
-    <path d="M2.625 15.3637V3.50002L17.1597 18.3296L11.4367 24.3542L2.625 15.3637Z" fill="#7D52F8"/>
-    <path d="M2.625 19.9305H7.04861V24.3541H2.625V19.9305Z" fill="#7D52F8"/>
+const DriftLogo = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <path d="M1 9 Q4 5, 7 9 Q10 13, 13 9 Q16 5, 19 9"
+      stroke="#4f8ef7" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M1 14 Q4 10, 7 14 Q10 18, 13 14 Q16 10, 19 14"
+      stroke="#4f8ef7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.45"/>
   </svg>
 )
 
@@ -171,20 +172,6 @@ const SearchIcon = () => (
   </svg>
 )
 
-const AddUserIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <circle cx="6.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3"/>
-    <path d="M1 13.5c0-2.485 2.239-4.5 5.5-4.5s5.5 2.015 5.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-    <path d="M13 7v4M11 9h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-  </svg>
-)
-
-const TasksIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
-    <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-)
 
 const ChevronDownIcon = () => (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -241,10 +228,9 @@ const SETTINGS_ITEMS: SettingsItem[] = [
 
 // ─── Navbar (top bar) ─────────────────────────────────────────────────────────
 
-export const Navbar: React.FC<Pick<AppNavProps, 'facilityName' | 'userName' | 'tasksCount'> & { darkMode?: boolean; onToggleDarkMode?: () => void }> = ({
+export const Navbar: React.FC<Pick<AppNavProps, 'facilityName' | 'userName'> & { darkMode?: boolean; onToggleDarkMode?: () => void }> = ({
   facilityName = 'Drift Storage Co.',
   userName = 'DY',
-  tasksCount = 0,
   darkMode = false,
   onToggleDarkMode,
 }) => {
@@ -266,7 +252,7 @@ export const Navbar: React.FC<Pick<AppNavProps, 'facilityName' | 'userName' | 't
   }}>
     {/* Logo */}
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-      <MonumentLogo />
+      <DriftLogo size={24} />
     </div>
 
     {/* Facility dropdown */}
@@ -333,31 +319,6 @@ export const Navbar: React.FC<Pick<AppNavProps, 'facilityName' | 'userName' | 't
           </svg>
         )}
       </button>
-
-      <button style={{ width: 32, height: 32, borderRadius: 'var(--ds-border-radius-md)', background: 'var(--ds-color-surface-muted)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ds-color-text-primary)' }}>
-        <AddUserIcon />
-      </button>
-
-      {/* Tasks with badge */}
-      <div style={{ position: 'relative' }}>
-        <button style={{ width: 32, height: 32, borderRadius: 'var(--ds-border-radius-md)', background: 'var(--ds-color-surface-muted)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ds-color-text-primary)' }}>
-          <TasksIcon />
-        </button>
-        {tasksCount > 0 && (
-          <span style={{
-            position: 'absolute',
-            top: -4,
-            right: -4,
-            background: 'var(--ds-color-error)',
-            color: 'white',
-            fontSize: 10,
-            fontWeight: 700,
-            borderRadius: 'var(--ds-border-radius-full)',
-            padding: '1px 5px',
-            lineHeight: 1.4,
-          }}>{tasksCount}</span>
-        )}
-      </div>
 
       {/* Divider */}
       <div style={{ width: 1, height: 24, background: 'var(--ds-color-border)', margin: '0 4px' }} />

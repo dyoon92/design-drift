@@ -460,7 +460,7 @@ export default function App() {
 
   return (
     <div data-theme={darkMode ? 'dark' : undefined} style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', fontFamily: 'Inter, system-ui, sans-serif', overflow: 'hidden' }}>
-      <Navbar facilityName="Drift Storage Co." userName="DU" tasksCount={24} darkMode={darkMode} onToggleDarkMode={() => setDarkMode(d => !d)} />
+      <Navbar facilityName="Drift Storage Co." userName="DU" darkMode={darkMode} onToggleDarkMode={() => setDarkMode(d => !d)} />
 
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {!isMobile && (

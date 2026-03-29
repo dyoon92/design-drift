@@ -12,9 +12,8 @@ type NavbarStory = StoryObj<typeof Navbar>
 export const Default: NavbarStory = {
   name: 'Default',
   args: {
-    facilityName: 'Sunrise Self Storage',
-    userName: 'DY',
-    tasksCount: 24,
+    facilityName: 'Drift Storage Co.',
+    userName: 'DU',
   },
 }
 
@@ -32,7 +31,7 @@ export const SidebarDefault: StoryObj<typeof Sidebar> = {
   },
   args: {
     activeNav: 'tenants',
-    userName: 'Dave Yoon',
-    userEmail: 'dave@monumentai.com',
+    userName: 'Demo User',
+    userEmail: 'demo@driftstorage.co',
   },
 }
