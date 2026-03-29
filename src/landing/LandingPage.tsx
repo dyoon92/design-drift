@@ -187,7 +187,7 @@ export function WaitlistModal({ onClose }: { onClose: () => void }) {
       style={{
         position: 'fixed', inset: 0, zIndex: 999999,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 24, background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(12px)',
+        padding: 24, background: 'rgba(0,0,0,0.88)',
       }}
       onClick={onClose}
     >
