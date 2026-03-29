@@ -395,7 +395,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           </div>
 
           {/* Composite area */}
-          <div style={{ position: 'relative', height: 380, overflow: 'hidden' }}>
+          <div style={{ position: 'relative', height: 440, overflow: 'hidden' }}>
 
             {/* ── Screenshot layers — crossfade between Quick and Full ── */}
             <img
@@ -403,7 +403,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
               alt=""
               style={{
                 position: 'absolute', left: 0, top: 0,
-                height: '100%', width: 'auto', maxWidth: 'calc(100% - 270px)',
+                height: '100%', width: 'auto', maxWidth: 'calc(100% - 210px)',
                 objectFit: 'cover', objectPosition: 'left top',
                 opacity: scanMode === 'quick' ? 1 : 0,
                 transition: 'opacity 0.7s ease',
@@ -414,7 +414,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
               alt=""
               style={{
                 position: 'absolute', left: 0, top: 0,
-                height: '100%', width: 'auto', maxWidth: 'calc(100% - 270px)',
+                height: '100%', width: 'auto', maxWidth: 'calc(100% - 210px)',
                 objectFit: 'cover', objectPosition: 'left top',
                 opacity: scanMode === 'full' ? 1 : 0,
                 transition: 'opacity 0.7s ease',
@@ -424,14 +424,14 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
             {/* Right edge fade so screenshot blends into panel */}
             <div style={{
               position: 'absolute', top: 0, bottom: 0,
-              right: 270, width: 40,
+              right: 210, width: 40,
               background: `linear-gradient(to right, transparent, #08080f)`,
               pointerEvents: 'none',
             }} />
 
             {/* ── Drift panel (always sharp) ── */}
             <div style={{
-              position: 'absolute', right: 0, top: 0, bottom: 0, width: 268,
+              position: 'absolute', right: 0, top: 0, bottom: 0, width: 208,
               background: C.bg, borderLeft: `1px solid ${C.border2}`,
               padding: '12px 11px', display: 'flex', flexDirection: 'column', gap: 7,
               overflow: 'hidden',
