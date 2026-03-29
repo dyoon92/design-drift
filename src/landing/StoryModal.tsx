@@ -27,7 +27,14 @@ const STEPS = [
     visual: 'code',
   },
   {
-    icon: <span style={{ fontSize: 44, lineHeight: 1, display: 'block', color: '#ef4444' }}>◎</span>,
+    icon: (
+      <svg width="44" height="44" viewBox="0 0 20 20" fill="none">
+        <path d="M1 9 Q4 5, 7 9 Q10 13, 13 9 Q16 5, 19 9"
+          stroke="#ef4444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M1 14 Q4 10, 7 14 Q10 18, 13 14 Q16 10, 19 14"
+          stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.45"/>
+      </svg>
+    ),
     iconColor: '#ef4444',
     title: 'Drift measures what actually shipped',
     body: "Drift reads the live React fiber tree — not static code, but what's actually running on screen. Every component is classified, every hardcoded token flagged. You see the real coverage number, not an estimate.",
