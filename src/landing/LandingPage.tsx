@@ -398,6 +398,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
                 height: '100%', width: 'auto', maxWidth: 'calc(100% - 210px)',
                 objectFit: 'cover', objectPosition: 'left top',
                 opacity: scanMode === 'quick' ? 1 : 0,
+                filter: 'blur(1.5px)',
                 transition: 'opacity 0.7s ease',
               }}
             />
