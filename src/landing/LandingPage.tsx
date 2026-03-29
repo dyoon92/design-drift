@@ -332,18 +332,18 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           ...display, fontSize: 'clamp(34px, 3.8vw, 60px)', fontWeight: 800,
           color: C.text, margin: '0 0 20px', lineHeight: 1.06, letterSpacing: -2,
         }}>
-          AI ships UI fast.{' '}
+          Vibe coding is the new normal.{' '}
           <span style={{
             background: `linear-gradient(95deg, ${C.blue} 0%, ${C.purple} 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>Drift makes sure it follows your design system.</span>
+          }}>Ship fast and keep the design system intact.</span>
         </h1>
 
         <p style={{
           ...sans, fontSize: 17, color: C.sub, lineHeight: 1.8,
           margin: '0 0 36px', fontWeight: 300, maxWidth: 480,
         }}>
-          Every sprint, AI coding tools introduce components your design system never approved. Drift gives every page a live coverage score — what's on-spec, what drifted, what AI invented from scratch. Catch gaps before they merge and push them back to Figma in one click.
+          AI lets you test ideas and ship screens in minutes — that speed is worth keeping. Drift makes sure what ships stays on-spec: live coverage scores, token violation flagging, and one-click fixes so your design library stays the source of truth without slowing anyone down.
         </p>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
