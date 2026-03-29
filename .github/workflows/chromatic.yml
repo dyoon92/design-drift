@@ -31,4 +31,5 @@ jobs:
         uses: chromaui/action@latest
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
-          onlyChanged: true   # TurboSnap — only test stories that changed
+          onlyChanged: true          # TurboSnap — only test stories that changed
+          exitZeroOnChanges: true    # don't fail CI on visual diffs — review on Chromatic
