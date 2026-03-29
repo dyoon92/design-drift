@@ -3132,9 +3132,6 @@ const SummaryPanel = (p: PanelProps) => {
                   {p.tokenViolations.map((v, i) => {
                     const isHov = p.hoveredViolation === v
                     const suggestion = suggestToken(v.type, v.value)
-                    const typeIcon: Record<DriftViolationType, string> = {
-                      'color': '', 'radius': '⌀', 'spacing': '↔', 'font-size': 'T', 'font-weight': 'W',
-                    }
                     // Find DS component names that contain the violating elements
                     const affectedNames = v.elements.length > 0
                       ? [...new Set(v.elements.flatMap(el =>
@@ -3155,10 +3152,9 @@ const SummaryPanel = (p: PanelProps) => {
                         }}>
                         {/* Card body */}
                         <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                          {v.type === 'color'
-                            ? <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, background: v.value, border: `1px solid rgba(0,0,0,0.18)`, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
-                            : <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, background: C.pillBg, border: `1px solid ${C.panelBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: C.textSub }}>{typeIcon[v.type]}</div>
-                          }
+                          {v.type === 'color' && (
+                            <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, background: v.value, border: `1px solid rgba(0,0,0,0.18)`, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
+                          )}
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {v.value}
@@ -3841,7 +3837,7 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
         {/* Token violation hover — desaturate page, highlight matched elements in their actual color */}
         {visible && hoveredViolation && (() => {
           const pad   = 3
-          const color = hoveredViolation.value
+          const color = hoveredViolation.type === 'color' ? hoveredViolation.value : '#f97316'
           const rects = hoveredViolation.elements
             .map(el => el.getBoundingClientRect())
             .filter(r => r.width > 0 || r.height > 0)
