@@ -49,64 +49,6 @@ const TenantsIcon = () => (
   </svg>
 )
 
-const LeadsIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.3"/>
-    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3"/>
-    <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-  </svg>
-)
-
-const CommunicationsIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v7a1 1 0 01-1 1H9l-3 2v-2H3a1 1 0 01-1-1V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-  </svg>
-)
-
-const DelinquenciesIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M8 1.5L14.5 13H1.5L8 1.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-    <path d="M8 6v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-    <circle cx="8" cy="11.5" r="0.75" fill="currentColor"/>
-  </svg>
-)
-
-
-const InsightsIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <rect x="2" y="9" width="3" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/>
-    <rect x="6.5" y="5.5" width="3" height="8.5" rx="0.5" stroke="currentColor" strokeWidth="1.3"/>
-    <rect x="11" y="2" width="3" height="12" rx="0.5" stroke="currentColor" strokeWidth="1.3"/>
-  </svg>
-)
-
-const ReportsIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3"/>
-    <path d="M8 1.5V8l4.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-  </svg>
-)
-
-const BillingIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3"/>
-    <path d="M8 4.5v7M6 6c0-.83.895-1.5 2-1.5s2 .67 2 1.5S9.105 7.5 8 7.5 6 8.17 6 9s.895 1.5 2 1.5 2-.67 2-1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-  </svg>
-)
-
-const SettingsIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M6.5 2l-.5 1.5a5 5 0 00-1.2.7L3.2 3.7 1.7 6.3l1.3 1a5 5 0 000 1.4l-1.3 1 1.5 2.6 1.6-.5a5 5 0 001.2.7L6.5 14h3l.5-1.5a5 5 0 001.2-.7l1.6.5 1.5-2.6-1.3-1a5 5 0 000-1.4l1.3-1L12 3.7l-1.6.5A5 5 0 009.2 3.5L8.5 2h-2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-    <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/>
-  </svg>
-)
-
-const LogoutIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-    <path d="M10.5 5L14 8l-3.5 3M14 8H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-)
 
 const CallsIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -166,6 +108,13 @@ const DocIcon = () => (
     <path d="M4 2h5.5L12 4.5V14a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
     <path d="M9 2v3h3" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
     <path d="M5.5 8h5M5.5 10.5h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+  </svg>
+)
+
+const BillingIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3"/>
+    <path d="M8 4.5v7M6 6c0-.83.895-1.5 2-1.5s2 .67 2 1.5S9.105 7.5 8 7.5 6 8.17 6 9s.895 1.5 2 1.5 2-.67 2-1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
   </svg>
 )
 
@@ -259,16 +208,8 @@ export interface AppNavProps {
 // ─── Nav items config ─────────────────────────────────────────────────────────
 
 const NAV_ITEMS: { id: NavId; label: string; icon: React.ReactNode }[] = [
-  { id: 'dashboard',       label: 'Dashboard',       icon: <DashboardIcon /> },
-  { id: 'units',           label: 'Units',            icon: <UnitsIcon /> },
-  { id: 'tenants',         label: 'Tenants',          icon: <TenantsIcon /> },
-  { id: 'leads',           label: 'Leads',            icon: <LeadsIcon /> },
-  { id: 'communications',  label: 'Communications',   icon: <CommunicationsIcon /> },
-  { id: 'calls',           label: 'Calls',            icon: <CallsIcon /> },
-  { id: 'delinquencies',   label: 'Delinquencies',    icon: <DelinquenciesIcon /> },
-  { id: 'insights',        label: 'Insights',         icon: <InsightsIcon /> },
-  { id: 'reports',         label: 'Reports',          icon: <ReportsIcon /> },
-  { id: 'billing',         label: 'Billing',          icon: <BillingIcon /> },
+  { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
+  { id: 'tenants',   label: 'Tenants',   icon: <TenantsIcon /> },
 ]
 
 // Settings sub-nav items
@@ -301,7 +242,7 @@ const SETTINGS_ITEMS: SettingsItem[] = [
 // ─── Navbar (top bar) ─────────────────────────────────────────────────────────
 
 export const Navbar: React.FC<Pick<AppNavProps, 'facilityName' | 'userName' | 'tasksCount'> & { darkMode?: boolean; onToggleDarkMode?: () => void }> = ({
-  facilityName = 'Sunrise Self Storage',
+  facilityName = 'Drift Storage Co.',
   userName = 'DY',
   tasksCount = 0,
   darkMode = false,
@@ -637,8 +578,8 @@ const SettingsSubNav = ({ onBack, collapsed }: { onBack: () => void; collapsed: 
 export const Sidebar: React.FC<AppNavProps> = ({
   activeNav = 'tenants',
   onNav,
-  userName = 'Dave Yoon',
-  userEmail = 'dave@monumentai.com',
+  userName = 'Demo User',
+  userEmail = 'demo@driftstorage.co',
 }) => {
   const [collapsed, setCollapsed] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -706,21 +647,6 @@ export const Sidebar: React.FC<AppNavProps> = ({
               })}
             </nav>
 
-            {/* Bottom: Settings + Logout */}
-            <div style={{ padding: '8px 8px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <NavButton
-                active={activeNav === 'settings'}
-                onClick={() => setShowSettings(true)}
-                title={collapsed ? 'Settings' : undefined}
-              >
-                <span style={{ flexShrink: 0, display: 'flex' }}><SettingsIcon /></span>
-                {!collapsed && 'Settings'}
-              </NavButton>
-              <NavButton title={collapsed ? 'Logout' : undefined}>
-                <span style={{ flexShrink: 0, display: 'flex' }}><LogoutIcon /></span>
-                {!collapsed && 'Logout'}
-              </NavButton>
-            </div>
           </>
         )}
 
