@@ -86,7 +86,7 @@ function useWaitlistCount() {
 }
 
 // ─── Waitlist form ────────────────────────────────────────────────────────────
-function WaitlistForm({ onSuccess }: { onSuccess?: () => void }) {
+function WaitlistForm({ onSuccess, onCountUpdate }: { onSuccess?: () => void; onCountUpdate?: (n: number) => void }) {
   const [email, setEmail]   = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'done'>('idle')
   const { count, setCount } = useWaitlistCount()
@@ -103,6 +103,7 @@ function WaitlistForm({ onSuccess }: { onSuccess?: () => void }) {
       })
       const n = await incrementCounter()
       setCount(n)
+      onCountUpdate?.(n)
     } catch { /* fire-and-forget */ }
     setStatus('done')
     onSuccess?.()
@@ -221,7 +222,7 @@ export function WaitlistModal({ onClose }: { onClose: () => void }) {
           The local overlay is free and available right now.
         </p>
 
-        <WaitlistForm onSuccess={() => setTimeout(onClose, 2400)} />
+        <WaitlistForm onSuccess={() => setTimeout(onClose, 2400)} onCountUpdate={setCount} />
 
         {count !== null && (
           <div style={{ marginTop: 14, ...sans, fontSize: 12, color: C.muted }}>
