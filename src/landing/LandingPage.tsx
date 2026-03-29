@@ -319,27 +319,27 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
       {/* Left: copy */}
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
-          <Chip color={C.blue}>React fiber scanner</Chip>
+          <Chip color={C.blue}>Design system coverage</Chip>
           <Chip color={C.purple}>Browser · IDE · CI</Chip>
-          <Chip color={C.green}>PR drift delta</Chip>
+          <Chip color={C.green}>Works with any React app</Chip>
         </div>
 
         <h1 style={{
           ...display, fontSize: 'clamp(34px, 3.8vw, 60px)', fontWeight: 800,
           color: C.text, margin: '0 0 20px', lineHeight: 1.06, letterSpacing: -2,
         }}>
-          AI ships fast.{' '}
+          See exactly where your{' '}
           <span style={{
             background: `linear-gradient(95deg, ${C.blue} 0%, ${C.purple} 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>Stay drift-free.</span>
+          }}>design system ends.</span>
         </h1>
 
         <p style={{
           ...sans, fontSize: 17, color: C.sub, lineHeight: 1.8,
           margin: '0 0 10px', fontWeight: 300, maxWidth: 480,
         }}>
-          Drift reads the live React fiber tree, measures DS coverage per page, and flags every component and token violation AI introduced — before it merges.
+          Press D on any live page to see which components match your design system — and which ones don't. Know your coverage score before every merge.
         </p>
         <p style={{ ...sans, fontSize: 13, color: C.muted, lineHeight: 1.6, margin: '0 0 36px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           Built by UX practitioners. Native to
@@ -397,19 +397,27 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           {/* Composite area */}
           <div style={{ position: 'relative', height: 380, overflow: 'hidden' }}>
 
-            {/* ── Screenshot layer ── */}
-            {/* Quick mode: blurred (boxes disappear) → Full mode: sharp (boxes appear) */}
+            {/* ── Screenshot layers — crossfade between Quick and Full ── */}
             <img
               src="/hero-app-overlay.png"
               alt=""
               style={{
                 position: 'absolute', left: 0, top: 0,
-                height: '100%', width: 'auto',
+                height: '100%', width: 'auto', maxWidth: 'calc(100% - 270px)',
                 objectFit: 'cover', objectPosition: 'left top',
-                filter: scanMode === 'quick' ? 'blur(3px) brightness(0.75)' : 'blur(0px) brightness(0.9)',
-                transition: 'filter 0.8s ease',
-                // crop to leave space for the HTML panel on the right
-                maxWidth: 'calc(100% - 270px)',
+                opacity: scanMode === 'quick' ? 1 : 0,
+                transition: 'opacity 0.7s ease',
+              }}
+            />
+            <img
+              src="/hero-app-full.png"
+              alt=""
+              style={{
+                position: 'absolute', left: 0, top: 0,
+                height: '100%', width: 'auto', maxWidth: 'calc(100% - 270px)',
+                objectFit: 'cover', objectPosition: 'left top',
+                opacity: scanMode === 'full' ? 1 : 0,
+                transition: 'opacity 0.7s ease',
               }}
             />
 
@@ -447,20 +455,33 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
                 </div>
               </div>
 
-              {/* Score */}
+              {/* Score — updates per scan mode */}
               <div style={{ padding: '10px 12px', borderRadius: 9, background: '#0e0e1c', border: `1px solid ${C.border2}` }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 5 }}>
-                  <span style={{ fontSize: 28, fontWeight: 800, color: C.orange, ...display }}>77%</span>
+                  <span style={{
+                    fontSize: 28, fontWeight: 800, ...display,
+                    color: scanMode === 'quick' ? C.orange : '#ef4444',
+                    transition: 'color 0.4s',
+                  }}>{scanMode === 'quick' ? '77%' : '16%'}</span>
                   <span style={{ fontSize: 10, color: C.muted }}>from your designs</span>
-                  <a href="#" style={{ marginLeft: 'auto', fontSize: 9, color: C.blue, textDecoration: 'none' }}>Storybook ↗</a>
+                  <span style={{ marginLeft: 'auto', fontSize: 9, color: C.blue }}>Storybook ↗</span>
                 </div>
                 <div style={{ height: 4, borderRadius: 2, background: C.border2, overflow: 'hidden', marginBottom: 7 }}>
-                  <div style={{ height: '100%', width: '77%', borderRadius: 2, background: `linear-gradient(90deg, ${C.green} 0%, ${C.orange} 100%)` }} />
+                  <div style={{
+                    height: '100%', borderRadius: 2,
+                    width: scanMode === 'quick' ? '77%' : '16%',
+                    background: scanMode === 'quick'
+                      ? `linear-gradient(90deg, ${C.green}, ${C.orange})`
+                      : `linear-gradient(90deg, ${C.orange}, #ef4444)`,
+                    transition: 'width 0.7s ease, background 0.4s',
+                  }} />
                 </div>
-                <div style={{ display: 'flex', gap: 12, fontSize: 10 }}>
+                <div style={{ display: 'flex', gap: 10, fontSize: 10 }}>
                   <span style={{ color: C.green }}>10 designed</span>
                   <span style={{ color: C.orange }}>10 modified</span>
-                  <span style={{ color: '#ef4444' }}>3 custom</span>
+                  <span style={{ color: '#ef4444', transition: 'all 0.4s' }}>
+                    {scanMode === 'quick' ? '3' : '53'} custom
+                  </span>
                 </div>
               </div>
 
@@ -473,17 +494,21 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
                     borderBottom: i === 0 ? `2px solid ${C.blue}` : '2px solid transparent',
                     whiteSpace: 'nowrap',
                   }}>
-                    {tab}{(i === 1) ? ' 10' : (i === 2) ? ' 34' : ''}
+                    {tab}{i === 1 ? ' 10' : i === 2 ? ' 22' : i === 0 ? ` ${scanMode === 'quick' ? '4' : '4'}` : ''}
                   </span>
                 ))}
               </div>
 
-              {/* Component list */}
-              {[
+              {/* Component list — different per mode */}
+              {(scanMode === 'quick' ? [
                 { name: 'Navbar', tag: 'modified', color: C.orange, desc: 'Custom styles applied on top' },
                 { name: 'Sidebar', tag: 'modified', color: C.orange, desc: 'Custom styles applied on top' },
                 { name: 'OccupancyWidget', tag: 'modified', color: C.orange, desc: 'Custom styles applied on top' },
-              ].map(item => (
+              ] : [
+                { name: 'CardHeader', tag: 'custom', color: '#ef4444', desc: 'No DS equivalent — 6× used' },
+                { name: 'BtnGrp', tag: 'custom', color: '#ef4444', desc: 'No DS equivalent — 4× used' },
+                { name: 'LineChart', tag: 'custom', color: '#ef4444', desc: 'No DS equivalent — 3× used' },
+              ]).map(item => (
                 <div key={item.name} style={{ padding: '7px 9px', borderRadius: 7, background: C.surface, border: `1px solid ${C.border}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -493,7 +518,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
                     </div>
                     <span style={{ fontSize: 9, color: C.muted }}>×1 ↗</span>
                   </div>
-                  <div style={{ fontSize: 9, color: C.muted, paddingLeft: 12 }}>{item.desc} — click to inspect</div>
+                  <div style={{ fontSize: 9, color: C.muted, paddingLeft: 12 }}>{item.desc}</div>
                 </div>
               ))}
 
@@ -508,18 +533,20 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
               </div>
             </div>
 
-            {/* Scan mode label — bottom left of screenshot area */}
+            {/* Scan mode label */}
             <div style={{
               position: 'absolute', bottom: 10, left: 10,
-              padding: '4px 10px', borderRadius: 6,
-              background: scanMode === 'quick' ? `${C.blue}22` : `${C.green}22`,
-              border: `1px solid ${scanMode === 'quick' ? C.blue : C.green}40`,
+              padding: '5px 11px', borderRadius: 6,
+              background: scanMode === 'quick' ? `${C.blue}22` : `#ef444422`,
+              border: `1px solid ${scanMode === 'quick' ? C.blue : '#ef4444'}40`,
               fontSize: 9, fontWeight: 700,
-              color: scanMode === 'quick' ? C.blue : C.green,
-              transition: 'all 0.4s ease',
+              color: scanMode === 'quick' ? C.blue : '#ef4444',
+              transition: 'all 0.5s ease',
               ...sans,
             }}>
-              {scanMode === 'quick' ? '⚡ Quick scan' : '◎ Full scan — all components identified'}
+              {scanMode === 'quick'
+                ? '⚡ Quick scan — top-level DS components · 77% coverage'
+                : '◎ Full scan — all sub-components · 16% coverage · 53 custom'}
             </div>
           </div>
         </div>
