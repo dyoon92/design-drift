@@ -407,7 +407,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
                 <img src={src} alt="" style={{
                   height: '100%', width: 'auto',
                   objectFit: 'cover', objectPosition: 'left top',
-                  filter: 'blur(1.5px)',
+                  filter: 'blur(0.6px)',
                   transform: 'scale(1.02)',
                   transformOrigin: 'left top',
                 }} />
