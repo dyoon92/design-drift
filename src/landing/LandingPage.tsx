@@ -319,27 +319,27 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
       {/* Left: copy */}
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
-          <Chip color={C.blue}>Design system coverage</Chip>
-          <Chip color={C.purple}>Browser · IDE · CI</Chip>
-          <Chip color={C.green}>Works with any React app</Chip>
+          <Chip color={C.blue}>Live coverage score</Chip>
+          <Chip color={C.purple}>Figma sync</Chip>
+          <Chip color={C.green}>Browser · IDE · CI</Chip>
         </div>
 
         <h1 style={{
           ...display, fontSize: 'clamp(34px, 3.8vw, 60px)', fontWeight: 800,
           color: C.text, margin: '0 0 20px', lineHeight: 1.06, letterSpacing: -2,
         }}>
-          See exactly where your{' '}
+          Stop guessing if your{' '}
           <span style={{
             background: `linear-gradient(95deg, ${C.blue} 0%, ${C.purple} 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>design system ends.</span>
+          }}>design system is being used.</span>
         </h1>
 
         <p style={{
           ...sans, fontSize: 17, color: C.sub, lineHeight: 1.8,
           margin: '0 0 10px', fontWeight: 300, maxWidth: 480,
         }}>
-          Press D on any live page to see which components match your design system — and which ones don't. Know your coverage score before every merge.
+          Drift gives every page a live coverage score — which components are on-spec, which have drifted, and which ones AI introduced from scratch. Catch gaps before they merge, and push missing components back to Figma as a design brief in one click.
         </p>
         <p style={{ ...sans, fontSize: 13, color: C.muted, lineHeight: 1.6, margin: '0 0 36px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           Built by UX practitioners. Native to
