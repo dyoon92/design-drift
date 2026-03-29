@@ -1671,26 +1671,31 @@ const PropsPanel = ({ component, onClose }: { component: ScannedComponent; onClo
         {component.drifted && component.driftViolations.length > 0 && (() => {
           // Group violations by type + value so e.g. all four border-radius props
           // with the same value collapse into one row instead of four.
-          type GroupedV = { type: 'color' | 'radius'; value: string; props: string[] }
+          type GroupedV = { type: DriftViolationType; value: string; props: string[] }
           const grouped = Object.values(
             component.driftViolations.reduce<Record<string, GroupedV>>((acc, v) => {
               const key = `${v.type}||${v.value}`
-              if (!acc[key]) acc[key] = { type: v.type as 'color' | 'radius', value: v.value, props: [] }
+              if (!acc[key]) acc[key] = { type: v.type, value: v.value, props: [] }
               acc[key].props.push(v.prop)
               return acc
             }, {})
           )
 
-          const describe = (type: 'color' | 'radius', value: string, props: string[]) => {
+          const describe = (type: DriftViolationType, value: string, props: string[]) => {
             if (type === 'radius') {
               const n = props.length
               if (n >= 4) return `All corners set to ${value}`
               if (n === 3) return `3 corners set to ${value}`
               if (n === 2) return `2 corners set to ${value}`
-              // single corner — humanise the prop name
               const corner = props[0].replace('border-', '').replace('-radius', '').replace(/-/g, ' ')
               return `${corner} corner set to ${value}`
             }
+            if (type === 'spacing') {
+              const prop = props[0].replace(/([A-Z])/g, '-$1').toLowerCase()
+              return `Hardcoded ${prop}: ${value}`
+            }
+            if (type === 'font-size')   return `Hardcoded font-size: ${value}`
+            if (type === 'font-weight') return `Hardcoded font-weight: ${value}`
             // color
             if (props.some(p => p === 'color' || p === 'fill' || p === 'stroke')) return `Text / icon color`
             if (props.some(p => p === 'background-color' || p === 'background')) return `Background color`
@@ -1731,7 +1736,7 @@ const PropsPanel = ({ component, onClose }: { component: ScannedComponent; onClo
               {grouped.map((g, i) => {
                 const label      = describe(g.type, g.value, g.props)
                 const suggestion = suggestToken(g.type, g.value)
-                const fixOnePrompt = `Fix \`${component.name}\`: replace the hardcoded ${g.type === 'radius' ? 'border-radius' : 'color'} \`${g.value}\` (${label.toLowerCase()}) with the correct design token.${suggestion ? ` Use \`${suggestion}\`.` : ''}`
+                const fixOnePrompt = `Fix \`${component.name}\`: replace the hardcoded ${g.type} value \`${g.value}\` (${label.toLowerCase()}) with the correct design token.${suggestion ? ` Use \`${suggestion}\`.` : ''}`
                 return (
                   <div
                     key={i}
@@ -1754,6 +1759,15 @@ const PropsPanel = ({ component, onClose }: { component: ScannedComponent; onClo
                               width: 10, height: 10, borderRadius: 2, flexShrink: 0,
                               background: g.value, border: '1px solid rgba(0,0,0,0.12)',
                             }} />
+                          )}
+                          {g.type === 'spacing' && (
+                            <span style={{ fontSize: 11, color: C.orange }}>↔</span>
+                          )}
+                          {g.type === 'font-size' && (
+                            <span style={{ fontSize: 11, color: C.orange }}>T</span>
+                          )}
+                          {g.type === 'font-weight' && (
+                            <span style={{ fontSize: 11, fontWeight: 700, color: C.orange }}>W</span>
                           )}
                           <span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{label}</span>
                         </div>

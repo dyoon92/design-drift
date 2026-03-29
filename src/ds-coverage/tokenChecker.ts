@@ -154,6 +154,7 @@ export function scanTokenViolations(): TokenViolation[] {
       const value = style.getPropertyValue(prop).trim()
       const isViolation =
         (COLOR_PROPS.has(prop)       && isHardcodedColor(value))      ||
+        (RADIUS_PROPS.has(prop)      && isHardcodedRadius(value))     ||
         (SPACING_PROPS.has(prop)     && isHardcodedSpacing(value))    ||
         (FONT_SIZE_PROPS.has(prop)   && isHardcodedFontSize(value))   ||
         (FONT_WEIGHT_PROPS.has(prop) && isHardcodedFontWeight(value))
