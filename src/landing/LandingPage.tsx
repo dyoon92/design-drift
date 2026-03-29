@@ -328,11 +328,11 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           ...display, fontSize: 'clamp(34px, 3.8vw, 60px)', fontWeight: 800,
           color: C.text, margin: '0 0 20px', lineHeight: 1.06, letterSpacing: -2,
         }}>
-          Stop letting AI{' '}
+          AI ships UI fast.{' '}
           <span style={{
             background: `linear-gradient(95deg, ${C.blue} 0%, ${C.purple} 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>drift your design system.</span>
+          }}>Drift makes sure it follows your design system.</span>
         </h1>
 
         <p style={{
