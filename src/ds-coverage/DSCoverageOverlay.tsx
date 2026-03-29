@@ -33,7 +33,6 @@ const PROMOTE_MIN     = 5
 const HISTORY_KEY     = 'ds-coverage-history'
 const HISTORY_MAX     = 15
 const THEME_KEY       = 'ds-coverage-theme'
-const API_KEY_KEY     = 'ds-coverage-anthropic-key'
 const SCAN_CACHE_PFX  = 'ds-coverage-scan-'
 // Counts active html2canvas captures — MutationObserver skips scans while > 0
 let capturingCount = 0
@@ -586,6 +585,7 @@ const AI_PROXY_URL: string | undefined = (import.meta.env.VITE_AI_PROXY_URL as s
 // Optional shared secret sent as Bearer token on every proxy request.
 // Must match PROXY_SECRET on the server. Set in .env: VITE_PROXY_SECRET=...
 const AI_PROXY_SECRET: string | undefined = (import.meta.env.VITE_PROXY_SECRET as string | undefined)
+const DRIFT_FIX_SERVER = 'http://localhost:7779'
 
 /** Build headers for proxy requests — injects Authorization when secret is set. */
 function proxyHeaders(): Record<string, string> {
@@ -711,74 +711,25 @@ async function fetchAISuggestion(
   count: number,
   props: Record<string, unknown>,
   pages: string[],
-  apiKey: string,
 ): Promise<string> {
-  // ── Proxy mode: key lives server-side ────────────────────────────────────
-  if (AI_PROXY_URL) {
-    const res = await fetch(`${AI_PROXY_URL}/api/ai/suggest`, {
-      method: 'POST',
-      headers: proxyHeaders(),
-      body: JSON.stringify({
-        name, count, pages,
-        props: Object.fromEntries(
-          Object.entries(props)
-            .filter(([k]) => k !== 'children' && typeof props[k] !== 'function')
-            .slice(0, 8)
-            .map(([k, v]) => [k, fmtProp(k, v)])
-        ),
-        dsComponents: [...DS_COMPONENTS],
-      }),
-    })
-    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error ?? `Proxy error ${res.status}`) }
-    const data = await res.json()
-    return data.text ?? 'No suggestion available.'
-  }
-
-  // ── Direct browser mode: key from localStorage (dev only) ────────────────
-  const propsStr = Object.entries(props)
-    .filter(([k]) => k !== 'children' && typeof props[k] !== 'function')
-    .slice(0, 8)
-    .map(([k, v]) => `${k}: ${fmtProp(k, v)}`)
-    .join(', ') || '(none)'
-
-  const dsList = [...DS_COMPONENTS].join(', ')
-
-  const prompt =
-`You're a design system consultant reviewing a React component in a property management app (StorageOS).
-
-UNKNOWN COMPONENT: "${name}"
-- Renders ${count} times across ${pages.length} page(s): ${pages.join(', ')}
-- Current props: ${propsStr}
-
-DESIGN SYSTEM AVAILABLE: ${dsList}
-
-Respond in exactly 3 short sentences:
-1. Can an existing DS component replace "${name}"? If yes, which one and how would you adapt it?
-2. If no direct replacement: what is this component's pattern, and should it be promoted to the DS?
-3. If promoting to DS: name 2-3 other places in a property management app where this pattern would be reused.
-Be specific, concise, and actionable.`
-
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  if (!AI_PROXY_URL) throw new Error('AI features require VITE_AI_PROXY_URL to be configured.')
+  const res = await fetch(`${AI_PROXY_URL}/api/ai/suggest`, {
     method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+    headers: proxyHeaders(),
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 280,
-      messages: [{ role: 'user', content: prompt }],
+      name, count, pages,
+      props: Object.fromEntries(
+        Object.entries(props)
+          .filter(([k]) => k !== 'children' && typeof props[k] !== 'function')
+          .slice(0, 8)
+          .map(([k, v]) => [k, fmtProp(k, v)])
+      ),
+      dsComponents: [...DS_COMPONENTS],
     }),
   })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as any)?.error?.message ?? `API error ${res.status}`)
-  }
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error ?? `Proxy error ${res.status}`) }
   const data = await res.json()
-  return data.content?.[0]?.text ?? 'No suggestion available.'
+  return data.text ?? 'No suggestion available.'
 }
 
 // ─── Drift fix fetcher ────────────────────────────────────────────────────────
@@ -786,57 +737,16 @@ Be specific, concise, and actionable.`
 async function fetchDriftFix(
   name: string,
   violations: DriftViolation[],
-  apiKey: string,
 ): Promise<string> {
-  // ── Proxy mode ────────────────────────────────────────────────────────────
-  if (AI_PROXY_URL) {
-    const res = await fetch(`${AI_PROXY_URL}/api/ai/drift-fix`, {
-      method: 'POST',
-      headers: proxyHeaders(),
-      body: JSON.stringify({ name, violations }),
-    })
-    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error ?? `Proxy error ${res.status}`) }
-    const data = await res.json()
-    return data.text ?? '{}'
-  }
-
-  // ── Direct browser mode ───────────────────────────────────────────────────
-  const tokenList = readLiveTokens() || '(no CSS custom properties found)'
-
-  const violationLines = violations
-    .map(v => `  ${v.prop}: "${v.value}"  (type: ${v.type})`)
-    .join('\n')
-
-  const prompt =
-`You are a design system engineer. A DS React component has hardcoded inline style overrides that must be replaced with design tokens.
-
-COMPONENT: ${name}
-HARDCODED OVERRIDES:
-${violationLines}
-
-AVAILABLE DS TOKENS:
-  ${tokenList}
-
-Return ONLY a JSON object mapping each CSS property (camelCase) to its correct token replacement.
-If no exact token exists, pick the closest one and note it.
-Example: {"borderRadius": "var(--ds-border-radius-lg)", "color": "var(--ds-color-text-primary)"}
-JSON only, no explanation outside the object.`
-
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  if (!AI_PROXY_URL) throw new Error('AI features require VITE_AI_PROXY_URL to be configured.')
+  const res = await fetch(`${AI_PROXY_URL}/api/ai/drift-fix`, {
     method: 'POST',
-    headers: {
-      'x-api-key': apiKey, 'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001', max_tokens: 400,
-      messages: [{ role: 'user', content: prompt }],
-    }),
+    headers: proxyHeaders(),
+    body: JSON.stringify({ name, violations }),
   })
-  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any)?.error?.message ?? `API ${res.status}`) }
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error ?? `Proxy error ${res.status}`) }
   const data = await res.json()
-  return data.content?.[0]?.text ?? '{}'
+  return data.text ?? '{}'
 }
 
 // ─── Page shell generator ─────────────────────────────────────────────────────
@@ -844,8 +754,8 @@ JSON only, no explanation outside the object.`
 async function fetchPageShell(
   description: string,
   selectedComponents: string[],
-  apiKey: string,
 ): Promise<string> {
+  if (!AI_PROXY_URL) throw new Error('AI features require VITE_AI_PROXY_URL to be configured.')
   const tokenList = readLiveTokens() || '(no CSS custom properties found)'
   const compList  = selectedComponents.map(c => `  - ${c} (import from './stories/${c}')`).join('\n')
 
@@ -878,27 +788,18 @@ STRICT RULES:
 
 Output the complete .tsx file only — no markdown fences, no explanation.`
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch(`${AI_PROXY_URL}/api/ai/page-shell`, {
     method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }],
-    }),
+    headers: proxyHeaders(),
+    body: JSON.stringify({ description, selectedComponents, prompt }),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error((err as any)?.error?.message ?? `API error ${res.status}`)
+    throw new Error((err as any)?.error ?? `Proxy error ${res.status}`)
   }
   const data = await res.json()
   // Strip any accidental markdown fences the model may still add
-  const raw = (data.content?.[0]?.text ?? '') as string
+  const raw = (data.text ?? '') as string
   return raw.replace(/^```(?:tsx?|jsx?)?\n?/m, '').replace(/\n?```\s*$/m, '').trim()
 }
 
@@ -1062,69 +963,6 @@ const OverlayBox = React.memo(({ c, yOffset, inspectMode, isInspected, isHighlig
     </div>
   )
 })
-
-// ─── AI fix-prompt builder ────────────────────────────────────────────────────
-
-function buildFixPrompt(component: ScannedComponent): string {
-  const violations = component.driftViolations ?? []
-
-  if (violations.length === 0) {
-    // Gap component — ask AI to find a DS replacement or tokenise it
-    const mProps = component.fiber?.memoizedProps ?? {}
-    const propLines = Object.entries(mProps)
-      .filter(([k]) => k !== 'children' && typeof mProps[k] !== 'function')
-      .slice(0, 6)
-      .map(([k, v]) => `  ${k}: ${fmtProp(k, v)}`)
-      .join('\n')
-    return [
-      `\`${component.name}\` is a custom-built component that is not in the design system.`,
-      ``,
-      `Find \`${component.name}\` in the codebase and either:`,
-      `1. Replace it with the closest equivalent design system component, OR`,
-      `2. If it's genuinely new, refactor it to use design tokens:`,
-      `   • colours  → var(--ds-color-*)`,
-      `   • spacing  → var(--ds-spacing-*)`,
-      `   • corners  → var(--ds-border-radius-*)`,
-      propLines ? `\nCurrent props detected at runtime:\n${propLines}` : '',
-    ].filter(Boolean).join('\n')
-  }
-
-  // Drifted DS component — group violations and emit precise fix instructions
-  type GV = { type: 'color' | 'radius'; value: string; props: string[] }
-  const grouped = Object.values(
-    violations.reduce<Record<string, GV>>((acc, v) => {
-      const key = `${v.type}||${v.value}`
-      if (!acc[key]) acc[key] = { type: v.type as 'color' | 'radius', value: v.value, props: [] }
-      acc[key].props.push(v.prop)
-      return acc
-    }, {})
-  )
-
-  const lines = grouped.map(g => {
-    const token = suggestToken(g.type, g.value)
-    const where = g.type === 'radius' && g.props.length >= 4
-      ? 'borderRadius (all corners)'
-      : g.props.join(', ')
-    return token
-      ? `• \`${where}: ${g.value}\`  →  \`${token}\``
-      : `• \`${where}: ${g.value}\`  →  find the closest token in your design tokens file (no exact match)`
-  }).join('\n')
-
-  return [
-    `Fix \`${component.name}\` to use design system tokens instead of hardcoded values.`,
-    ``,
-    `Hardcoded overrides to replace:`,
-    lines,
-    ``,
-    `Instructions:`,
-    `1. Find the \`${component.name}\` component file in the codebase (search by display name).`,
-    `2. Replace exactly those hardcoded values with the token shown — nothing else.`,
-    `3. Design tokens are CSS custom properties defined in the project's variables.css or tokens.css.`,
-    `4. Do not refactor, rename, or change any other code.`,
-    ``,
-    `After saving, the Drift overlay will rescan automatically.`,
-  ].join('\n')
-}
 
 // ─── Props inspector panel + chat ────────────────────────────────────────────
 // Parses ```lang\n...\n``` blocks out of a response and renders them with a
@@ -1614,20 +1452,18 @@ const ComponentActionsBar = ({ component }: { component: ScannedComponent }) => 
   )
 }
 
-const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponent; onClose: () => void; apiKey: string }) => {
+const PropsPanel = ({ component, onClose }: { component: ScannedComponent; onClose: () => void }) => {
   const C       = useC()
   const props   = component.fiber?.memoizedProps ?? {}
   const entries = Object.entries(props).filter(([k]) => k !== 'children')
 
   const hasAction = component.drifted || !component.inDS
-  const hasKey    = !!(apiKey || AI_PROXY_URL)
 
   // ── Structured fix state ──────────────────────────────────────────────────
   const [fixResponse,  setFixResponse]  = useState<string | null>(null)
   const [fixError,     setFixError]     = useState<string | null>(null)
   const [sending,      setSending]      = useState(false)
   const [copiedToast,  setCopiedToast]  = useState(false)
-  const [copiedFix,    setCopiedFix]    = useState(false)
   const [fixTitle,     setFixTitle]     = useState('')
 
   useEffect(() => {
@@ -1637,63 +1473,37 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
     setCopiedToast(false)
   }, [component.name])
 
-  const buildSystemPrompt = () => {
-    const violations = component.driftViolations ?? []
-    const tokenList  = readLiveTokens() || '(no CSS custom properties found)'
-    if (component.drifted && violations.length > 0) {
-      const lines = violations.map(v => `  • ${v.prop}: "${v.value}" (type: ${v.type})`).join('\n')
-      return `You are a design system engineer. Fix the React component \`${component.name}\` by replacing hardcoded overrides with design tokens. Reply with exact code snippets only — no explanations, no new styles, no invented values.\n\nHardcoded overrides:\n${lines}\n\nAvailable design tokens:\n  ${tokenList}`
-    }
-    return `You are a design system engineer. The component \`${component.name}\` is not in the design system. Suggest which existing DS component or token to use. Be concise, use code blocks.\n\nAvailable tokens:\n  ${readLiveTokens()}`
-  }
-
   const firePrompt = async (userText: string, title: string) => {
     if (sending) return
-
-    // No API key — silent clipboard copy + transient toast, no persistent area
-    if (!hasKey) {
-      try { await navigator.clipboard.writeText(buildFixPrompt(component)) } catch {}
-      setCopiedToast(true)
-      setTimeout(() => setCopiedToast(false), 2500)
-      return
-    }
-
+    setSending(true)
     setFixTitle(title)
     setFixResponse(null)
     setFixError(null)
-    setSending(true)
+
+    const payload = {
+      type: title.startsWith('Fix all') ? 'fix-all' : 'fix-one',
+      component: component.name,
+      prompt: userText,
+      violations: component.driftViolations ?? [],
+      route: window.location.pathname,
+    }
 
     try {
-      const msgs = [{ role: 'user', content: userText }]
-      let responseText: string
-      if (AI_PROXY_URL) {
-        const res = await fetch(`${AI_PROXY_URL}/api/ai/chat`, {
-          method: 'POST', headers: proxyHeaders(),
-          body: JSON.stringify({ system: buildSystemPrompt(), messages: msgs }),
-        })
-        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error ?? `Proxy ${res.status}`) }
-        responseText = (await res.json()).text ?? ''
+      const res = await fetch(`${DRIFT_FIX_SERVER}/drift-fix`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) {
+        setFixResponse('✓ Fix queued! In Claude Code, say: **"apply drift fixes"**\n\nDrift will rescan automatically after the file saves.')
       } else {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'x-api-key': apiKey, 'anthropic-version': '2023-06-01',
-            'content-type': 'application/json',
-            'anthropic-dangerous-direct-browser-access': 'true',
-          },
-          body: JSON.stringify({
-            model: 'claude-haiku-4-5-20251001', max_tokens: 1024,
-            system: buildSystemPrompt(),
-            messages: msgs,
-          }),
-        })
-        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any)?.error?.message ?? `API ${res.status}`) }
-        const data = await res.json()
-        responseText = data.content?.[0]?.text ?? ''
+        throw new Error(`Server responded ${res.status}`)
       }
-      setFixResponse(responseText)
-    } catch (err) {
-      setFixError(String(err))
+    } catch {
+      // Server not running — fall back to clipboard
+      try { await navigator.clipboard.writeText(userText) } catch {}
+      setCopiedToast(true)
+      setTimeout(() => setCopiedToast(false), 2500)
     } finally {
       setSending(false)
     }
@@ -1808,29 +1618,6 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
             {fixResponse !== null && (
               <>
                 <ChatBubble msg={{ role: 'assistant', content: fixResponse }} C={C} />
-                {/* Copy & apply row */}
-                <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <button
-                    onClick={async () => {
-                      try { await navigator.clipboard.writeText(fixResponse) } catch {}
-                      setCopiedFix(true)
-                      setTimeout(() => setCopiedFix(false), 2500)
-                    }}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                      width: '100%', padding: '8px 0',
-                      background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-                      border: 'none', borderRadius: 8, cursor: 'pointer',
-                      fontSize: 11, fontWeight: 700, color: '#fff',
-                      fontFamily: 'Inter, sans-serif',
-                    }}
-                  >
-                    {copiedFix ? '✓ Copied!' : '⎘ Copy fix → paste into Claude Code'}
-                  </button>
-                  <div style={{ fontSize: 10, color: C.muted, textAlign: 'center', fontFamily: 'Inter, sans-serif' }}>
-                    Drift rescans automatically after the file saves
-                  </div>
-                </div>
               </>
             )}
           </div>
@@ -2081,7 +1868,6 @@ interface PanelProps {
   surfaceMode: boolean; inspectMode: boolean
   theme: Theme
   hoveredGap: string | null
-  apiKey: string
   suggestions: Record<string, Suggestion>
   driftFixes: Record<string, Suggestion>
   onFilterChange: (f: 'all' | 'gaps') => void
@@ -2093,7 +1879,6 @@ interface PanelProps {
   hoveredViolation: TokenViolation | null
   onHoverGap: (name: string | null) => void
   onHoverViolation: (v: TokenViolation | null) => void
-  onSaveApiKey: (key: string) => void
   onInspect: (c: ScannedComponent) => void
   onSuggest: (name: string, count: number, props: Record<string, unknown>) => void
   onDriftFix: (name: string, violations: DriftViolation[]) => void
@@ -2110,7 +1895,6 @@ const SummaryPanel = (p: PanelProps) => {
   const [exported,   setExported]  = useState(false)
   const [mdCopied,   setMdCopied]  = useState(false)
   const [pngBusy,    setPngBusy]   = useState(false)
-  const [keyDraft,   setKeyDraft]  = useState('')
   const [settingsPage, setSettingsPage] = useState(false)
   const [hoveredRow,       setHoveredRow]       = useState<string | null>(null)
   // Palette generator
@@ -2388,62 +2172,6 @@ const SummaryPanel = (p: PanelProps) => {
               </div>
             </div>
 
-            {/* AI suggestions card — hidden in demo mode */}
-            {!IS_DEMO && <div style={{ background: C.btnBg, border: `1px solid ${C.panelBorder}`, borderRadius: 10, padding: '12px 14px' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: 0.6, marginBottom: 10, fontFamily: 'Inter, sans-serif' }}>AI SUGGESTIONS</div>
-              <div style={{ fontSize: 12, color: C.textSub, lineHeight: 1.55, marginBottom: 12, fontFamily: 'Inter, sans-serif' }}>
-                Connect an Anthropic API key to get one-click fixes for drift and custom components.
-              </div>
-              {p.apiKey ? (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: `${C.blue}15`, borderRadius: 8, marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ color: C.blue, fontSize: 12 }}>✦</span>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: C.blue, fontFamily: 'Inter, sans-serif' }}>AI suggestions active</span>
-                    </div>
-                    <button onClick={() => p.onSaveApiKey('')} style={{
-                      background: 'none', border: 'none', fontSize: 10, color: C.muted,
-                      cursor: 'pointer', padding: 0, textDecoration: 'underline', fontFamily: 'Inter, sans-serif',
-                    }}>Remove</button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <input
-                    type="password"
-                    placeholder="sk-ant-api03-..."
-                    value={keyDraft}
-                    onChange={e => setKeyDraft(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && keyDraft) { p.onSaveApiKey(keyDraft); setKeyDraft('') } }}
-                    style={{
-                      width: '100%', boxSizing: 'border-box', marginBottom: 8,
-                      background: C.panel, border: `1px solid ${C.panelBorder}`,
-                      borderRadius: 8, padding: '8px 10px', fontSize: 11,
-                      color: C.text, fontFamily: 'monospace', outline: 'none',
-                    }}
-                  />
-                  <button
-                    onClick={() => { if (keyDraft) { p.onSaveApiKey(keyDraft); setKeyDraft('') } }}
-                    disabled={!keyDraft}
-                    style={{
-                      width: '100%', background: keyDraft ? C.blue : C.pillBg, border: 'none',
-                      borderRadius: 8, padding: '8px 0', color: keyDraft ? '#fff' : C.muted,
-                      fontSize: 12, fontWeight: 600, cursor: keyDraft ? 'pointer' : 'default',
-                      fontFamily: 'Inter, sans-serif', marginBottom: 10, transition: 'background 0.15s',
-                    }}
-                  >Save key</button>
-                </div>
-              )}
-              <a
-                href="https://console.anthropic.com/settings/keys"
-                target="_blank"
-                rel="noreferrer"
-                style={{ fontSize: 10, color: C.blue, textDecoration: 'none', fontFamily: 'Inter, sans-serif' }}
-              >
-                Get an Anthropic API key →
-              </a>
-            </div>}
-
             {/* AI Tools card */}
             <div style={{ background: C.btnBg, border: `1px solid ${C.panelBorder}`, borderRadius: 10, padding: '12px 14px' }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: 0.6, marginBottom: 10, fontFamily: 'Inter, sans-serif' }}>AI TOOLS</div>
@@ -2663,10 +2391,10 @@ const SummaryPanel = (p: PanelProps) => {
                 <button
                   disabled={genLoading || !genDesc.trim()}
                   onClick={async () => {
-                    if (!p.apiKey) { setGenError('Add your Anthropic API key in Settings to generate page shells.'); return }
+                    if (!AI_PROXY_URL) { setGenError('VITE_AI_PROXY_URL is required to generate page shells.'); return }
                     setGenLoading(true); setGenError(null); setGenOutput(null)
                     try {
-                      const code = await fetchPageShell(genDesc, Array.from(DS_COMPONENTS), p.apiKey)
+                      const code = await fetchPageShell(genDesc, Array.from(DS_COMPONENTS))
                       setGenOutput(code)
                     } catch (e: any) {
                       setGenError(e.message ?? 'Generation failed')
@@ -3164,31 +2892,20 @@ const SummaryPanel = (p: PanelProps) => {
                         </div>
                         {/* Card footer — AI suggest button */}
                         <div style={{ borderTop: `1px solid ${C.panelBorder}`, padding: '7px 12px', background: 'rgba(124,58,237,0.04)' }}>
-                          {p.apiKey ? (
-                            <button
-                              onClick={() => p.onSuggest(name, count, gapProps)}
-                              disabled={suggestion?.status === 'loading' || suggestion?.status === 'done'}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 4,
-                                fontSize: 10, fontWeight: 700, background: 'none', border: 'none', padding: 0,
-                                color: suggestion?.status === 'done' ? C.muted : '#7c3aed',
-                                cursor: suggestion?.status === 'loading' || suggestion?.status === 'done' ? 'default' : 'pointer',
-                                fontFamily: 'Inter, sans-serif', opacity: suggestion?.status === 'loading' ? 0.5 : 1,
-                              }}
-                            >
-                              <span style={{ fontSize: 11 }}>✦</span>
-                              {suggestion?.status === 'loading' ? 'Thinking…' : suggestion?.status === 'done' ? 'Suggestion ready' : 'Suggest replacement'}
-                            </button>
-                          ) : (
-                            <button onClick={() => setSettingsPage(true)}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 4,
-                                fontSize: 10, fontWeight: 700, background: 'none', border: 'none', padding: 0,
-                                color: '#7c3aed', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                              }}>
-                              <span style={{ fontSize: 11 }}>✦</span> Enable AI suggestions
-                            </button>
-                          )}
+                          <button
+                            onClick={() => p.onSuggest(name, count, gapProps)}
+                            disabled={suggestion?.status === 'loading' || suggestion?.status === 'done'}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 4,
+                              fontSize: 10, fontWeight: 700, background: 'none', border: 'none', padding: 0,
+                              color: suggestion?.status === 'done' ? C.muted : '#7c3aed',
+                              cursor: suggestion?.status === 'loading' || suggestion?.status === 'done' ? 'default' : 'pointer',
+                              fontFamily: 'Inter, sans-serif', opacity: suggestion?.status === 'loading' ? 0.5 : 1,
+                            }}
+                          >
+                            <span style={{ fontSize: 11 }}>✦</span>
+                            {suggestion?.status === 'loading' ? 'Thinking…' : suggestion?.status === 'done' ? 'Suggestion ready' : 'Suggest replacement'}
+                          </button>
                         </div>
                       </div>
                     )
@@ -3457,21 +3174,6 @@ const SummaryPanel = (p: PanelProps) => {
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <div style={{ flexShrink: 0, borderTop: `1px solid ${C.panelBorder}`, padding: '10px 16px 12px' }}>
-        {/* AI suggestions prompt — only when no key set and not in demo */}
-        {!p.apiKey && !IS_DEMO && (
-          <button onClick={() => setSettingsPage(true)} style={{
-            display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
-            padding: '8px 12px', background: `${C.blue}12`,
-            border: `1px solid ${C.blue}30`, borderRadius: 8,
-            cursor: 'pointer', textAlign: 'left', width: '100%',
-          }}>
-            <span style={{ fontSize: 14, color: C.blue }}>✦</span>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: C.text, fontFamily: 'Inter, sans-serif' }}>Enable AI suggestions</div>
-              <div style={{ fontSize: 10, color: C.muted, fontFamily: 'Inter, sans-serif' }}>One-click fixes for drift and custom components</div>
-            </div>
-          </button>
-        )}
         {/* Demo-only waitlist CTA */}
         {IS_DEMO && (
           <button
@@ -3611,7 +3313,6 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
   const [inspectMode,    setInspectMode]    = useState(false)
   const [inspected,      setInspected]      = useState<ScannedComponent | null>(null)
   const [hoveredGap,     setHoveredGap]     = useState<string | null>(null)
-  const [apiKey,         setApiKey]         = useState<string>(() => localStorage.getItem(API_KEY_KEY) ?? '')
   const [suggestions,    setSuggestions]    = useState<Record<string, Suggestion>>({})
   const [driftFixes,     setDriftFixes]     = useState<Record<string, Suggestion>>({})
   const [isCached,       setIsCached]       = useState(false)
@@ -3773,40 +3474,32 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
     })
   }, [])
 
-  const saveApiKey = useCallback((key: string) => {
-    const trimmed = key.trim()
-    localStorage.setItem(API_KEY_KEY, trimmed)
-    setApiKey(trimmed)
-  }, [])
-
   const handleSuggest = useCallback(async (
     name: string,
     count: number,
     props: Record<string, unknown>,
   ) => {
-    if (!apiKey) return
     if (suggestions[name]?.status === 'loading' || suggestions[name]?.status === 'done') return
     setSuggestions(prev => ({ ...prev, [name]: { status: 'loading' } }))
     try {
       const pages = [window.location.pathname]
-      const text  = await fetchAISuggestion(name, count, props, pages, apiKey)
+      const text  = await fetchAISuggestion(name, count, props, pages)
       setSuggestions(prev => ({ ...prev, [name]: { status: 'done', text } }))
     } catch (err) {
       setSuggestions(prev => ({ ...prev, [name]: { status: 'error', text: String(err) } }))
     }
-  }, [apiKey, suggestions])
+  }, [suggestions])
 
   const handleDriftFix = useCallback(async (name: string, violations: DriftViolation[]) => {
-    if (!apiKey) return
     if (driftFixes[name]?.status === 'loading' || driftFixes[name]?.status === 'done') return
     setDriftFixes(prev => ({ ...prev, [name]: { status: 'loading' } }))
     try {
-      const text = await fetchDriftFix(name, violations, apiKey)
+      const text = await fetchDriftFix(name, violations)
       setDriftFixes(prev => ({ ...prev, [name]: { status: 'done', text } }))
     } catch (err) {
       setDriftFixes(prev => ({ ...prev, [name]: { status: 'error', text: String(err) } }))
     }
-  }, [apiKey, driftFixes])
+  }, [driftFixes])
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -4116,14 +3809,14 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
                 onPromoted={handlePromoted}
               />
             ) : inspected ? (
-              <PropsPanel component={inspected} onClose={() => setInspected(null)} apiKey={apiKey} />
+              <PropsPanel component={inspected} onClose={() => setInspected(null)} />
             ) : (
               <SummaryPanel
                 components={components} tokenViolations={tokenViolations} history={history}
                 scanned={scanned} scanning={scanning} isCached={isCached} filter={filter} gapFilter={gapFilter}
                 surfaceMode={surfaceMode} inspectMode={inspectMode}
                 theme={theme} hoveredGap={hoveredGap}
-                apiKey={apiKey} suggestions={suggestions} driftFixes={driftFixes}
+                suggestions={suggestions} driftFixes={driftFixes}
                 onFilterChange={setFilter} onGapFilterChange={setGapFilter} onRescan={() => scan(true)}
                 onToggleSurface={() => setSurfaceMode(v => !v)}
                 onToggleInspect={() => setInspectMode(v => !v)}
@@ -4131,7 +3824,6 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
                 onHoverGap={handleHoverGap}
                 hoveredViolation={hoveredViolation}
                 onHoverViolation={setHoveredViolation}
-                onSaveApiKey={saveApiKey}
                 onInspect={setInspected}
                 onSuggest={handleSuggest}
                 onDriftFix={handleDriftFix}

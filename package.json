@@ -13,6 +13,7 @@
     "figma-sync": "node scripts/figma-sync.mjs",
     "drift-check": "node scripts/drift-check.mjs",
     "drift-mcp": "node scripts/drift-mcp.mjs",
+    "drift-fix-server": "node scripts/drift-fix-server.mjs",
     "proxy": "node api-proxy/server.mjs",
     "build:extension": "node browser-extension/build.mjs",
     "build:figma-plugin": "node figma-plugin/build.mjs",

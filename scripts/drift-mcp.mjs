@@ -22,11 +22,13 @@
  *   Settings → MCP → Add Server → command: node scripts/drift-mcp.mjs
  *
  * Tools exposed:
- *   drift_manifest       List all registered DS components
- *   drift_analyze        Analyze a file for DS vs custom component usage
- *   drift_gaps           Show the most-used custom components across the codebase
- *   drift_suggest        Suggest a DS replacement for a custom component
- *   drift_report         Run the full headless Playwright drift scan
+ *   drift_manifest          List all registered DS components
+ *   drift_analyze           Analyze a file for DS vs custom component usage
+ *   drift_gaps              Show the most-used custom components across the codebase
+ *   drift_suggest           Suggest a DS replacement for a custom component
+ *   drift_report            Run the full headless Playwright drift scan
+ *   drift_get_pending_fix   Return fixes queued by the browser overlay
+ *   drift_clear_fixes       Clear the fix queue after applying
  */
 
 import { Server }               from '@modelcontextprotocol/sdk/server/index.js'
@@ -35,11 +37,12 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
-import { readFileSync, existsSync, readdirSync } from 'fs'
+import { readFileSync, existsSync, readdirSync, writeFileSync } from 'fs'
 import { resolve, join, relative, extname } from 'path'
 import { execSync, spawnSync } from 'child_process'
 
-const ROOT = process.cwd()
+const ROOT       = process.cwd()
+const FIXES_PATH = join(ROOT, '.drift-fixes.json')
 
 // ─── Config reader ────────────────────────────────────────────────────────────
 // Parses config.ts statically (regex) so we don't need to transpile TS.
@@ -243,6 +246,26 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           url:    { type: 'string',  description: 'URL of the running app (default: http://localhost:5173)' },
           routes: { type: 'string',  description: 'Comma-separated routes to scan (default: /)' },
           build:  { type: 'boolean', description: 'Whether to run npm run build first (default: false)' },
+        },
+        required: [],
+      },
+    },
+    {
+      name: 'drift_get_pending_fix',
+      description: 'Return all fix requests queued by the browser overlay (from .drift-fixes.json). Each entry has the component name, violations, and a ready-to-use fix prompt. Call this when the user asks to apply drift fixes, then edit the files directly.',
+      inputSchema: { type: 'object', properties: {}, required: [] },
+    },
+    {
+      name: 'drift_clear_fixes',
+      description: 'Clear pending fix requests from .drift-fixes.json. Call this after applying fixes. Pass specific IDs to clear only those entries, or omit to clear all.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          ids: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Fix IDs to clear. Omit to clear everything.',
+          },
         },
         required: [],
       },
@@ -462,6 +485,59 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     }
 
     return { content: [{ type: 'text', text: lines.join('\n') }] }
+  }
+
+  // ── drift_get_pending_fix ──────────────────────────────────────────────────
+  if (name === 'drift_get_pending_fix') {
+    if (!existsSync(FIXES_PATH)) {
+      return { content: [{ type: 'text', text: '## Pending Fixes\n\nNo .drift-fixes.json found — nothing queued yet.\n\nTo queue fixes: open the app with ?demo=1, click a component, then click "✦ Fix this".' }] }
+    }
+    let fixes
+    try { fixes = JSON.parse(readFileSync(FIXES_PATH, 'utf8')) } catch {
+      return { content: [{ type: 'text', text: 'Error reading .drift-fixes.json — file may be malformed.' }] }
+    }
+    if (!fixes.length) {
+      return { content: [{ type: 'text', text: '## Pending Fixes\n\nQueue is empty.' }] }
+    }
+    const lines = [`## Pending Fixes (${fixes.length})`, '']
+    for (const f of fixes) {
+      lines.push(`### ${f.id}`)
+      lines.push(`- **Component:** \`${f.component ?? '?'}\``)
+      lines.push(`- **Type:** ${f.type ?? '?'}`)
+      lines.push(`- **Route:** ${f.route ?? '?'}`)
+      lines.push(`- **Queued:** ${f.ts ?? '?'}`)
+      lines.push('')
+      lines.push('**Prompt to apply:**')
+      lines.push('```')
+      lines.push(f.prompt ?? '(no prompt)')
+      lines.push('```')
+      if (f.violations?.length) {
+        lines.push('')
+        lines.push('**Violations:**')
+        for (const v of f.violations) lines.push(`- \`${v.prop}\`: \`${v.value}\` (${v.type})`)
+      }
+      lines.push('')
+      lines.push('---')
+      lines.push('')
+    }
+    lines.push('After applying all fixes, call `drift_clear_fixes` to reset the queue.')
+    return { content: [{ type: 'text', text: lines.join('\n') }] }
+  }
+
+  // ── drift_clear_fixes ──────────────────────────────────────────────────────
+  if (name === 'drift_clear_fixes') {
+    const ids = args.ids
+    if (!ids || ids.length === 0) {
+      writeFileSync(FIXES_PATH, '[]', 'utf8')
+      return { content: [{ type: 'text', text: 'All pending fixes cleared.' }] }
+    }
+    let fixes = []
+    try { fixes = JSON.parse(readFileSync(FIXES_PATH, 'utf8')) } catch {}
+    const idSet = new Set(ids)
+    const remaining = fixes.filter(f => !idSet.has(f.id))
+    writeFileSync(FIXES_PATH, JSON.stringify(remaining, null, 2), 'utf8')
+    const cleared = fixes.length - remaining.length
+    return { content: [{ type: 'text', text: `Cleared ${cleared} fix(es). ${remaining.length} remaining.` }] }
   }
 
   return { content: [{ type: 'text', text: `Unknown tool: ${name}` }] }
