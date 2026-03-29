@@ -1987,8 +1987,12 @@ const SummaryPanel = (p: PanelProps) => {
   const color        = coverageColor(pct, C)
 
   const gapMap = new Map<string, number>()
-  p.components.filter(c => !c.inDS && !p.ignored.has(c.name)).forEach(c => gapMap.set(c.name, (gapMap.get(c.name) ?? 0) + 1))
-  const gaps         = [...gapMap.entries()].sort((a, b) => b[1] - a[1])
+  p.components.filter(c => !c.inDS).forEach(c => gapMap.set(c.name, (gapMap.get(c.name) ?? 0) + 1))
+  const gaps         = [...gapMap.entries()].sort((a, b) => {
+    const aIgnored = p.ignored.has(a[0]) ? 1 : 0
+    const bIgnored = p.ignored.has(b[0]) ? 1 : 0
+    return aIgnored !== bIgnored ? aIgnored - bIgnored : b[1] - a[1]
+  })
   const promoteCount = gaps.filter(([, n]) => n >= PROMOTE_MIN).length
 
   const dsMap = new Map<string, number>()
