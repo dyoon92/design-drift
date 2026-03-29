@@ -3990,7 +3990,7 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
               visible={visible} pct={pct}
               scanned={scanned} scanning={scanning} inspectMode={inspectMode}
               driftedCount={components.filter(c => c.drifted).length}
-              gapCount={components.filter(c => !c.inDS).length}
+              gapCount={components.filter(c => !c.inDS && !ignored.has(c.name)).length}
               onClick={() => setVisible(v => !v)}
             />
           </div>
@@ -3999,3 +3999,6 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
     </ThemeCtx.Provider>
   )
 }
+
+// Named alias used by the @catchdrift/overlay npm package wrapper
+export const DSCoverageOverlayWithConfig = DSCoverageOverlay
