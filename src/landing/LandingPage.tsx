@@ -175,7 +175,7 @@ function WaitlistForm({ onSuccess, onCountUpdate }: { onSuccess?: () => void; on
 
 // ─── Waitlist modal ────────────────────────────────────────────────────────────
 export function WaitlistModal({ onClose }: { onClose: () => void }) {
-  const { count } = useWaitlistCount()
+  const { count, setCount } = useWaitlistCount()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
