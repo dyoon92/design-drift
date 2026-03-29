@@ -283,7 +283,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
 
   useEffect(() => {
     // cycle Quick → Full → Quick every 2.5 s
-    const id = setInterval(() => setScanMode(m => m === 'quick' ? 'full' : 'quick'), 2500)
+    const id = setInterval(() => setScanMode(m => m === 'quick' ? 'full' : 'quick'), 5000)
     return () => clearInterval(id)
   }, [])
 
@@ -533,21 +533,6 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
               </div>
             </div>
 
-            {/* Scan mode label */}
-            <div style={{
-              position: 'absolute', bottom: 10, left: 10,
-              padding: '5px 11px', borderRadius: 6,
-              background: scanMode === 'quick' ? `${C.blue}22` : `#ef444422`,
-              border: `1px solid ${scanMode === 'quick' ? C.blue : '#ef4444'}40`,
-              fontSize: 9, fontWeight: 700,
-              color: scanMode === 'quick' ? C.blue : '#ef4444',
-              transition: 'all 0.5s ease',
-              ...sans,
-            }}>
-              {scanMode === 'quick'
-                ? '⚡ Quick scan — top-level DS components · 77% coverage'
-                : '◎ Full scan — all sub-components · 16% coverage · 53 custom'}
-            </div>
           </div>
         </div>
       </div>
