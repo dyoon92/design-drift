@@ -279,6 +279,14 @@ function Nav({ onOpenModal }: { onOpenModal: () => void }) {
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero({ onOpenModal }: { onOpenModal: () => void }) {
   const { count } = useWaitlistCount()
+  const [scanMode, setScanMode] = useState<'quick' | 'full'>('quick')
+
+  useEffect(() => {
+    // cycle Quick → Full → Quick every 2.5 s
+    const id = setInterval(() => setScanMode(m => m === 'quick' ? 'full' : 'quick'), 2500)
+    return () => clearInterval(id)
+  }, [])
+
   return (
     <section style={{
       minHeight: 'calc(100vh - 60px)',
@@ -371,12 +379,12 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
         )}
       </div>
 
-      {/* Right: mock browser + Drift panel */}
+      {/* Right: screenshot-based hero mock */}
       <div className="hero-mock" style={{ position: 'relative', zIndex: 1 }}>
         <div style={{
-          background: C.surface, border: `1px solid ${C.border2}`,
-          borderRadius: 14, overflow: 'hidden',
-          boxShadow: `0 40px 90px rgba(0,0,0,0.65), 0 0 0 1px ${C.border}`,
+          border: `1px solid ${C.border2}`, borderRadius: 14, overflow: 'hidden',
+          boxShadow: `0 40px 90px rgba(0,0,0,0.7), 0 0 0 1px ${C.border}`,
+          background: '#08080f',
         }}>
           {/* Browser chrome */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 16px', borderBottom: `1px solid ${C.border}`, background: '#0c0c15' }}>
@@ -386,133 +394,133 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
             </div>
           </div>
 
-          {/* App + overlay composite */}
-          <div style={{ position: 'relative', height: 360 }}>
+          {/* Composite area */}
+          <div style={{ position: 'relative', height: 380, overflow: 'hidden' }}>
 
-            {/* ── Layer 1: blurry app background ── */}
-            <div style={{ position: 'absolute', inset: 0, filter: 'blur(1.5px)', opacity: 0.6, overflow: 'hidden' }}>
-              {/* Sidebar */}
-              <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 46, background: '#0b0b16', borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 12, gap: 14 }}>
-                <WaveLogo size={16} color={C.blue} />
-                {[C.blue, C.muted, C.muted, C.muted, C.muted].map((clr, i) => (
-                  <div key={i} style={{ width: 30, height: 30, borderRadius: 8, background: i === 0 ? `${C.blue}20` : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: 13, height: 1.5, background: clr, borderRadius: 1, boxShadow: `0 4px 0 ${clr}, 0 -4px 0 ${clr}` }} />
-                  </div>
-                ))}
-              </div>
-              {/* Main content */}
-              <div style={{ position: 'absolute', left: 46, top: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column' }}>
-                {/* Navbar */}
-                <div style={{ height: 44, borderBottom: `1px solid ${C.border}`, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0e0e1c', flexShrink: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ ...display, fontSize: 12, fontWeight: 700, color: C.text }}>Drift Storage Co.</span>
-                    <div style={{ width: 1, height: 14, background: C.border }} />
-                    <span style={{ fontSize: 10, color: C.muted }}>Dashboard</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <div style={{ width: 80, height: 20, borderRadius: 4, background: C.border }} />
-                    <div style={{ width: 26, height: 26, borderRadius: 999, background: `linear-gradient(135deg, ${C.blue}, ${C.purple})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff' }}>DU</div>
-                  </div>
-                </div>
-                {/* Dashboard content */}
-                <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'hidden' }}>
-                  {/* Stat widgets */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                    {[
-                      { label: 'Occupancy', value: '94.2%', color: C.green },
-                      { label: 'Revenue', value: '$42.8k', color: C.text },
-                      { label: 'Net Move-ins', value: '+4', color: C.blue },
-                      { label: 'New Leads', value: '12', color: C.text },
-                      { label: 'Past Due', value: '3', color: C.orange },
-                      { label: 'Delinquent', value: '$1.2k', color: C.orange },
-                    ].map(card => (
-                      <div key={card.label} style={{ padding: '9px 11px', borderRadius: 7, background: '#0d0d18', border: `1px solid ${C.border}` }}>
-                        <div style={{ fontSize: 8, color: C.muted, marginBottom: 3 }}>{card.label}</div>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: card.color, ...display }}>{card.value}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Table */}
-                  <div style={{ background: C.surface2, borderRadius: 8, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-                    {['J. Smith · Unit 101 · Current', 'A. Chen · Unit 204 · Current', 'M. Davis · Unit 312 · Past Due'].map((row, i) => (
-                      <div key={row} style={{ padding: '7px 12px', borderBottom: i < 2 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 9, color: C.sub }}>{row}</span>
-                        <div style={{ width: 40, height: 14, borderRadius: 3, background: i === 2 ? `${C.orange}20` : `${C.green}20` }} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* ── Screenshot layer ── */}
+            {/* Quick mode: blurred (boxes disappear) → Full mode: sharp (boxes appear) */}
+            <img
+              src="/hero-app-overlay.png"
+              alt=""
+              style={{
+                position: 'absolute', left: 0, top: 0,
+                height: '100%', width: 'auto',
+                objectFit: 'cover', objectPosition: 'left top',
+                filter: scanMode === 'quick' ? 'blur(3px) brightness(0.75)' : 'blur(0px) brightness(0.9)',
+                transition: 'filter 0.8s ease',
+                // crop to leave space for the HTML panel on the right
+                maxWidth: 'calc(100% - 270px)',
+              }}
+            />
 
-            {/* ── Layer 2: component highlight boxes ── */}
-            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-              {/* Navbar box — green (DS component) */}
-              <div style={{ position: 'absolute', left: 46, top: 0, right: 190, height: 44, border: `1.5px solid ${C.green}`, boxSizing: 'border-box' }}>
-                <div style={{ position: 'absolute', top: -1, left: 0, fontSize: 8, fontWeight: 700, color: '#000', background: C.green, padding: '1px 5px', borderRadius: '0 0 3px 0', whiteSpace: 'nowrap' }}>Navbar · DS ✓</div>
-              </div>
-              {/* OccupancySummaryCard box — orange (modified) */}
-              <div style={{ position: 'absolute', left: 52, top: 50, width: 210, height: 128, border: `1.5px solid ${C.orange}`, boxSizing: 'border-box' }}>
-                <div style={{ position: 'absolute', top: -1, left: 0, fontSize: 8, fontWeight: 700, color: '#000', background: C.orange, padding: '1px 5px', borderRadius: '0 0 3px 0', whiteSpace: 'nowrap' }}>OccupancyWidget · modified</div>
-              </div>
-              {/* PastDueCard box — red (custom/drifted) */}
-              <div style={{ position: 'absolute', left: 162, top: 184, width: 100, height: 46, border: `1.5px solid #ef4444`, boxSizing: 'border-box' }}>
-                <div style={{ position: 'absolute', top: -1, left: 0, fontSize: 8, fontWeight: 700, color: '#fff', background: '#ef4444', padding: '1px 5px', borderRadius: '0 0 3px 0', whiteSpace: 'nowrap' }}>PastDueCard · custom</div>
-              </div>
-            </div>
-
-            {/* ── Layer 3: Drift panel (sharp) ── */}
+            {/* Right edge fade so screenshot blends into panel */}
             <div style={{
-              position: 'absolute', right: 0, top: 0, bottom: 0, width: 186,
+              position: 'absolute', top: 0, bottom: 0,
+              right: 270, width: 40,
+              background: `linear-gradient(to right, transparent, #08080f)`,
+              pointerEvents: 'none',
+            }} />
+
+            {/* ── Drift panel (always sharp) ── */}
+            <div style={{
+              position: 'absolute', right: 0, top: 0, bottom: 0, width: 268,
               background: C.bg, borderLeft: `1px solid ${C.border2}`,
-              padding: '11px 10px', display: 'flex', flexDirection: 'column', gap: 7,
+              padding: '12px 11px', display: 'flex', flexDirection: 'column', gap: 7,
+              overflow: 'hidden',
             }}>
+              {/* Header row */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <WaveLogo size={13} />
-                  <span style={{ ...display, fontSize: 12, fontWeight: 800, color: C.text }}>Drift</span>
+                  <WaveLogo size={14} />
+                  <span style={{ ...display, fontSize: 13, fontWeight: 800, color: C.text }}>Drift</span>
                 </div>
-                <div style={{ display: 'flex', gap: 2 }}>
-                  {['Quick','Full'].map((m,i) => (
-                    <span key={m} style={{ fontSize: 8, fontWeight: 600, padding: '2px 6px', borderRadius: 8, background: i===0 ? '#555566' : 'transparent', color: i===0 ? '#fff' : C.muted }}>{m}</span>
+                {/* Animated Quick/Full toggle */}
+                <div style={{ display: 'flex', gap: 2, background: C.surface2, borderRadius: 8, padding: 2 }}>
+                  {(['Quick','Full'] as const).map(m => (
+                    <span key={m} style={{
+                      fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+                      background: (m.toLowerCase() === scanMode) ? C.blue : 'transparent',
+                      color: (m.toLowerCase() === scanMode) ? '#fff' : C.muted,
+                      transition: 'all 0.4s ease',
+                    }}>{m}</span>
                   ))}
                 </div>
               </div>
+
               {/* Score */}
-              <div style={{ padding: '10px', borderRadius: 8, background: '#0e0e1c', border: `1px solid ${C.border2}` }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 4 }}>
-                  <span style={{ fontSize: 26, fontWeight: 800, color: C.orange, ...display }}>77%</span>
-                  <span style={{ fontSize: 9, color: C.muted }}>from your designs</span>
+              <div style={{ padding: '10px 12px', borderRadius: 9, background: '#0e0e1c', border: `1px solid ${C.border2}` }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 5 }}>
+                  <span style={{ fontSize: 28, fontWeight: 800, color: C.orange, ...display }}>77%</span>
+                  <span style={{ fontSize: 10, color: C.muted }}>from your designs</span>
+                  <a href="#" style={{ marginLeft: 'auto', fontSize: 9, color: C.blue, textDecoration: 'none' }}>Storybook ↗</a>
                 </div>
-                <div style={{ height: 3, borderRadius: 2, background: C.border2, overflow: 'hidden', marginBottom: 6 }}>
-                  <div style={{ height: '100%', width: '77%', borderRadius: 2, background: `linear-gradient(90deg, ${C.green}, ${C.orange})` }} />
+                <div style={{ height: 4, borderRadius: 2, background: C.border2, overflow: 'hidden', marginBottom: 7 }}>
+                  <div style={{ height: '100%', width: '77%', borderRadius: 2, background: `linear-gradient(90deg, ${C.green} 0%, ${C.orange} 100%)` }} />
                 </div>
-                <div style={{ display: 'flex', gap: 10, fontSize: 9 }}>
+                <div style={{ display: 'flex', gap: 12, fontSize: 10 }}>
                   <span style={{ color: C.green }}>10 designed</span>
                   <span style={{ color: C.orange }}>10 modified</span>
                   <span style={{ color: '#ef4444' }}>3 custom</span>
                 </div>
               </div>
+
+              {/* Tabs */}
+              <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${C.border}` }}>
+                {['Overview','Modifications','Style issues','History'].map((tab, i) => (
+                  <span key={tab} style={{
+                    fontSize: 9, fontWeight: i === 0 ? 700 : 500, padding: '5px 8px',
+                    color: i === 0 ? C.text : C.muted,
+                    borderBottom: i === 0 ? `2px solid ${C.blue}` : '2px solid transparent',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {tab}{(i === 1) ? ' 10' : (i === 2) ? ' 34' : ''}
+                  </span>
+                ))}
+              </div>
+
               {/* Component list */}
               {[
-                { name: 'Navbar', tag: 'DS ✓', color: C.green },
-                { name: 'OccupancyWidget', tag: 'modified', color: C.orange },
-                { name: 'PastDueCard', tag: 'custom', color: '#ef4444' },
-                { name: 'Sidebar', tag: 'DS ✓', color: C.green },
+                { name: 'Navbar', tag: 'modified', color: C.orange, desc: 'Custom styles applied on top' },
+                { name: 'Sidebar', tag: 'modified', color: C.orange, desc: 'Custom styles applied on top' },
+                { name: 'OccupancyWidget', tag: 'modified', color: C.orange, desc: 'Custom styles applied on top' },
               ].map(item => (
-                <div key={item.name} style={{ padding: '6px 8px', borderRadius: 6, background: C.surface, border: `1px solid ${C.border}` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: C.text }}>{item.name}</span>
-                    <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: `${item.color}18`, color: item.color }}>{item.tag}</span>
+                <div key={item.name} style={{ padding: '7px 9px', borderRadius: 7, background: C.surface, border: `1px solid ${C.border}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: 999, background: item.color }} />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: C.text }}>{item.name}</span>
+                      <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 3, background: `${item.color}18`, color: item.color }}>{item.tag}</span>
+                    </div>
+                    <span style={{ fontSize: 9, color: C.muted }}>×1 ↗</span>
                   </div>
+                  <div style={{ fontSize: 9, color: C.muted, paddingLeft: 12 }}>{item.desc} — click to inspect</div>
                 </div>
               ))}
+
               {/* CTA */}
-              <div style={{ marginTop: 'auto', padding: '7px 8px', borderRadius: 8, background: `linear-gradient(135deg, ${C.blue}22, ${C.purple}18)`, border: `1px solid ${C.blue}30`, fontSize: 9, color: C.blue, fontWeight: 700, textAlign: 'center' }}>
-                Like what you see? Join waitlist →
+              <div style={{
+                marginTop: 'auto', padding: '10px', borderRadius: 9,
+                background: `linear-gradient(135deg, ${C.blue}, ${C.purple})`,
+                fontSize: 11, color: '#fff', fontWeight: 700, textAlign: 'center',
+                cursor: 'pointer',
+              }}>
+                Like what you see? Join the waitlist →
               </div>
             </div>
 
+            {/* Scan mode label — bottom left of screenshot area */}
+            <div style={{
+              position: 'absolute', bottom: 10, left: 10,
+              padding: '4px 10px', borderRadius: 6,
+              background: scanMode === 'quick' ? `${C.blue}22` : `${C.green}22`,
+              border: `1px solid ${scanMode === 'quick' ? C.blue : C.green}40`,
+              fontSize: 9, fontWeight: 700,
+              color: scanMode === 'quick' ? C.blue : C.green,
+              transition: 'all 0.4s ease',
+              ...sans,
+            }}>
+              {scanMode === 'quick' ? '⚡ Quick scan' : '◎ Full scan — all components identified'}
+            </div>
           </div>
         </div>
       </div>
