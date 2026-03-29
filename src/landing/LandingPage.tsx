@@ -337,17 +337,9 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
 
         <p style={{
           ...sans, fontSize: 17, color: C.sub, lineHeight: 1.8,
-          margin: '0 0 10px', fontWeight: 300, maxWidth: 480,
+          margin: '0 0 36px', fontWeight: 300, maxWidth: 480,
         }}>
-          Drift gives every page a live coverage score — which components are on-spec, which have drifted, and which ones AI introduced from scratch. Catch gaps before they merge, and push missing components back to Figma as a design brief in one click.
-        </p>
-        <p style={{ ...sans, fontSize: 13, color: C.muted, lineHeight: 1.6, margin: '0 0 36px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          Built by UX practitioners. Native to
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <ClaudeLogo size={16} />
-            <span style={{ color: claudeOrange, fontWeight: 600 }}>Claude Code</span>
-          </span>
-          · Works with Cursor & Windsurf too.
+          Drift gives every page a live coverage score — which components are on-spec, drifted, or invented by AI from scratch. Catch gaps before they merge, push missing components back to Figma, and fix them directly from Claude Code, Cursor, or Windsurf.
         </p>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
