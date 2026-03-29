@@ -280,11 +280,12 @@ function Nav({ onOpenModal }: { onOpenModal: () => void }) {
 function Hero({ onOpenModal }: { onOpenModal: () => void }) {
   const { count } = useWaitlistCount()
   const [scanMode, setScanMode] = useState<'quick' | 'full'>('quick')
+  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    // cycle Quick → Full → Quick every 2.5 s
+    const t = setTimeout(() => setVisible(true), 80)
     const id = setInterval(() => setScanMode(m => m === 'quick' ? 'full' : 'quick'), 5000)
-    return () => clearInterval(id)
+    return () => { clearTimeout(t); clearInterval(id) }
   }, [])
 
   return (
@@ -314,6 +315,9 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
         padding: '0 64px',
         maxWidth: 1240, margin: '0 auto', width: '100%',
         boxSizing: 'border-box', position: 'relative', zIndex: 1,
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(16px)',
+        transition: 'opacity 0.7s ease, transform 0.7s ease',
       }}>
 
       {/* Left: copy */}
