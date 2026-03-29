@@ -121,7 +121,7 @@ function WaitlistForm({ onSuccess, onCountUpdate }: { onSuccess?: () => void; on
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.green }}>You're on the list</div>
             <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-              {count ? `#${count} in line — ` : ''}We'll reach out when team access opens.
+              {count ? `#${count} in line — ` : ''}We'll reach out when early access opens.
             </div>
           </div>
         </div>
@@ -218,7 +218,7 @@ export function WaitlistModal({ onClose }: { onClose: () => void }) {
           <span style={{ ...display, fontSize: 24, fontWeight: 800, color: C.text }}>Join the waitlist</span>
         </div>
         <p style={{ ...sans, fontSize: 14, color: C.muted, lineHeight: 1.7, margin: '10px 0 28px' }}>
-          PR drift comments are invite-only for the first 200 teams.<br/>
+          PR drift comments are invite-only for the first 200 builders.<br/>
           The local overlay is free and available right now.
         </p>
 
@@ -226,7 +226,7 @@ export function WaitlistModal({ onClose }: { onClose: () => void }) {
 
         {count !== null && (
           <div style={{ marginTop: 14, ...sans, fontSize: 12, color: C.muted }}>
-            <span style={{ color: C.green, fontWeight: 700 }}>{count}</span> {count === 1 ? 'team' : 'teams'} already on the list
+            <span style={{ color: C.green, fontWeight: 700 }}>{count}</span> {count === 1 ? 'builder' : 'builders'} already on the list
           </div>
         )}
       </div>
@@ -366,7 +366,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
         </div>
         {count !== null && count > 0 && (
           <p style={{ ...sans, fontSize: 13, color: C.muted, marginTop: 14, marginBottom: 0 }}>
-            <span style={{ color: C.green, fontWeight: 700 }}>{count.toLocaleString()}</span> team{count !== 1 ? 's' : ''} already on the waitlist
+            <span style={{ color: C.green, fontWeight: 700 }}>{count.toLocaleString()}</span> builder{count !== 1 ? 's' : ''} already on the waitlist
           </p>
         )}
       </div>
@@ -381,48 +381,90 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           {/* Browser chrome */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 16px', borderBottom: `1px solid ${C.border}`, background: '#0c0c15' }}>
             {['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} style={{ width: 10, height: 10, borderRadius: 999, background: c }} />)}
-            <div style={{ marginLeft: 8, flex: 1, maxWidth: 200, background: C.border, borderRadius: 4, padding: '3px 10px', fontSize: 10, color: C.muted, ...mono }}>
-              app.company.com/dashboard
+            <div style={{ marginLeft: 8, flex: 1, maxWidth: 220, background: C.border, borderRadius: 4, padding: '3px 10px', fontSize: 10, color: C.muted, ...mono }}>
+              localhost:5173/dashboard
             </div>
           </div>
 
-          <div style={{ display: 'flex', minHeight: 330 }}>
-            {/* Mock app */}
-            <div style={{ flex: 1, padding: '18px', display: 'flex', flexDirection: 'column', gap: 11 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: C.text, ...display }}>Dashboard</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
-                {[
-                  { label: 'Occupancy', value: '94.2%', ok: true },
-                  { label: 'Revenue', value: '$42.8k', ok: true },
-                  { label: 'Past Due', value: '3 units', ok: false },
-                  { label: 'New Leads', value: '12', ok: false },
-                ].map(card => (
-                  <div key={card.label} style={{
-                    padding: '11px 13px', borderRadius: 8, background: '#0d0d18',
-                    border: `1.5px solid ${card.ok ? C.border : C.orange + '55'}`,
-                    position: 'relative',
-                  }}>
-                    {!card.ok && <div style={{ position: 'absolute', inset: 0, background: `${C.orange}07`, pointerEvents: 'none', borderRadius: 8 }} />}
-                    <div style={{ fontSize: 9, color: C.muted, marginBottom: 4 }}>{card.label}</div>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: card.ok ? C.text : C.orange, ...display }}>{card.value}</div>
-                    {!card.ok && <div style={{ fontSize: 8, color: C.orange, marginTop: 2, fontWeight: 600 }}>⚠ drifted</div>}
+          {/* App + overlay composite */}
+          <div style={{ position: 'relative', height: 360 }}>
+
+            {/* ── Layer 1: blurry app background ── */}
+            <div style={{ position: 'absolute', inset: 0, filter: 'blur(1.5px)', opacity: 0.6, overflow: 'hidden' }}>
+              {/* Sidebar */}
+              <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 46, background: '#0b0b16', borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 12, gap: 14 }}>
+                <WaveLogo size={16} color={C.blue} />
+                {[C.blue, C.muted, C.muted, C.muted, C.muted].map((clr, i) => (
+                  <div key={i} style={{ width: 30, height: 30, borderRadius: 8, background: i === 0 ? `${C.blue}20` : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 13, height: 1.5, background: clr, borderRadius: 1, boxShadow: `0 4px 0 ${clr}, 0 -4px 0 ${clr}` }} />
                   </div>
                 ))}
               </div>
-              <div style={{ height: 1, background: C.border }} />
-              {['Unit 101 — J. Smith', 'Unit 204 — A. Chen', 'Unit 312 — M. Davis'].map((row, i) => (
-                <div key={row} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0' }}>
-                  <span style={{ fontSize: 10, color: C.sub }}>{row}</span>
-                  <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: i === 1 ? `${C.orange}15` : `${C.green}15`, color: i === 1 ? C.orange : C.green }}>
-                    {i === 1 ? 'drifted' : 'DS ✓'}
-                  </span>
+              {/* Main content */}
+              <div style={{ position: 'absolute', left: 46, top: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column' }}>
+                {/* Navbar */}
+                <div style={{ height: 44, borderBottom: `1px solid ${C.border}`, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0e0e1c', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ ...display, fontSize: 12, fontWeight: 700, color: C.text }}>Drift Storage Co.</span>
+                    <div style={{ width: 1, height: 14, background: C.border }} />
+                    <span style={{ fontSize: 10, color: C.muted }}>Dashboard</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <div style={{ width: 80, height: 20, borderRadius: 4, background: C.border }} />
+                    <div style={{ width: 26, height: 26, borderRadius: 999, background: `linear-gradient(135deg, ${C.blue}, ${C.purple})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff' }}>DU</div>
+                  </div>
                 </div>
-              ))}
+                {/* Dashboard content */}
+                <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'hidden' }}>
+                  {/* Stat widgets */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                    {[
+                      { label: 'Occupancy', value: '94.2%', color: C.green },
+                      { label: 'Revenue', value: '$42.8k', color: C.text },
+                      { label: 'Net Move-ins', value: '+4', color: C.blue },
+                      { label: 'New Leads', value: '12', color: C.text },
+                      { label: 'Past Due', value: '3', color: C.orange },
+                      { label: 'Delinquent', value: '$1.2k', color: C.orange },
+                    ].map(card => (
+                      <div key={card.label} style={{ padding: '9px 11px', borderRadius: 7, background: '#0d0d18', border: `1px solid ${C.border}` }}>
+                        <div style={{ fontSize: 8, color: C.muted, marginBottom: 3 }}>{card.label}</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: card.color, ...display }}>{card.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Table */}
+                  <div style={{ background: C.surface2, borderRadius: 8, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+                    {['J. Smith · Unit 101 · Current', 'A. Chen · Unit 204 · Current', 'M. Davis · Unit 312 · Past Due'].map((row, i) => (
+                      <div key={row} style={{ padding: '7px 12px', borderBottom: i < 2 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 9, color: C.sub }}>{row}</span>
+                        <div style={{ width: 40, height: 14, borderRadius: 3, background: i === 2 ? `${C.orange}20` : `${C.green}20` }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Drift panel */}
+            {/* ── Layer 2: component highlight boxes ── */}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+              {/* Navbar box — green (DS component) */}
+              <div style={{ position: 'absolute', left: 46, top: 0, right: 190, height: 44, border: `1.5px solid ${C.green}`, boxSizing: 'border-box' }}>
+                <div style={{ position: 'absolute', top: -1, left: 0, fontSize: 8, fontWeight: 700, color: '#000', background: C.green, padding: '1px 5px', borderRadius: '0 0 3px 0', whiteSpace: 'nowrap' }}>Navbar · DS ✓</div>
+              </div>
+              {/* OccupancySummaryCard box — orange (modified) */}
+              <div style={{ position: 'absolute', left: 52, top: 50, width: 210, height: 128, border: `1.5px solid ${C.orange}`, boxSizing: 'border-box' }}>
+                <div style={{ position: 'absolute', top: -1, left: 0, fontSize: 8, fontWeight: 700, color: '#000', background: C.orange, padding: '1px 5px', borderRadius: '0 0 3px 0', whiteSpace: 'nowrap' }}>OccupancyWidget · modified</div>
+              </div>
+              {/* PastDueCard box — red (custom/drifted) */}
+              <div style={{ position: 'absolute', left: 162, top: 184, width: 100, height: 46, border: `1.5px solid #ef4444`, boxSizing: 'border-box' }}>
+                <div style={{ position: 'absolute', top: -1, left: 0, fontSize: 8, fontWeight: 700, color: '#fff', background: '#ef4444', padding: '1px 5px', borderRadius: '0 0 3px 0', whiteSpace: 'nowrap' }}>PastDueCard · custom</div>
+              </div>
+            </div>
+
+            {/* ── Layer 3: Drift panel (sharp) ── */}
             <div style={{
-              width: 180, background: C.bg, borderLeft: `1px solid ${C.border2}`,
+              position: 'absolute', right: 0, top: 0, bottom: 0, width: 186,
+              background: C.bg, borderLeft: `1px solid ${C.border2}`,
               padding: '11px 10px', display: 'flex', flexDirection: 'column', gap: 7,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -436,20 +478,27 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
                   ))}
                 </div>
               </div>
+              {/* Score */}
               <div style={{ padding: '10px', borderRadius: 8, background: '#0e0e1c', border: `1px solid ${C.border2}` }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 5 }}>
-                  <span style={{ fontSize: 24, fontWeight: 800, color: C.orange, ...display }}>77%</span>
-                  <span style={{ fontSize: 9, color: C.muted }}>on-spec</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 4 }}>
+                  <span style={{ fontSize: 26, fontWeight: 800, color: C.orange, ...display }}>77%</span>
+                  <span style={{ fontSize: 9, color: C.muted }}>from your designs</span>
                 </div>
                 <div style={{ height: 3, borderRadius: 2, background: C.border2, overflow: 'hidden', marginBottom: 6 }}>
-                  <div style={{ height: '100%', width: '77%', borderRadius: 2, background: C.orange }} />
+                  <div style={{ height: '100%', width: '77%', borderRadius: 2, background: `linear-gradient(90deg, ${C.green}, ${C.orange})` }} />
                 </div>
-                <div style={{ fontSize: 9, color: C.muted }}>3 drifted · 19 token violations</div>
+                <div style={{ display: 'flex', gap: 10, fontSize: 9 }}>
+                  <span style={{ color: C.green }}>10 designed</span>
+                  <span style={{ color: C.orange }}>10 modified</span>
+                  <span style={{ color: '#ef4444' }}>3 custom</span>
+                </div>
               </div>
+              {/* Component list */}
               {[
-                { name: 'PastDueCard', tag: 'drifted', color: C.orange },
-                { name: 'RevenueWidget', tag: 'drifted', color: C.orange },
                 { name: 'Navbar', tag: 'DS ✓', color: C.green },
+                { name: 'OccupancyWidget', tag: 'modified', color: C.orange },
+                { name: 'PastDueCard', tag: 'custom', color: '#ef4444' },
+                { name: 'Sidebar', tag: 'DS ✓', color: C.green },
               ].map(item => (
                 <div key={item.name} style={{ padding: '6px 8px', borderRadius: 6, background: C.surface, border: `1px solid ${C.border}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -458,7 +507,12 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
                   </div>
                 </div>
               ))}
+              {/* CTA */}
+              <div style={{ marginTop: 'auto', padding: '7px 8px', borderRadius: 8, background: `linear-gradient(135deg, ${C.blue}22, ${C.purple}18)`, border: `1px solid ${C.blue}30`, fontSize: 9, color: C.blue, fontWeight: 700, textAlign: 'center' }}>
+                Like what you see? Join waitlist →
+              </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -871,7 +925,7 @@ function WaitlistSection({ onOpenModal }: { onOpenModal: () => void }) {
           Stop guessing.<br/>Start catching drift.
         </h2>
         <p style={{ ...sans, fontSize: 16, color: C.muted, lineHeight: 1.8, margin: '0 0 40px', fontWeight: 300 }}>
-          The overlay is free. PR drift comments are invite-only for the first 200 teams.
+          The overlay is free. PR drift comments are invite-only for the first 200 builders.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={onOpenModal} style={{
@@ -896,12 +950,12 @@ function WaitlistSection({ onOpenModal }: { onOpenModal: () => void }) {
         </div>
         {count !== null && (
           <p style={{ ...sans, fontSize: 12, color: C.muted, marginTop: 16 }}>
-            <span style={{ color: C.green, fontWeight: 700 }}>{count}</span> {count === 1 ? 'team' : 'teams'} on the waitlist · No spam. One email when team access opens.
+            <span style={{ color: C.green, fontWeight: 700 }}>{count}</span> {count === 1 ? 'builder' : 'builders'} on the waitlist · No spam. One email when early access opens.
           </p>
         )}
         {count === null && (
           <p style={{ ...sans, fontSize: 12, color: C.muted, marginTop: 16 }}>
-            No spam. One email when team access opens.
+            No spam. One email when early access opens.
           </p>
         )}
       </div>
