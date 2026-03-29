@@ -1480,6 +1480,15 @@ const PropsPanel = ({ component, onClose }: { component: ScannedComponent; onClo
     setFixResponse(null)
     setFixError(null)
 
+    // In demo mode (or when server isn't running), copy prompt to clipboard
+    if (IS_DEMO) {
+      try { await navigator.clipboard.writeText(userText) } catch {}
+      setCopiedToast(true)
+      setTimeout(() => setCopiedToast(false), 2500)
+      setSending(false)
+      return
+    }
+
     const payload = {
       type: title.startsWith('Fix all') ? 'fix-all' : 'fix-one',
       component: component.name,
@@ -1553,7 +1562,7 @@ const PropsPanel = ({ component, onClose }: { component: ScannedComponent; onClo
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M2 6l3 3 5-5" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{ fontSize: 11, color: C.green, fontWeight: 600 }}>Fix prompt copied — paste into Claude Code</span>
+          <span style={{ fontSize: 11, color: C.green, fontWeight: 600 }}>Fix prompt copied — paste into Claude Code or Cursor</span>
         </div>
       )}
 
@@ -1666,17 +1675,17 @@ const PropsPanel = ({ component, onClose }: { component: ScannedComponent; onClo
                 </div>
                 {hasAction && (
                   <button
-                    onClick={() => !IS_DEMO && firePrompt(fixAllPrompt, `Fix all ${grouped.length} issues`)}
-                    disabled={sending || IS_DEMO}
-                    title={IS_DEMO ? 'One-click fixes available in your own install — not enabled in this demo' : undefined}
+                    onClick={() => firePrompt(fixAllPrompt, `Fix all ${grouped.length} issues`)}
+                    disabled={sending}
+                    title={IS_DEMO ? 'Copies fix prompt to clipboard — paste into Claude Code or Cursor' : undefined}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 4,
                       fontSize: 11, fontWeight: 700, padding: '4px 11px',
-                      background: IS_DEMO ? 'linear-gradient(135deg, #7c3aed88, #a855f788)' : 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                      background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
                       color: '#fff', border: 'none', borderRadius: 7,
-                      cursor: IS_DEMO ? 'not-allowed' : sending ? 'default' : 'pointer',
+                      cursor: sending ? 'default' : 'pointer',
                       fontFamily: 'Inter, sans-serif', opacity: sending ? 0.55 : 1,
-                      boxShadow: (sending || IS_DEMO) ? 'none' : '0 2px 8px rgba(124,58,237,0.35)',
+                      boxShadow: sending ? 'none' : '0 2px 8px rgba(124,58,237,0.35)',
                       transition: 'opacity 0.15s, box-shadow 0.15s',
                     }}
                   >
@@ -1743,15 +1752,15 @@ const PropsPanel = ({ component, onClose }: { component: ScannedComponent; onClo
                         background: 'rgba(124,58,237,0.04)',
                       }}>
                         <button
-                          onClick={() => !IS_DEMO && firePrompt(fixOnePrompt, label)}
-                          disabled={sending || IS_DEMO}
-                          title={IS_DEMO ? 'One-click fixes available in your own install — not enabled in this demo' : undefined}
+                          onClick={() => firePrompt(fixOnePrompt, label)}
+                          disabled={sending}
+                          title={IS_DEMO ? 'Copies fix prompt to clipboard — paste into Claude Code or Cursor' : undefined}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 4,
                             fontSize: 10, fontWeight: 700,
                             background: 'none', border: 'none', padding: 0,
-                            color: IS_DEMO ? '#7c3aed88' : '#7c3aed',
-                            cursor: IS_DEMO ? 'not-allowed' : sending ? 'default' : 'pointer',
+                            color: '#7c3aed',
+                            cursor: sending ? 'default' : 'pointer',
                             fontFamily: 'Inter, sans-serif', opacity: sending ? 0.5 : 1,
                           }}
                         >
