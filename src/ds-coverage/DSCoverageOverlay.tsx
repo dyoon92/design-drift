@@ -1116,8 +1116,13 @@ function buildFixPrompt(component: ScannedComponent): string {
     `Hardcoded overrides to replace:`,
     lines,
     ``,
-    `Find the \`${component.name}\` component file and make exactly those substitutions.`,
-    `Design tokens are defined in your project's CSS variables file (e.g. variables.css or tokens.css).`,
+    `Instructions:`,
+    `1. Find the \`${component.name}\` component file in the codebase (search by display name).`,
+    `2. Replace exactly those hardcoded values with the token shown — nothing else.`,
+    `3. Design tokens are CSS custom properties defined in the project's variables.css or tokens.css.`,
+    `4. Do not refactor, rename, or change any other code.`,
+    ``,
+    `After saving, the Drift overlay will rescan automatically.`,
   ].join('\n')
 }
 
@@ -1622,6 +1627,7 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
   const [fixError,     setFixError]     = useState<string | null>(null)
   const [sending,      setSending]      = useState(false)
   const [copiedToast,  setCopiedToast]  = useState(false)
+  const [copiedFix,    setCopiedFix]    = useState(false)
   const [fixTitle,     setFixTitle]     = useState('')
 
   useEffect(() => {
@@ -1800,7 +1806,32 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
             )}
             {/* Response — render inline, full height, no scroll cap */}
             {fixResponse !== null && (
-              <ChatBubble msg={{ role: 'assistant', content: fixResponse }} C={C} />
+              <>
+                <ChatBubble msg={{ role: 'assistant', content: fixResponse }} C={C} />
+                {/* Copy & apply row */}
+                <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <button
+                    onClick={async () => {
+                      try { await navigator.clipboard.writeText(fixResponse) } catch {}
+                      setCopiedFix(true)
+                      setTimeout(() => setCopiedFix(false), 2500)
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      width: '100%', padding: '8px 0',
+                      background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                      border: 'none', borderRadius: 8, cursor: 'pointer',
+                      fontSize: 11, fontWeight: 700, color: '#fff',
+                      fontFamily: 'Inter, sans-serif',
+                    }}
+                  >
+                    {copiedFix ? '✓ Copied!' : '⎘ Copy fix → paste into Claude Code'}
+                  </button>
+                  <div style={{ fontSize: 10, color: C.muted, textAlign: 'center', fontFamily: 'Inter, sans-serif' }}>
+                    Drift rescans automatically after the file saves
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -1848,16 +1879,17 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
                 </div>
                 {hasAction && (
                   <button
-                    onClick={() => firePrompt(fixAllPrompt, `Fix all ${grouped.length} issues`)}
-                    disabled={sending}
+                    onClick={() => !IS_DEMO && firePrompt(fixAllPrompt, `Fix all ${grouped.length} issues`)}
+                    disabled={sending || IS_DEMO}
+                    title={IS_DEMO ? 'Add your Claude API key in Settings to enable one-click fixes' : undefined}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 4,
                       fontSize: 11, fontWeight: 700, padding: '4px 11px',
-                      background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                      background: IS_DEMO ? 'linear-gradient(135deg, #7c3aed88, #a855f788)' : 'linear-gradient(135deg, #7c3aed, #a855f7)',
                       color: '#fff', border: 'none', borderRadius: 7,
-                      cursor: sending ? 'default' : 'pointer',
+                      cursor: IS_DEMO ? 'not-allowed' : sending ? 'default' : 'pointer',
                       fontFamily: 'Inter, sans-serif', opacity: sending ? 0.55 : 1,
-                      boxShadow: sending ? 'none' : '0 2px 8px rgba(124,58,237,0.35)',
+                      boxShadow: (sending || IS_DEMO) ? 'none' : '0 2px 8px rgba(124,58,237,0.35)',
                       transition: 'opacity 0.15s, box-shadow 0.15s',
                     }}
                   >
@@ -1924,13 +1956,15 @@ const PropsPanel = ({ component, onClose, apiKey }: { component: ScannedComponen
                         background: 'rgba(124,58,237,0.04)',
                       }}>
                         <button
-                          onClick={() => firePrompt(fixOnePrompt, label)}
-                          disabled={sending}
+                          onClick={() => !IS_DEMO && firePrompt(fixOnePrompt, label)}
+                          disabled={sending || IS_DEMO}
+                          title={IS_DEMO ? 'Add your Claude API key in Settings to enable one-click fixes' : undefined}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 4,
                             fontSize: 10, fontWeight: 700,
                             background: 'none', border: 'none', padding: 0,
-                            color: '#7c3aed', cursor: sending ? 'default' : 'pointer',
+                            color: IS_DEMO ? '#7c3aed88' : '#7c3aed',
+                            cursor: IS_DEMO ? 'not-allowed' : sending ? 'default' : 'pointer',
                             fontFamily: 'Inter, sans-serif', opacity: sending ? 0.5 : 1,
                           }}
                         >
