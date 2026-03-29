@@ -455,8 +455,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
                     color: scanMode === 'quick' ? C.orange : '#ef4444',
                     transition: 'color 0.4s',
                   }}>{scanMode === 'quick' ? '77%' : '16%'}</span>
-                  <span style={{ fontSize: 10, color: C.muted }}>from your designs</span>
-                  <span style={{ marginLeft: 'auto', fontSize: 9, color: C.blue }}>Storybook ↗</span>
+                  <span style={{ fontSize: 10, color: C.muted, whiteSpace: 'nowrap' }}>from your designs</span>
                 </div>
                 <div style={{ height: 4, borderRadius: 2, background: C.border2, overflow: 'hidden', marginBottom: 7 }}>
                   <div style={{
