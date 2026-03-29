@@ -310,7 +310,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
 
       {/* Content grid */}
       <div className="hero-grid" style={{
-        display: 'grid', gridTemplateColumns: '1fr 1fr',
+        display: 'grid', gridTemplateColumns: '1fr 1.25fr',
         gap: 56, alignItems: 'center',
         padding: '0 64px',
         maxWidth: 1240, margin: '0 auto', width: '100%',
@@ -407,9 +407,14 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
                 <img src={src} alt="" style={{
                   height: '100%', width: 'auto',
                   objectFit: 'cover', objectPosition: 'left top',
-                  filter: 'blur(0.6px)',
                   transform: 'scale(1.02)',
                   transformOrigin: 'left top',
+                }} />
+                {/* Dark overlay over the app screenshot */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'rgba(8, 8, 15, 0.45)',
+                  pointerEvents: 'none',
                 }} />
               </div>
             ))}
@@ -755,16 +760,17 @@ function AIEraSection() {
     <section style={{ background: C.surface, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, padding: '88px 64px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
-        <div style={{ marginBottom: 52, maxWidth: 700 }}>
+        <div style={{ marginBottom: 52, textAlign: 'center' }}>
           <Chip color={C.amber}>Why Drift exists</Chip>
           <h2 style={{
             ...display, fontSize: 'clamp(30px, 4vw, 50px)', fontWeight: 800,
-            color: C.text, margin: '20px 0 16px', letterSpacing: -1.5, lineHeight: 1.08,
+            color: C.text, margin: '20px auto 16px', letterSpacing: -1.5, lineHeight: 1.08,
+            maxWidth: 700,
           }}>
             The design system used to be built once.<br/>
             <span style={{ color: C.amber }}>Now it needs to hold</span> every sprint.
           </h2>
-          <p style={{ ...sans, fontSize: 16, color: C.sub, maxWidth: 540, lineHeight: 1.75, fontWeight: 300 }}>
+          <p style={{ ...sans, fontSize: 16, color: C.sub, maxWidth: 540, lineHeight: 1.75, fontWeight: 300, margin: '0 auto' }}>
             AI doesn't know you already have a <span style={{ ...mono, fontSize: 14, color: C.amber, fontWeight: 600 }}>PaymentBanner</span>. It invents one. Every sprint adds a little more. Drift catches it before it compounds.
           </p>
         </div>
