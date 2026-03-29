@@ -248,7 +248,7 @@ function Nav({ onOpenModal }: { onOpenModal: () => void }) {
         <span style={{ ...display, fontWeight: 800, fontSize: 16, color: C.text, letterSpacing: -0.3 }}>Drift</span>
       </div>
       <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-        {[['Features', '#features'], ['How it works', '#how-it-works'], ['Pricing', '#pricing']].map(([label, href]) => (
+        {[['Features', '#features']].map(([label, href]) => (
           <a key={label} href={href} style={{ fontSize: 13, color: C.muted, textDecoration: 'none', transition: 'color 0.15s' }}
             onMouseEnter={e => (e.currentTarget.style.color = C.text)}
             onMouseLeave={e => (e.currentTarget.style.color = C.muted)}>
@@ -509,87 +509,6 @@ function SocialProof() {
   )
 }
 
-// ─── Works Everywhere Strip ────────────────────────────────────────────────────
-function WorksEverywhereStrip() {
-  const items = [
-    {
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <rect x="1" y="3" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M6 14v1.5M12 14v1.5M4.5 15.5h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      ),
-      label: 'In the browser',
-      desc: 'Press D in your running app. No install needed beyond adding the overlay.',
-      color: C.blue,
-    },
-    {
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <rect x="1" y="1" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M5 7l3 2-3 2M10 13h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      ),
-      label: 'In your IDE',
-      desc: 'MCP server connects Drift to Claude Code, Cursor, and Windsurf. Ask about gaps without leaving your editor.',
-      color: claudeOrange,
-    },
-    {
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <rect x="1" y="3" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M5 7.5h8M5 10.5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      ),
-      label: 'In the terminal',
-      desc: '/drift-setup, /drift-sync, /drift-push — Claude Code slash commands that do the work for you.',
-      color: C.purple,
-    },
-    {
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M5.5 9.5l2.5 2.5 4.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      ),
-      label: 'In CI',
-      desc: 'GitHub Action posts a drift delta on every PR. No extra tooling — just a YAML file.',
-      color: C.green,
-    },
-  ]
-
-  return (
-    <div style={{
-      borderBottom: `1px solid ${C.border}`,
-      padding: '0 48px',
-      background: C.surface,
-    }}>
-      <div style={{
-        maxWidth: 1200, margin: '0 auto',
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-      }} className="works-grid">
-        {items.map((item, i) => (
-          <div key={item.label} style={{
-            padding: '28px 24px',
-            borderRight: i < items.length - 1 ? `1px solid ${C.border}` : 'none',
-            display: 'flex', flexDirection: 'column', gap: 10,
-          }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 9,
-              background: `${item.color}15`, border: `1px solid ${item.color}28`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: item.color, flexShrink: 0,
-            }}>
-              {item.icon}
-            </div>
-            <div style={{ ...display, fontSize: 13, fontWeight: 700, color: C.text }}>{item.label}</div>
-            <div style={{ ...sans, fontSize: 12, color: C.muted, lineHeight: 1.7 }}>{item.desc}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 // ─── Persona Tabs ─────────────────────────────────────────────────────────────
 type Persona = 'designer' | 'pm' | 'developer'
@@ -824,7 +743,6 @@ function AIEraSection() {
 const FEATURES = [
   { icon: '⬡', color: C.blue,   title: 'Live fiber tree scanning',        body: 'Reads the actual rendered component tree — not source. Sees drift as it runs, not as it\'s written.' },
   { icon: '◎', color: C.orange, title: 'Drift score per page',             body: '"23% of this page has drifted." One number engineers and leadership can both act on.' },
-  { icon: '⚡', color: C.purple, title: 'PR drift delta',                   body: 'Every PR shows what drifted in that change — before anyone reviews.' },
   { icon: '✦', color: C.green,  title: 'AI rules export',                  body: 'Generates CLAUDE.md and .cursorrules from your component registry — tells Cursor and Claude what exists and which tokens to use.' },
   { icon: '⬚', color: C.pink,   title: 'Page scaffold generator',          body: 'Describe a screen. Get React built from only your registered DS components — zero drift on day one.' },
   { icon: '↑',  color: C.amber, title: 'Promote to DS',                     body: 'Component appeared 8× but isn\'t in your system? One click generates the Cursor prompt to build it properly from Figma — then Drift tracks it.' },
@@ -832,8 +750,6 @@ const FEATURES = [
   { icon: '📷', color: C.blue,   title: 'One-click screenshot capture',     body: 'Capture any component as an image directly from the overlay — download it, attach to a Jira ticket, or drop it into a Figma file request without leaving the browser.' },
   { icon: '◈', color: C.purple, title: 'Jira ticket from any gap',         body: 'Custom component with no DS equivalent? One click creates a pre-filled Jira ticket — component name, screenshot, occurrence count, and a curated design prompt ready to go.' },
   { icon: '⬡', color: C.pink,   title: 'Figma spec prompts',               body: 'Missing a DS component? Drift generates a structured Figma brief — props, states, token requirements — so designers know exactly what to build next.' },
-  { icon: '/',  color: C.green,  title: '/drift Claude slash command',       body: 'Run /drift in Claude Code to analyze coverage, get migration suggestions, and auto-fix gaps — all from your terminal without touching a browser.' },
-  { icon: '⟳', color: C.amber,  title: 'MCP server for your IDE',          body: 'drift_gaps, drift_suggest, drift_analyze — available as MCP tools in Claude Code, Cursor, and Windsurf. Drift context while you write code, not after.' },
 ]
 
 function Features() {
@@ -934,166 +850,8 @@ function PRDeltaCallout() {
   )
 }
 
-// ─── How it works — 4 steps ───────────────────────────────────────────────────
-function HowItWorks() {
-  const steps = [
-    {
-      n: '01', color: C.blue, icon: '⬡',
-      title: 'Set up in 30 seconds',
-      body: 'Run /drift-setup in Claude Code. It reads your codebase, creates drift.config.ts pre-populated with your components, adds the overlay import, and wires up CI — all in one shot.',
-      code: '$ /drift-setup   # in Claude Code — done',
-    },
-    {
-      n: '02', color: C.orange, icon: '◎',
-      title: 'Press D — inspect anything',
-      body: 'Drift reads the live React fiber tree. Click any component to inspect props, take a screenshot, file a Jira ticket, or generate a Figma brief for a missing DS component.',
-      code: '77% on-spec · 3 drifted · 19 token violations',
-    },
-    {
-      n: '03', color: C.purple, icon: '/',
-      title: 'Fix drift from your IDE',
-      body: 'The MCP server brings drift context into Claude Code, Cursor, and Windsurf. Ask what\'s drifted, get a replacement suggestion, and apply it — without touching a browser.',
-      code: 'drift_suggest: replace BtnGrp → <Tabs>',
-    },
-    {
-      n: '04', color: C.green, icon: '✦',
-      title: 'Catch it before every merge',
-      body: 'The GitHub Action posts a drift delta to every PR. Designers and PMs see coverage change before anyone reviews — no tools, no meetings, no manual QA.',
-      code: 'DS coverage: 81% → 74% ⚠ drifted −7%',
-    },
-  ]
 
-  return (
-    <section id="how-it-works" style={{ padding: '88px 64px', maxWidth: 1240, margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: 56 }}>
-        <Chip color={C.purple}>Get started</Chip>
-        <h2 style={{ ...display, fontSize: 44, fontWeight: 800, color: C.text, margin: '20px 0 12px', letterSpacing: -1 }}>
-          A developer sets it up once.
-        </h2>
-        <p style={{ ...sans, fontSize: 15, color: C.muted, fontWeight: 300, maxWidth: 520, margin: '0 auto', lineHeight: 1.7 }}>
-          After that, the whole team sees drift — in the browser, in the IDE, and in every PR.
-        </p>
-      </div>
-
-      <div className="how-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-        {steps.map(s => (
-          <div key={s.n} style={{
-            padding: '28px', borderRadius: 14,
-            background: C.surface, border: `1px solid ${C.border}`,
-            display: 'flex', flexDirection: 'column',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-              <span style={{ ...mono, fontSize: 10, color: C.muted }}>{s.n}</span>
-              <div style={{
-                width: 34, height: 34, borderRadius: 9,
-                background: `${s.color}15`, border: `1px solid ${s.color}28`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 15, color: s.color,
-              }}>{s.icon}</div>
-            </div>
-            <div style={{ ...display, fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 10, lineHeight: 1.3 }}>{s.title}</div>
-            <div style={{ ...sans, fontSize: 13, color: C.muted, lineHeight: 1.75, flex: 1, marginBottom: 16 }}>{s.body}</div>
-            <div style={{ padding: '10px 14px', borderRadius: 8, background: '#09090f', border: `1px solid ${C.border2}`, fontSize: 11, color: s.color, ...mono, wordBreak: 'break-all' }}>
-              {s.code}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-// ─── Pricing ──────────────────────────────────────────────────────────────────
-function Pricing({ onOpenModal }: { onOpenModal: () => void }) {
-  const tiers = [
-    {
-      name: 'Free', price: '$0', period: 'forever', color: C.sub,
-      desc: 'For engineers who want to see how much their UI has drifted.',
-      features: ['Local overlay — unlimited scans','DS coverage % per page','Token violation detection','Screenshot capture of any component','Jira & Figma ticket generation from gaps','AI context file export (.cursorrules, CLAUDE.md)','Page scaffold generator','/drift Claude slash command','MCP server for Claude Code, Cursor & Windsurf'],
-      cta: 'Install free', ctaAction: () => window.open('https://github.com/dyoon92/design-drift', '_blank'),
-      highlight: false,
-    },
-    {
-      name: 'Team', price: '$149', period: '/ month', color: C.blue,
-      desc: 'For teams that can\'t afford to let drift go unnoticed in PRs.',
-      features: ['Everything in Free','GitHub App — PR drift delta comments','Coverage history & trending','Slack alerts on drift regression','Up to 10 repos · 25 members'],
-      cta: 'Join waitlist', ctaAction: onOpenModal,
-      highlight: true,
-    },
-    {
-      name: 'Enterprise', price: 'Custom', period: '', color: C.purple,
-      desc: 'For orgs with large DS teams and compliance requirements.',
-      features: ['Everything in Team','Unlimited repos & members','SSO / SAML','Slack + Jira integration','Dedicated onboarding & SLA'],
-      cta: 'Talk to us', ctaAction: () => window.location.href = 'mailto:hello@drift.design',
-      highlight: false,
-    },
-  ]
-
-  return (
-    <section id="pricing" style={{ padding: '88px 64px', background: C.surface, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <Chip color={C.purple}>Pricing</Chip>
-          <h2 style={{ ...display, fontSize: 44, fontWeight: 800, color: C.text, margin: '20px 0 12px', letterSpacing: -1 }}>
-            Free to start. Powerful at scale.
-          </h2>
-          <p style={{ ...sans, fontSize: 15, color: C.muted, fontWeight: 300 }}>
-            The local overlay is free forever. One PR comment and your team will ask you to upgrade.
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
-          {tiers.map(t => (
-            <div key={t.name} style={{
-              padding: '32px 28px', borderRadius: 16,
-              background: t.highlight ? `linear-gradient(160deg, #0d1628, #0a0f20)` : C.surface2,
-              border: `1.5px solid ${t.highlight ? C.blue + '50' : C.border}`,
-              boxShadow: t.highlight ? `0 0 56px ${C.blue}18` : 'none',
-              position: 'relative', display: 'flex', flexDirection: 'column',
-            }}>
-              {t.highlight && (
-                <div style={{
-                  position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-                  background: C.blue, color: '#fff', fontSize: 11, fontWeight: 700,
-                  padding: '4px 14px', borderRadius: 999, ...sans, whiteSpace: 'nowrap',
-                }}>Most popular</div>
-              )}
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ ...sans, fontSize: 12, fontWeight: 700, color: t.color, letterSpacing: 0.5, marginBottom: 8 }}>{t.name.toUpperCase()}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                  <span style={{ ...display, fontSize: 40, fontWeight: 800, color: C.text, letterSpacing: -1 }}>{t.price}</span>
-                  {t.period && <span style={{ ...sans, fontSize: 13, color: C.muted }}>{t.period}</span>}
-                </div>
-                <div style={{ ...sans, fontSize: 13, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>{t.desc}</div>
-              </div>
-              <div style={{ flex: 1, marginBottom: 24 }}>
-                {t.features.map(f => (
-                  <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '7px 0', borderBottom: `1px solid ${C.border}` }}>
-                    <span style={{ color: C.green, fontSize: 12, marginTop: 1, flexShrink: 0 }}>✓</span>
-                    <span style={{ ...sans, fontSize: 13, color: C.sub, lineHeight: 1.5 }}>{f}</span>
-                  </div>
-                ))}
-              </div>
-              <button onClick={t.ctaAction} style={{
-                ...sans, width: '100%', fontSize: 14, fontWeight: 700, padding: '12px 0',
-                background: t.highlight ? C.blue : 'transparent',
-                color: t.highlight ? '#fff' : C.text,
-                border: t.highlight ? 'none' : `1px solid ${C.border2}`,
-                borderRadius: 10, cursor: 'pointer',
-                boxShadow: t.highlight ? `0 0 24px ${C.blue}35` : 'none',
-                transition: 'opacity 0.15s',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-                {t.cta}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
+// ─── Pricing (hidden — restore from git when tiers are finalised) ─────────────
 
 // ─── Waitlist CTA section ─────────────────────────────────────────────────────
 function WaitlistSection({ onOpenModal }: { onOpenModal: () => void }) {
@@ -1197,19 +955,12 @@ export function LandingPage() {
           .hero-mock   { display: none !important; }
           .aiera-flow  { grid-template-columns: 1fr 1fr !important; }
           .aiera-bottom { grid-template-columns: 1fr 1fr !important; }
-          .how-grid    { grid-template-columns: 1fr 1fr !important; }
-          .works-grid  { grid-template-columns: 1fr 1fr !important; }
         }
         @media (max-width: 640px) {
-          .how-grid    { grid-template-columns: 1fr !important; }
-          .works-grid  { grid-template-columns: 1fr 1fr !important; }
           .hero-grid   { padding: 0 24px !important; }
           .nav-links   { gap: 16px !important; }
           .nav-links a { display: none !important; }
           .aiera-flow  { grid-template-columns: 1fr !important; }
-        }
-        @media (max-width: 480px) {
-          .works-grid  { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 480px) {
           .hero-grid  { padding: 0 20px !important; }
@@ -1219,13 +970,10 @@ export function LandingPage() {
       <Nav onOpenModal={openModal} />
       <Hero onOpenModal={openModal} />
       <SocialProof />
-      <WorksEverywhereStrip />
       <AIEraSection />
       <Features />
-      <PRDeltaCallout />
-      <HowItWorks />
       <ClaudeSection />
-      <Pricing onOpenModal={openModal} />
+      <PRDeltaCallout />
       <WaitlistSection onOpenModal={openModal} />
       <Footer />
     </div>

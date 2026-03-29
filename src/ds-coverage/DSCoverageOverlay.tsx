@@ -1668,7 +1668,7 @@ const PropsPanel = ({ component, onClose }: { component: ScannedComponent; onClo
                   <button
                     onClick={() => !IS_DEMO && firePrompt(fixAllPrompt, `Fix all ${grouped.length} issues`)}
                     disabled={sending || IS_DEMO}
-                    title={IS_DEMO ? 'Add your Claude API key in Settings to enable one-click fixes' : undefined}
+                    title={IS_DEMO ? 'One-click fixes available in your own install — not enabled in this demo' : undefined}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 4,
                       fontSize: 11, fontWeight: 700, padding: '4px 11px',
@@ -1745,7 +1745,7 @@ const PropsPanel = ({ component, onClose }: { component: ScannedComponent; onClo
                         <button
                           onClick={() => !IS_DEMO && firePrompt(fixOnePrompt, label)}
                           disabled={sending || IS_DEMO}
-                          title={IS_DEMO ? 'Add your Claude API key in Settings to enable one-click fixes' : undefined}
+                          title={IS_DEMO ? 'One-click fixes available in your own install — not enabled in this demo' : undefined}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 4,
                             fontSize: 10, fontWeight: 700,
