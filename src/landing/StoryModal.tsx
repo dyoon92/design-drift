@@ -6,35 +6,35 @@ interface StoryModalProps {
 
 const STEPS = [
   {
-    icon: '◈',
+    icon: <img src="/figma-logo.svg" style={{ width: 44, height: 44, display: 'block' }} alt="Figma" />,
     iconColor: '#7c3aed',
     title: 'Your design system lives in Figma',
     body: 'Designers define every component, token, and spacing rule. Figma is the source of truth — the contract between what was designed and what gets built.',
     visual: 'figma',
   },
   {
-    icon: '⬡',
+    icon: <img src="/storybook-icon.webp" style={{ width: 44, height: 44, display: 'block' }} alt="Storybook" />,
     iconColor: '#4f8ef7',
     title: 'Developers build them in Storybook',
     body: "Each component gets implemented, documented, and catalogued. Storybook becomes the living bridge between design and code — and Drift reads it to know your system.",
     visual: 'storybook',
   },
   {
-    icon: '⚡',
+    icon: <span style={{ fontSize: 44, lineHeight: 1, display: 'block' }}>⚡</span>,
     iconColor: '#f59e0b',
     title: 'Then AI enters the picture',
     body: "Cursor and Claude can now build entire screens in seconds using your Storybook components. Most of the time it works great. But sometimes AI invents a one-off card, hardcodes a color, or skips your spacing tokens.",
     visual: 'code',
   },
   {
-    icon: '◎',
+    icon: <span style={{ fontSize: 44, lineHeight: 1, display: 'block', color: '#ef4444' }}>◎</span>,
     iconColor: '#ef4444',
     title: 'Drift measures what actually shipped',
     body: "Drift reads the live React fiber tree — not static code, but what's actually running on screen. Every component is classified, every hardcoded token flagged. You see the real coverage number, not an estimate.",
     visual: 'coverage',
   },
   {
-    icon: '✦',
+    icon: <span style={{ fontSize: 44, lineHeight: 1, display: 'block' }}>✦</span>,
     iconColor: '#34d399',
     title: 'Every PR shows the drift delta',
     body: "The GitHub Action posts coverage before and after to every pull request. Designers see what AI changed. Engineers fix drift before review. PMs track coverage as a real metric. The loop is closed.",
@@ -236,7 +236,7 @@ export function StoryModal({ onDone }: StoryModalProps) {
             transition: 'opacity 0.16s ease',
           }}>
             {/* Icon */}
-            <div style={{ fontSize: 48, color: current.iconColor, marginBottom: 16, lineHeight: 1 }}>
+            <div style={{ marginBottom: 16 }}>
               {current.icon}
             </div>
 
