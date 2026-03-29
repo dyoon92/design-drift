@@ -33,6 +33,7 @@ const PROMOTE_MIN     = 5
 const HISTORY_KEY     = 'ds-coverage-history'
 const HISTORY_MAX     = 15
 const THEME_KEY       = 'ds-coverage-theme'
+const IGNORE_KEY      = 'drift-approved-gaps'
 const SCAN_CACHE_PFX  = 'ds-coverage-scan-'
 // Counts active html2canvas captures — MutationObserver skips scans while > 0
 let capturingCount = 0
@@ -135,6 +136,13 @@ const coverageColor = (pct: number, C: Colors) =>
 // ─── Page history ─────────────────────────────────────────────────────────────
 
 interface HistoryEntry { path: string; pct: number; ds: number; gaps: number; total: number; ts: number }
+
+function loadIgnored(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(IGNORE_KEY) ?? '[]')) } catch { return new Set() }
+}
+function saveIgnored(s: Set<string>) {
+  try { localStorage.setItem(IGNORE_KEY, JSON.stringify([...s])) } catch {}
+}
 
 function loadHistory(): HistoryEntry[] {
   try { return JSON.parse(sessionStorage.getItem(HISTORY_KEY) ?? '[]') } catch { return [] }
@@ -444,19 +452,45 @@ const COLOR_TOKEN_MAP: Record<string, string> = {
 }
 
 const RADIUS_TOKEN_MAP: Record<string, string> = {
-  '4px':    '--ds-border-radius-sm',
-  '6px':    '--ds-border-radius-md',
-  '8px':    '--ds-border-radius-lg',
-  '999px':  '--ds-border-radius-full',
+  '4px':   '--ds-border-radius-sm',
+  '6px':   '--ds-border-radius-md',
+  '8px':   '--ds-border-radius-lg',
+  '999px': '--ds-border-radius-full',
   '9999px': '--ds-border-radius-full',
   '50%':    '--ds-border-radius-full',
   '100%':   '--ds-border-radius-full',
 }
 
-function suggestToken(type: 'color' | 'radius', value: string): string | null {
+const SPACING_TOKEN_MAP: Record<string, string> = {
+  '4px':  '--ds-spacing-1',
+  '8px':  '--ds-spacing-2',
+  '12px': '--ds-spacing-3',
+  '16px': '--ds-spacing-4',
+  '20px': '--ds-spacing-5',
+  '24px': '--ds-spacing-6',
+  '32px': '--ds-spacing-8',
+}
+
+const FONT_SIZE_TOKEN_MAP: Record<string, string> = {
+  '12px': '--ds-font-size-sm',
+  '14px': '--ds-font-size-base',
+  '15px': '--ds-font-size-md',
+}
+
+const FONT_WEIGHT_TOKEN_MAP: Record<string, string> = {
+  '400': '--ds-font-weight-regular',
+  '500': '--ds-font-weight-medium',
+  '600': '--ds-font-weight-semibold',
+  '700': '--ds-font-weight-bold',
+}
+
+function suggestToken(type: DriftViolationType, value: string): string | null {
   const norm = value.trim().toLowerCase()
-  if (type === 'color')  return COLOR_TOKEN_MAP[norm]  ? `var(${COLOR_TOKEN_MAP[norm]})`  : null
-  if (type === 'radius') return RADIUS_TOKEN_MAP[norm] ? `var(${RADIUS_TOKEN_MAP[norm]})` : null
+  if (type === 'color')       return COLOR_TOKEN_MAP[norm]       ? `var(${COLOR_TOKEN_MAP[norm]})`       : null
+  if (type === 'radius')      return RADIUS_TOKEN_MAP[norm]      ? `var(${RADIUS_TOKEN_MAP[norm]})`      : null
+  if (type === 'spacing')     return SPACING_TOKEN_MAP[norm]     ? `var(${SPACING_TOKEN_MAP[norm]})`     : null
+  if (type === 'font-size')   return FONT_SIZE_TOKEN_MAP[norm]   ? `var(${FONT_SIZE_TOKEN_MAP[norm]})`   : null
+  if (type === 'font-weight') return FONT_WEIGHT_TOKEN_MAP[norm] ? `var(${FONT_WEIGHT_TOKEN_MAP[norm]})` : null
   return null
 }
 
@@ -887,20 +921,21 @@ const PaletteIcon = ({ size = 16, color }: { size?: number; color: string }) => 
 
 // ─── Individual overlay box ───────────────────────────────────────────────────
 
-const OverlayBox = React.memo(({ c, yOffset, inspectMode, isInspected, isHighlighted, onInspect }: {
+const OverlayBox = React.memo(({ c, yOffset, inspectMode, isInspected, isHighlighted, onInspect, isIgnored }: {
   c: ScannedComponent
   yOffset: number
   inspectMode: boolean
   isInspected: boolean
   isHighlighted: boolean
   onInspect: (c: ScannedComponent) => void
+  isIgnored?: boolean
 }) => {
   const C = useC()
   const storyPath = c.inDS ? DS_STORY_PATHS[c.name] : undefined
   const storyUrl  = storyPath ? `${SB_BASE}/?path=/story/${storyPath}` : undefined
   const figmaUrl  = c.inDS ? (DS_FIGMA_LINKS[c.name] || undefined) : undefined
 
-  const baseColor   = c.drifted ? C.orange : c.inDS ? C.green : C.red
+  const baseColor   = isIgnored ? C.muted : c.drifted ? C.orange : c.inDS ? C.green : C.red
   const outlineColor = (isInspected || isHighlighted) ? C.blue : baseColor
   const bp = badgeCorner(c, yOffset, outlineColor)
 
@@ -1895,6 +1930,9 @@ interface PanelProps {
   promotedComponents: Set<string>
   onPromote: (name: string, count: number) => void
   onOpenWaitlist?: () => void
+  ignored: Set<string>
+  onApproveGap: (name: string) => void
+  onUnapproveGap: (name: string) => void
 }
 
 const SummaryPanel = (p: PanelProps) => {
@@ -1925,15 +1963,17 @@ const SummaryPanel = (p: PanelProps) => {
   const [genError,       setGenError]       = useState<string | null>(null)
   const [genCopied,      setGenCopied]      = useState(false)
 
-  const dsCount      = p.components.filter(c => c.inDS).length
+  // Ignored (approved) gaps count as DS for coverage purposes — they're known, intentional
+  const dsCount      = p.components.filter(c => c.inDS || p.ignored.has(c.name)).length
   const driftedCount = p.components.filter(c => c.drifted).length
-  const gapCount     = p.components.filter(c => !c.inDS).length
+  const gapCount     = p.components.filter(c => !c.inDS && !p.ignored.has(c.name)).length
+  const ignoredCount = p.components.filter(c => !c.inDS && p.ignored.has(c.name)).length
   const total        = p.components.length
   const pct          = total ? Math.round((dsCount / total) * 100) : 0
   const color        = coverageColor(pct, C)
 
   const gapMap = new Map<string, number>()
-  p.components.filter(c => !c.inDS).forEach(c => gapMap.set(c.name, (gapMap.get(c.name) ?? 0) + 1))
+  p.components.filter(c => !c.inDS && !p.ignored.has(c.name)).forEach(c => gapMap.set(c.name, (gapMap.get(c.name) ?? 0) + 1))
   const gaps         = [...gapMap.entries()].sort((a, b) => b[1] - a[1])
   const promoteCount = gaps.filter(([, n]) => n >= PROMOTE_MIN).length
 
@@ -2665,6 +2705,12 @@ const SummaryPanel = (p: PanelProps) => {
               <span style={{ fontWeight: 700, color: C.red }}>{gapCount}</span>
               <span style={{ color: C.muted }}> custom</span>
             </span>
+            {ignoredCount > 0 && (
+              <span style={{ fontSize: 11, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontWeight: 700, color: '#34d399' }}>{ignoredCount}</span>
+                <span style={{ color: C.muted }}> approved</span>
+              </span>
+            )}
           </div>
           {/* Footer */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.panelBorder}` }}>
@@ -2822,6 +2868,7 @@ const SummaryPanel = (p: PanelProps) => {
                     const isFrequent   = count >= PROMOTE_MIN
                     const isPromotable = count >= 3
                     const isPromoted   = promotedComponents.has(name)
+                    const isIgnored    = p.ignored.has(name)
                     const isHovered    = p.hoveredGap === name
                     return (
                       <div key={name}
@@ -2862,6 +2909,36 @@ const SummaryPanel = (p: PanelProps) => {
                                   }}
                                 >
                                   ↑ Promote
+                                </button>
+                              )}
+                              {!isPromoted && !isIgnored && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); p.onApproveGap(name) }}
+                                  title="Mark as approved — intentional, exclude from coverage gap count"
+                                  style={{
+                                    fontSize: 10, padding: '2px 7px', borderRadius: 4,
+                                    background: 'transparent', border: `1px solid ${C.muted}`,
+                                    color: C.muted, cursor: 'pointer',
+                                    fontFamily: 'Inter, sans-serif', fontWeight: 600,
+                                    lineHeight: 1.4,
+                                  }}
+                                >
+                                  ✓ Approve
+                                </button>
+                              )}
+                              {isIgnored && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); p.onUnapproveGap(name) }}
+                                  title="Remove approval — count as gap again"
+                                  style={{
+                                    fontSize: 10, padding: '2px 7px', borderRadius: 4,
+                                    background: 'transparent', border: `1px solid #34d399`,
+                                    color: '#34d399', cursor: 'pointer',
+                                    fontFamily: 'Inter, sans-serif', fontWeight: 600,
+                                    lineHeight: 1.4,
+                                  }}
+                                >
+                                  ✓ Approved
                                 </button>
                               )}
                               {isPromoted && (
@@ -3325,6 +3402,25 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
   const [suggestions,    setSuggestions]    = useState<Record<string, Suggestion>>({})
   const [driftFixes,     setDriftFixes]     = useState<Record<string, Suggestion>>({})
   const [isCached,       setIsCached]       = useState(false)
+  const [ignored,        setIgnored]        = useState<Set<string>>(() => loadIgnored())
+
+  const approveGap = useCallback((name: string) => {
+    setIgnored(prev => {
+      const next = new Set(prev)
+      next.add(name)
+      saveIgnored(next)
+      return next
+    })
+  }, [])
+
+  const unapproveGap = useCallback((name: string) => {
+    setIgnored(prev => {
+      const next = new Set(prev)
+      next.delete(name)
+      saveIgnored(next)
+      return next
+    })
+  }, [])
 
   // ─── Promote-to-DS state ─────────────────────────────────────────────────
   const [promotingComponent, setPromotingComponent] = useState<{ name: string; count: number } | null>(null)
@@ -3699,6 +3795,7 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
             isInspected={inspected === c}
             isHighlighted={!!hoveredGap || hoverComp === c}
             onInspect={setInspected}
+            isIgnored={ignored.has(c.name)}
           />
         ))}
 
@@ -3840,6 +3937,9 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
                 promotedComponents={promotedComponents}
                 onPromote={(name, count) => setPromotingComponent({ name, count })}
                 onOpenWaitlist={onOpenWaitlist}
+                ignored={ignored}
+                onApproveGap={approveGap}
+                onUnapproveGap={unapproveGap}
               />
             )}
           </div>
