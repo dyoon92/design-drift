@@ -9,11 +9,15 @@
  * as inline style props.
  */
 
+export type DriftViolationType = 'color' | 'radius' | 'spacing' | 'font-size' | 'font-weight'
+export interface DriftViolation { prop: string; value: string; type: DriftViolationType }
+
 export interface TokenViolation {
-  prop:     string          // CSS property name, e.g. "background"
-  value:    string          // the offending value, e.g. "#1a1a2e"
-  count:    number          // how many DOM elements have this exact prop+value
-  elements: HTMLElement[]   // actual DOM nodes (empty when loaded from cache)
+  prop:     string              // CSS property name, e.g. "background"
+  value:    string              // the offending value, e.g. "#1a1a2e"
+  type:     DriftViolationType  // what category of token this violates
+  count:    number              // how many DOM elements have this exact prop+value
+  elements: HTMLElement[]       // actual DOM nodes (empty when loaded from cache)
 }
 
 // ─── Patterns that identify a hardcoded color ─────────────────────────────────
@@ -40,9 +44,6 @@ const COLOR_PROPS = new Set([
   'column-rule-color', 'columnRuleColor',
   // box-shadow can contain colors but is noisier — skip for now
 ])
-
-export type DriftViolationType = 'color' | 'radius' | 'spacing' | 'font-size' | 'font-weight'
-export interface DriftViolation { prop: string; value: string; type: DriftViolationType }
 
 // Border-radius properties that should use var(--ds-border-radius-*)
 const RADIUS_PROPS = new Set([
@@ -140,8 +141,9 @@ export function hasColorViolationsInSubtree(root: Element): boolean {
  * Returns a deduplicated list sorted by frequency (most common first).
  */
 export function scanTokenViolations(): TokenViolation[] {
-  const tally    = new Map<string, number>()          // key: "prop||value"
-  const elsByKey = new Map<string, HTMLElement[]>()   // key: "prop||value" → elements
+  const tally    = new Map<string, number>()                  // key: "prop||value"
+  const elsByKey = new Map<string, HTMLElement[]>()           // key: "prop||value" → elements
+  const typeByKey = new Map<string, DriftViolationType>()     // key: "prop||value" → type
 
   const elements = document.querySelectorAll('[style]')
   for (const el of Array.from(elements)) {
@@ -152,26 +154,27 @@ export function scanTokenViolations(): TokenViolation[] {
     for (let i = 0; i < style.length; i++) {
       const prop  = style[i]
       const value = style.getPropertyValue(prop).trim()
-      const isViolation =
-        (COLOR_PROPS.has(prop)       && isHardcodedColor(value))      ||
-        (RADIUS_PROPS.has(prop)      && isHardcodedRadius(value))     ||
-        (SPACING_PROPS.has(prop)     && isHardcodedSpacing(value))    ||
-        (FONT_SIZE_PROPS.has(prop)   && isHardcodedFontSize(value))   ||
-        (FONT_WEIGHT_PROPS.has(prop) && isHardcodedFontWeight(value))
-      if (!isViolation) continue
+      let type: DriftViolationType | null = null
+      if (COLOR_PROPS.has(prop)       && isHardcodedColor(value))      type = 'color'
+      else if (RADIUS_PROPS.has(prop)      && isHardcodedRadius(value))     type = 'radius'
+      else if (SPACING_PROPS.has(prop)     && isHardcodedSpacing(value))    type = 'spacing'
+      else if (FONT_SIZE_PROPS.has(prop)   && isHardcodedFontSize(value))   type = 'font-size'
+      else if (FONT_WEIGHT_PROPS.has(prop) && isHardcodedFontWeight(value)) type = 'font-weight'
+      if (!type) continue
 
       const key = `${prop}||${value}`
       tally.set(key, (tally.get(key) ?? 0) + 1)
       const arr = elsByKey.get(key) ?? []
       arr.push(el as HTMLElement)
       elsByKey.set(key, arr)
+      if (!typeByKey.has(key)) typeByKey.set(key, type)
     }
   }
 
   return [...tally.entries()]
     .map(([key, count]) => {
       const [prop, value] = key.split('||')
-      return { prop, value, count, elements: elsByKey.get(key) ?? [] }
+      return { prop, value, type: typeByKey.get(key)!, count, elements: elsByKey.get(key) ?? [] }
     })
     .sort((a, b) => b.count - a.count)
 }

@@ -44,7 +44,7 @@ interface ScanCacheEntry {
   hash: string
   /** componentName → drift violations (serialisable subset) */
   driftMap: Record<string, Array<{ prop: string; value: string; type: DriftViolationType }>>
-  tokenViolations: Array<{ prop: string; value: string; count: number }>
+  tokenViolations: Array<{ prop: string; value: string; type: DriftViolationType; count: number }>
 }
 
 function cacheKey(route: string, surfaceMode: boolean): string {
@@ -3117,20 +3117,32 @@ const SummaryPanel = (p: PanelProps) => {
               <div style={{ textAlign: 'center', padding: '28px 0' }}>
                 <div style={{ fontSize: 26, marginBottom: 8 }}>✓</div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>No style issues found</div>
-                <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>All colours and shapes match your design palette</div>
+                <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>All colours, spacing, and shapes match your design tokens</div>
               </div>
             ) : (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                   <span style={{ fontSize: 32, fontWeight: 800, color: C.red, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{p.tokenViolations.length}</span>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>colours not from your palette</div>
-                    <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>these were set manually by the developer, not from your design tokens</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>hardcoded style values</div>
+                    <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>colors, spacing, radius, or typography set without using a design token</div>
                   </div>
                 </div>
                 <div>
                   {p.tokenViolations.map((v, i) => {
                     const isHov = p.hoveredViolation === v
+                    const suggestion = suggestToken(v.type, v.value)
+                    const typeIcon: Record<DriftViolationType, string> = {
+                      'color': '', 'radius': '⌀', 'spacing': '↔', 'font-size': 'T', 'font-weight': 'W',
+                    }
+                    // Find DS component names that contain the violating elements
+                    const affectedNames = v.elements.length > 0
+                      ? [...new Set(v.elements.flatMap(el =>
+                          p.components
+                            .filter(c => c.element.contains(el) || c.element === el)
+                            .map(c => c.name)
+                        ))].slice(0, 3)
+                      : []
                     return (
                       <div key={i}
                         onMouseEnter={() => p.onHoverViolation(v)}
@@ -3143,10 +3155,23 @@ const SummaryPanel = (p: PanelProps) => {
                         }}>
                         {/* Card body */}
                         <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, background: v.value, border: `1px solid rgba(0,0,0,0.18)`, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
+                          {v.type === 'color'
+                            ? <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, background: v.value, border: `1px solid rgba(0,0,0,0.18)`, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
+                            : <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, background: C.pillBg, border: `1px solid ${C.panelBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: C.textSub }}>{typeIcon[v.type]}</div>
+                          }
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.value}</div>
-                            <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{v.prop} · used {v.count}×</div>
+                            <div style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {v.value}
+                              {suggestion && (
+                                <span style={{ color: C.green, fontWeight: 400, marginLeft: 6 }}>→ {suggestion}</span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>
+                              {v.prop}
+                              {affectedNames.length > 0 && (
+                                <span style={{ marginLeft: 6, color: C.textSub }}>in {affectedNames.join(', ')}</span>
+                              )}
+                            </div>
                           </div>
                           <span style={{ fontSize: 10, fontWeight: 700, color: C.red, background: C.redChipBg, padding: '2px 7px', borderRadius: 10, flexShrink: 0 }}>×{v.count}</span>
                         </div>
@@ -3155,7 +3180,7 @@ const SummaryPanel = (p: PanelProps) => {
                           <div style={{ fontSize: 10, color: C.muted }}>
                             {isHov && v.elements.length > 0
                               ? `Highlighting ${v.elements.length} element${v.elements.length !== 1 ? 's' : ''} on screen`
-                              : 'Hover to highlight on screen · replace with a design token'}
+                              : `Hover to highlight · ${suggestion ? `replace with ${suggestion}` : 'replace with a design token'}`}
                           </div>
                         </div>
                       </div>
@@ -3163,7 +3188,7 @@ const SummaryPanel = (p: PanelProps) => {
                   })}
                 </div>
                 <div style={{ marginTop: 12, fontSize: 10, color: C.muted, lineHeight: 1.6, padding: '8px 10px', background: C.pillBg, borderRadius: 8 }}>
-                  Ask your developer to replace these with colours from your design palette so the screen stays visually consistent.
+                  Ask your developer to replace these values with design tokens so the screen stays consistent with the system.
                 </div>
               </>
             )
@@ -3546,7 +3571,7 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
           const cachedViolations = cached.driftMap[c.name] ?? []
           return { ...c, drifted: cachedViolations.length > 0, driftViolations: cachedViolations }
         })
-        violations = cached.tokenViolations.map(v => ({ ...v, elements: [] }))
+        violations = cached.tokenViolations.map(v => ({ ...v, type: v.type ?? 'color' as DriftViolationType, elements: [] }))
         fromCache = true
       } else {
         // Cache miss — full drift analysis
