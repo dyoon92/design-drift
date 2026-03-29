@@ -2064,7 +2064,6 @@ interface PanelProps {
   onSuggest: (name: string, count: number, props: Record<string, unknown>) => void
   onDriftFix: (name: string, violations: DriftViolation[]) => void
   onClose: () => void
-  onSetup: () => void
   promotedComponents: Set<string>
   onPromote: (name: string, count: number) => void
   onOpenWaitlist?: () => void
@@ -2780,17 +2779,6 @@ const SummaryPanel = (p: PanelProps) => {
           }}>CACHED</span>
         )}
         <div style={{ flex: 1 }} />
-        {/* Setup wizard */}
-        <button onClick={p.onSetup} title="Run setup wizard" style={{
-          height: 24, display: 'flex', alignItems: 'center', gap: 4,
-          padding: '0 8px',
-          background: C.btnBg, border: `1px solid ${C.panelBorder}`,
-          borderRadius: 8, cursor: 'pointer',
-          fontSize: 10, fontWeight: 700, color: C.muted,
-          fontFamily: 'Inter, sans-serif', letterSpacing: 0.2,
-        }}>
-          ⚙ Setup
-        </button>
         {/* Settings */}
         <button onClick={() => setSettingsPage(true)} title="Settings" style={{
           width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -4114,7 +4102,6 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
                 onSuggest={handleSuggest}
                 onDriftFix={handleDriftFix}
                 onClose={handleClosePanel}
-                onSetup={() => setShowSetup(true)}
                 promotedComponents={promotedComponents}
                 onPromote={(name, count) => setPromotingComponent({ name, count })}
                 onOpenWaitlist={onOpenWaitlist}
