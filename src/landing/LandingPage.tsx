@@ -390,29 +390,25 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           <div style={{ position: 'relative', height: 440, overflow: 'hidden' }}>
 
             {/* ── Screenshot layers — crossfade between Quick and Full ── */}
-            <img
-              src="/hero-app-overlay.png"
-              alt=""
-              style={{
-                position: 'absolute', left: 0, top: 0,
-                height: '100%', width: 'auto', maxWidth: 'calc(100% - 210px)',
-                objectFit: 'cover', objectPosition: 'left top',
-                opacity: scanMode === 'quick' ? 1 : 0,
-                filter: 'blur(1.5px)',
+            {([
+              { src: '/hero-app-overlay.png', active: scanMode === 'quick' },
+              { src: '/hero-app-full.png',    active: scanMode === 'full'  },
+            ] as { src: string; active: boolean }[]).map(({ src, active }) => (
+              <div key={src} style={{
+                position: 'absolute', left: 0, top: 0, bottom: 0,
+                width: 'calc(100% - 210px)', overflow: 'hidden',
+                opacity: active ? 1 : 0,
                 transition: 'opacity 0.7s ease',
-              }}
-            />
-            <img
-              src="/hero-app-full.png"
-              alt=""
-              style={{
-                position: 'absolute', left: 0, top: 0,
-                height: '100%', width: 'auto', maxWidth: 'calc(100% - 210px)',
-                objectFit: 'cover', objectPosition: 'left top',
-                opacity: scanMode === 'full' ? 1 : 0,
-                transition: 'opacity 0.7s ease',
-              }}
-            />
+              }}>
+                <img src={src} alt="" style={{
+                  height: '100%', width: 'auto',
+                  objectFit: 'cover', objectPosition: 'left top',
+                  filter: 'blur(1.5px)',
+                  transform: 'scale(1.02)',
+                  transformOrigin: 'left top',
+                }} />
+              </div>
+            ))}
 
             {/* Right edge fade so screenshot blends into panel */}
             <div style={{
