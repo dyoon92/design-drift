@@ -332,11 +332,11 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           ...display, fontSize: 'clamp(34px, 3.8vw, 60px)', fontWeight: 800,
           color: C.text, margin: '0 0 20px', lineHeight: 1.06, letterSpacing: -2,
         }}>
-          Vibe coding is the new normal.{' '}
+          AI ships UI fast.{' '}
           <span style={{
             background: `linear-gradient(95deg, ${C.blue} 0%, ${C.purple} 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>Ship fast and keep the design system intact.</span>
+          }}>Drift makes sure it follows your design system.</span>
         </h1>
 
         <p style={{
@@ -767,8 +767,8 @@ function AIEraSection() {
             color: C.text, margin: '20px auto 16px', letterSpacing: -1.5, lineHeight: 1.08,
             maxWidth: 700,
           }}>
-            The design system used to be built once.<br/>
-            <span style={{ color: C.amber }}>Now it needs to hold</span> every sprint.
+            The design system was built once.{' '}
+            <span style={{ color: C.amber }}>Now it needs to hold every sprint.</span>
           </h2>
           <p style={{ ...sans, fontSize: 16, color: C.sub, maxWidth: 540, lineHeight: 1.75, fontWeight: 300, margin: '0 auto' }}>
             AI doesn't know you already have a <span style={{ ...mono, fontSize: 14, color: C.amber, fontWeight: 600 }}>PaymentBanner</span>. It invents one. Every sprint adds a little more. Drift catches it before it compounds.
