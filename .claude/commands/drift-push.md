@@ -1,12 +1,22 @@
+---
+description: "Push a built component to Figma, file a design request for a gap component, or post coverage as a Figma annotation. Requires figmaFileKey in drift.config.ts."
+allowed-tools: Read, Glob, Grep, Bash, Edit, Write
+argument-hint: "[<ComponentName> | gaps | coverage | request <Name> \"<description>\"]"
+disable-model-invocation: true
+---
+
 # /drift-push — Push implemented components back to Figma
 
 When a custom component has been built and approved, push evidence back to Figma:
-screenshots, implementation notes, and coverage status. Closes the design→code loop.
+implementation notes, props API, token usage, and coverage status. Closes the design→code loop.
+
+Works with any product team — no assumptions about domain or component naming.
 
 ## Arguments: `$ARGUMENTS`
 - `<ComponentName>`  — push a specific component to Figma
 - `gaps`             — push all components that appear ≥5× in the codebase but have no Figma node
 - `coverage`         — post a coverage summary annotation to the Figma file's cover page
+- `request <ComponentName> "<description>"` — create a new component design request in Figma (for components that need to be designed first)
 
 ---
 
@@ -30,7 +40,7 @@ Read `drift.config.ts` (or `src/ds-coverage/config.ts`) to get:
 
 ## Step 2 — Resolve target Figma page
 
-Before pushing any component, you need to know which Figma page to target.
+Before pushing any component, confirm which Figma page to target.
 
 ### If `figmaProposalsPage` is set in config:
 Use it directly. Report: `Target page: "<figmaProposalsPage>" (from config)`
@@ -69,7 +79,11 @@ Wait for the user's reply before continuing.
 
 1. Find the component file: `src/stories/<ComponentName>.tsx` or search `src/`
 2. Read the component's props interface
-3. Check if it already has a `figmaLink` in `config.components` — if yes, ask to confirm before proceeding
+3. Check if it already has a `figmaLink` in `config.components` — if yes, confirm before proceeding:
+   ```
+   <ComponentName> already has a Figma link: <url>
+   Update it? (yes/no)
+   ```
 
 4. Build a structured Figma brief:
 
@@ -77,20 +91,26 @@ Wait for the user's reply before continuing.
 ## Component: <ComponentName>
 
 **Source file:** src/stories/<ComponentName>.tsx
-**Used:** <N>× in codebase
-**DS status:** [registered in config / not yet registered]
+**Used:** <N>× in codebase (across <N> files)
+**DS status:** [registered in config / not yet registered / approved gap]
 
 **Props API:**
-<extracted TypeScript interface>
+<extracted TypeScript interface — include all props, types, and defaults>
 
 **Variants / states:**
-<extract from props union types, e.g. variant: 'primary' | 'secondary'>
+<extract from props union types, e.g. variant: 'primary' | 'secondary' | 'danger'>
 
 **Token usage:**
-<grep for var(--ds-*) references in the component file>
+<grep for var(--ds-*) references — list each token used>
+
+**Hardcoded values (if any):**
+<flag any colors/spacing not using tokens — these need to be resolved before DS promotion>
 
 **Implementation notes:**
-<any JSDoc comments from the file>
+<any JSDoc comments or comments from the file>
+
+**Usage examples (from codebase):**
+<1-2 real usage examples found in src/>
 ```
 
 5. **If Figma MCP is connected:**
@@ -98,13 +118,7 @@ Wait for the user's reply before continuing.
    - Post the brief as a Figma annotation/comment on the component node
    - Build and report the figmaLink URL: `https://www.figma.com/design/{figmaFileKey}?node-id={node_id}`
    - Ask: "Should I update drift.config.ts with this figmaLink?"
-   - If yes, update config:
-     ```ts
-     <ComponentName>: {
-       storyPath: '...',
-       figmaLink: 'https://www.figma.com/design/{figmaFileKey}?node-id={node_id}',
-     },
-     ```
+   - If yes, update config
 
 6. **If Figma MCP is NOT connected:**
    - Output the brief as formatted text
@@ -115,14 +129,12 @@ Wait for the user's reply before continuing.
      2. Create a new frame named "<ComponentName>"
      3. Paste the brief above as a comment on that frame
      4. Copy the node URL (right-click frame → Copy link)
-     5. Run: /drift-push <ComponentName>
-        and paste the URL when asked
+     5. Paste the URL here to save it to drift.config.ts (or type "skip")
      ```
-   - Ask: "Paste the Figma node URL here to save it to drift.config.ts (or skip):"
-   - If provided, update config with the `figmaLink`
+   - If URL provided, update config with `figmaLink`
    - Show MCP setup snippet:
      ```
-     To connect Figma MCP (enables automatic push):
+     To enable automatic Figma push (skip manual steps):
      Add to ~/.claude.json mcpServers:
        "figma": {
          "command": "npx",
@@ -135,8 +147,8 @@ Wait for the user's reply before continuing.
 
 ### `gaps` — push all high-frequency custom components
 
-1. Statically scan `src/` (excluding `src/stories/`, `src/tokens/`, `node_modules/`) for JSX component usage
-2. Cross-reference against `config.components` — find components NOT in config
+1. Statically scan `src/` (excluding `src/stories/`, `src/tokens/`, `node_modules/`, `*.stories.*`, `*.test.*`) for JSX component usage
+2. Cross-reference against `config.components` — find components NOT in config and not in `approvedGaps`
 3. Count occurrences of each, sort descending
 4. Show the top 10:
 
@@ -161,12 +173,13 @@ Push these to Figma? Reply with:
 
 ### `coverage` — post coverage summary to Figma
 
-1. Run `npm run drift-check --json` to get current coverage data
+1. Run `node scripts/drift-check.mjs --json` to get current coverage data (or read latest saved report if available)
 2. Build a coverage report card:
 
 ```
 ## Drift Coverage Report
 Date: <today>
+Project: <project name from package.json>
 
 Overall DS coverage: <N>%
 Threshold: <threshold>% — [✅ PASSING / ❌ FAILING]
@@ -181,7 +194,11 @@ Top gaps (most-used custom components):
   2. <Name> ×<count>
   3. <Name> ×<count>
 
-Token violations: <N> hardcoded colors
+Approved gaps: <N>
+Token violations: <N> hardcoded colors/values
+
+Promotion candidates (used ≥5× with no DS equivalent):
+  - <Name> ×<count>
 ```
 
 3. **If Figma MCP connected:**
@@ -192,15 +209,66 @@ Token violations: <N> hardcoded colors
 4. **If Figma MCP NOT connected:**
    - Output the report card
    - Instruct: "Paste this as a comment on the cover page of your Figma file"
-   - Show MCP setup snippet (same as above)
+   - Show MCP setup snippet
+
+---
+
+### `request <ComponentName> "<description>"` — create a design request
+
+For components that need to be designed in Figma before they can be built in code.
+This is for PdMs and engineers surfacing net-new component needs to the design team.
+
+1. Gather context:
+   ```
+   Creating design request for: <ComponentName>
+   Description: <description>
+
+   A few quick questions:
+   1. What problem does this solve? (user story or use case)
+   2. Is there a similar component in the DS we could extend instead?
+   3. How many places will this be used? (rough estimate)
+   4. Priority: urgent / high / normal / low
+   ```
+
+2. Build a design request brief:
+   ```
+   ## Design Request: <ComponentName>
+
+   **Requested by:** <ask for name/team>
+   **Date:** <today>
+   **Priority:** <priority>
+
+   **Description:** <description>
+
+   **Use case:**
+   <user story>
+
+   **Proposed usage count:** <N> locations
+
+   **DS gap analysis:**
+   Checked existing DS components — no existing component covers this need because:
+   <explain what's missing or why extension isn't viable>
+
+   **Acceptance criteria (suggested):**
+   - [ ] Figma spec complete (all states, variants, responsive behavior)
+   - [ ] Tokens used exclusively (no hardcoded values)
+   - [ ] Added to Storybook with all variant stories
+   - [ ] Accessibility audit passed
+   - [ ] drift.config.ts updated + /drift-sync run
+   ```
+
+3. **If Figma MCP connected:** Post as a new frame on the proposals page
+4. **If Figma MCP NOT connected:** Output the brief for manual paste into Figma
+5. **If Jira configured:** Offer to create a Jira ticket in the DS project
 
 ---
 
 ## Style notes
 
 - Always confirm the target Figma page before writing anything
-- Be specific about what was pushed to Figma vs. what needs manual action
-- If Figma MCP isn't connected, always show the MCP setup snippet so they can easily connect it
+- Be specific about what was pushed vs. what needs manual action
+- If Figma MCP isn't connected, always show the MCP setup snippet
 - Never modify component source files — read only
 - When building figmaLink URLs, always use the format:
   `https://www.figma.com/design/{figmaFileKey}?node-id={node_id}`
+- Flag hardcoded values (non-token colors/spacing) as blockers for DS promotion — these need to be resolved before a component is truly DS-ready

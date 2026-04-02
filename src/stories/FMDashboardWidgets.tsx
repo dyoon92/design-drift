@@ -269,7 +269,7 @@ const TrendUp = ({ color = '#08875D' }: { color?: string }) => (
   </svg>
 )
 
-const KPICard = ({ label, value, trend, trendUp = true }: { label: string; value: string; trend: string; trendUp?: boolean }) => {
+export const KPICard = ({ label, value, trend, trendUp = true }: { label: string; value: string; trend: string; trendUp?: boolean }) => {
   useFMAnimStyles()
   const [open, setOpen] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)

@@ -5,7 +5,7 @@ import { StoryModal } from './landing/StoryModal'
 import { WaitlistModal } from './landing/LandingPage'
 import { Tabs } from './stories/Tabs'
 import { OccupancyWidget, RevenueWidget, NetMoveInsWidget, LeadsWidget, PastDueWidget, UnitStatusWidget, ProtectionAutopayWidget, ECRIWidget } from './stories/DashboardWidgets'
-import { FMKPIRow, PriorityTasksPanel, RecentCommunicationsPanel, GoalTrackerPanel, DelinquenciesPanel, GoogleReviewsPanel, PromotionsPanel } from './stories/FMDashboardWidgets'
+import { FMKPIRow, KPICard, PriorityTasksPanel, RecentCommunicationsPanel, GoalTrackerPanel, DelinquenciesPanel, GoogleReviewsPanel, PromotionsPanel } from './stories/FMDashboardWidgets'
 import { TenantsTable } from './stories/TenantsTable'
 import { TenantPageHeader } from './stories/TenantPageHeader'
 import { PaymentBanner } from './stories/PaymentBanner'
@@ -305,7 +305,7 @@ function DashboardView({ isMobile }: { isMobile: boolean }) {
 
       {mode === 'portfolio' ? (
         <>
-          <OccupancySummaryCard />
+          <OccupancySummaryRow />
           <div style={{ display: 'flex', gap, marginBottom: gap, flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch' }}>
             <div style={{ flex: 1, minWidth: 0 }}><OccupancyWidget /></div>
             <div style={{ flex: 1, minWidth: 0 }}><RevenueWidget /></div>
@@ -384,28 +384,16 @@ function QuickActionsBar() {
 }
 QuickActionsBar.displayName = 'QuickActionsBar'
 
-function OccupancySummaryCard() {
+// Migrated from OccupancySummaryCard → DS KPICard (/drift fix OccupancySummaryCard)
+function OccupancySummaryRow() {
   return (
-    <div style={{
-      display: 'flex', gap: 24, padding: '14px 18px',
-      background: 'var(--ds-color-surface)', border: '1px solid var(--ds-color-border)',
-      borderRadius: 10, marginBottom: 20, fontFamily: 'Inter, system-ui, sans-serif',
-      flexWrap: 'wrap',
-    }}>
-      {[
-        { label: 'Occupied', value: '86%', color: '#34d399' },
-        { label: 'Overdue',  value: '12%', color: '#ef4444' },
-        { label: 'Vacant',   value: '14%', color: '#9090aa' },
-      ].map(({ label, value, color }) => (
-        <div key={label}>
-          <div style={{ fontSize: 11, color: '#9090aa', marginBottom: 2 }}>{label}</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color }}>{value}</div>
-        </div>
-      ))}
+    <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+      <KPICard label="Occupied" value="86%" trend="2.1%" trendUp={true} />
+      <KPICard label="Overdue"  value="12%" trend="0.8%" trendUp={false} />
+      <KPICard label="Vacant"   value="14%" trend="2.1%" trendUp={false} />
     </div>
   )
 }
-OccupancySummaryCard.displayName = 'OccupancySummaryCard'
 
 // ─── Tenants list view ────────────────────────────────────────────────────────
 
@@ -484,10 +472,13 @@ export default function App() {
         </main>
       </div>
 
+      {/* drift:ignore reason="Internal Drift tooling overlay — not product UI" approvedBy="Dave Yoon" */}
       {(import.meta.env.DEV || import.meta.env.VITE_SHOW_OVERLAY === 'true') && <DSCoverageOverlay autoOpen={openOverlay} onOpenWaitlist={() => setShowWaitlist(true)} />}
 
+      {/* drift:ignore reason="Marketing waitlist modal — not product UI" approvedBy="Dave Yoon" */}
       {showWaitlist && <WaitlistModal onClose={() => setShowWaitlist(false)} />}
 
+      {/* drift:ignore reason="Landing page story preview — marketing surface only" approvedBy="Dave Yoon" */}
       {showTour && <StoryModal onDone={() => { setShowTour(false); setOpenOverlay(true) }} />}
 
       <div style={{

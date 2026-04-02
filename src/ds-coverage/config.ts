@@ -143,6 +143,32 @@ const config: DesignDriftConfig = {
     MetricSparkPopover: {
       storyPath: 'fm-dashboard--sparkpopoveroccupancy',
     },
+    KPICard: {
+      storyPath: 'fm-dashboard--kpirow', // individual card used within the KPI row
+    },
+  },
+
+  // ─── Approved exceptions ──────────────────────────────────────────────────
+  // Components intentionally outside the DS. Excluded from coverage calculations.
+  approvedGaps: {
+    DSCoverageOverlay: {
+      rationale: 'Internal Drift tooling overlay — not product UI, lives in src/ds-coverage/',
+      approvedBy: 'Dave Yoon',
+      approvedAt: '2026-04-02',
+      promoteToDS: false,
+    },
+    StoryModal: {
+      rationale: 'Landing page story preview modal — marketing surface, not product UI',
+      approvedBy: 'Dave Yoon',
+      approvedAt: '2026-04-02',
+      promoteToDS: false,
+    },
+    WaitlistModal: {
+      rationale: 'Landing page waitlist form modal — marketing surface, not product UI',
+      approvedBy: 'Dave Yoon',
+      approvedAt: '2026-04-02',
+      promoteToDS: false,
+    },
   },
 }
 
