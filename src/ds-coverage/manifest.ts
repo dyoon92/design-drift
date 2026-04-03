@@ -17,6 +17,9 @@ export type { DesignDriftConfig }
 /** Set of all registered DS component names — used by the fiber scanner. */
 export const DS_COMPONENTS = new Set<string>(Object.keys(config.components))
 
+/** Set of approved-gap component names — excluded from coverage calculations. */
+export const APPROVED_GAPS = new Set<string>(Object.keys(config.approvedGaps ?? {}))
+
 /** Maps component name → Storybook story path (only entries with a storyPath). */
 export const DS_STORY_PATHS: Record<string, string> = Object.fromEntries(
   Object.entries(config.components)
