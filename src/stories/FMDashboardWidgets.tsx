@@ -647,6 +647,7 @@ export const PromotionsPanel = () => (
     </div>
   </div>
 )
+KPICard.displayName = 'KPICard'
 MetricSparkPopover.displayName = 'MetricSparkPopover'
 FMKPIRow.displayName = 'FMKPIRow'
 PriorityTasksPanel.displayName = 'PriorityTasksPanel'
