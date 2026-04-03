@@ -4,6 +4,18 @@
  * Import these types when building your own config or extending the tool.
  */
 
+/** Metadata for an approved gap — a custom component intentionally outside the DS. */
+export interface ApprovedGapEntry {
+  /** Why this component is exempt from DS coverage requirements. */
+  rationale: string
+  /** Who approved this exception. */
+  approvedBy: string
+  /** ISO date when the exception was approved. */
+  approvedAt: string
+  /** Whether to propose this component for DS inclusion in the future. */
+  promoteToDS: boolean
+}
+
 /** Metadata for a single design system component. */
 export interface ComponentEntry {
   /** Storybook story ID — used to build the "Open in Storybook" link.
@@ -54,4 +66,8 @@ export interface DesignDriftConfig {
   /** Map of React component display name → component metadata.
    *  Keys must match exactly what fiber.type.name returns at runtime. */
   components: Record<string, ComponentEntry>
+
+  /** Components intentionally outside the DS — excluded from coverage calculations.
+   *  Keys must match the component's display name exactly. */
+  approvedGaps?: Record<string, ApprovedGapEntry>
 }
