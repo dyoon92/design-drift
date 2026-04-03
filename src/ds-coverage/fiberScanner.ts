@@ -8,7 +8,7 @@
  * nodes. Dev-only — intentionally fragile is fine.
  */
 
-import { DS_COMPONENTS, APPROVED_GAPS } from './manifest'
+import { DS_COMPONENTS, APPROVED_GAPS, APPROVED_GAPS_DESCEND } from './manifest'
 import type { DriftViolation } from './tokenChecker'
 
 export interface ScannedComponent {
@@ -96,11 +96,14 @@ function walkDown(rootFiber: any, out: ScannedComponent[], surfaceMode: boolean)
         const rect = element.getBoundingClientRect()
         if (rect.width > 0 || rect.height > 0) {
           const inDS = DS_COMPONENTS.has(name)
-          // Approved gaps are excluded from coverage — skip the component and
-          // stop descending into its children (same behaviour as a DS component
-          // in surfaceMode, but never pushed into the results at all).
+          // Approved gaps are excluded from coverage — never pushed to results.
+          // descendInto=true (view wrappers): skip the component but keep
+          //   walking children so DS components inside are still detected.
+          // descendInto=false/unset (marketing surfaces, tooling): stop here,
+          //   children are also excluded.
           if (APPROVED_GAPS.has(name)) {
             if (fiber.sibling) stack.push(fiber.sibling)
+            if (APPROVED_GAPS_DESCEND.has(name) && fiber.child) stack.push(fiber.child)
             continue
           }
           out.push({ name, inDS, drifted: false, driftViolations: [], rect, element, fiber })

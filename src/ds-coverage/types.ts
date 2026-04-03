@@ -14,6 +14,16 @@ export interface ApprovedGapEntry {
   approvedAt: string
   /** Whether to propose this component for DS inclusion in the future. */
   promoteToDS: boolean
+  /**
+   * When true, the fiber scanner skips this component from results but
+   * continues descending into its children. Use for page-level view wrappers
+   * that group DS components — you want their DS children counted.
+   *
+   * When false (default), the scanner skips this component AND stops
+   * descending. Use for self-contained surfaces (marketing modals, tooling)
+   * whose internal custom components should also be excluded.
+   */
+  descendInto?: boolean
 }
 
 /** Metadata for a single design system component. */

@@ -20,6 +20,17 @@ export const DS_COMPONENTS = new Set<string>(Object.keys(config.components))
 /** Set of approved-gap component names — excluded from coverage calculations. */
 export const APPROVED_GAPS = new Set<string>(Object.keys(config.approvedGaps ?? {}))
 
+/**
+ * Subset of approved gaps where descendInto=true — the scanner skips the
+ * component itself but keeps walking into its children (used for view wrappers
+ * that group DS components).
+ */
+export const APPROVED_GAPS_DESCEND = new Set<string>(
+  Object.entries(config.approvedGaps ?? {})
+    .filter(([, entry]) => entry.descendInto === true)
+    .map(([name]) => name),
+)
+
 /** Maps component name → Storybook story path (only entries with a storyPath). */
 export const DS_STORY_PATHS: Record<string, string> = Object.fromEntries(
   Object.entries(config.components)

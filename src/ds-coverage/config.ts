@@ -178,24 +178,28 @@ const config: DesignDriftConfig = {
       approvedBy: 'Dave Yoon',
       approvedAt: '2026-04-03',
       promoteToDS: false,
+      descendInto: true,
     },
     DashboardView: {
       rationale: 'Page-level view wrapper — composes DS components for the dashboard route',
       approvedBy: 'Dave Yoon',
       approvedAt: '2026-04-03',
       promoteToDS: false,
+      descendInto: true,
     },
     TenantsView: {
       rationale: 'Page-level view wrapper — composes DS components for the tenants list route',
       approvedBy: 'Dave Yoon',
       approvedAt: '2026-04-03',
       promoteToDS: false,
+      descendInto: true,
     },
     OccupancySummaryRow: {
       rationale: 'Local layout wrapper — arranges KPICard instances for the dashboard header',
       approvedBy: 'Dave Yoon',
       approvedAt: '2026-04-03',
       promoteToDS: false,
+      descendInto: true,
     },
     ChevronDownIcon: {
       rationale: 'Inline SVG icon — no DS icon system yet; promote once icons are added to DS',
