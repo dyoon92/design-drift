@@ -102,12 +102,6 @@ function InstallSnippet() {
 }
 
 // ─── Waitlist counter (Cloudflare Pages Function at /count) ──────────────────
-async function incrementCounter(): Promise<number> {
-  const r = await fetch('/count', { method: 'POST' })
-  const j = await r.json()
-  return (j as any).value as number
-}
-
 function useWaitlistCount() {
   const [count, setCount] = useState<number | null>(null)
   useEffect(() => {
@@ -127,14 +121,14 @@ function WaitlistForm({ onSuccess, onCountUpdate }: { onSuccess?: () => void; on
     if (!email.trim()) return
     setStatus('loading')
     try {
-      await fetch('https://formspree.io/f/xjgpgovz', {
+      // /waitlist handles counter increment + welcome email via Resend
+      const res = await fetch('/waitlist', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
-      const n = await incrementCounter()
-      setCount(n)
-      onCountUpdate?.(n)
+      const data = await res.json() as { ok: boolean; count?: number }
+      if (data.count) { setCount(data.count); onCountUpdate?.(data.count) }
     } catch { /* fire-and-forget */ }
     setStatus('done')
     onSuccess?.()
