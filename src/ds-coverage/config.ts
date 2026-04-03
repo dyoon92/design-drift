@@ -17,6 +17,11 @@ const config: DesignDriftConfig = {
   figmaFileKey: 'yO7V6x2VhxuIhDyR24fQ2h',
   threshold: 80,
 
+  // ─── Import-path registry ──────────────────────────────────────────────────
+  // Components imported from these paths are auto-discovered by `npm run drift-sync`.
+  // For teams using an npm DS package, use e.g. ['@acme/ui', '@acme/icons'].
+  dsPackages: ['./src/stories'],
+
   components: {
     // ─── Core primitives ──────────────────────────────────────────────────────
     Button: {
@@ -83,10 +88,6 @@ const config: DesignDriftConfig = {
     TenantStatsWidget: {
       storyPath: 'tenants-tenant-stats-widget--default',
     },
-    MultiUnitBanner: {
-      // storyPath: 'tenants-multi-unit-banner--default',  // TODO: add stories file
-    },
-
     // ─── Communication ────────────────────────────────────────────────────────
     CommunicationsPanel: {
       storyPath: 'tenants-communications-panel--default',
@@ -142,9 +143,6 @@ const config: DesignDriftConfig = {
     },
     MetricSparkPopover: {
       storyPath: 'fm-dashboard--sparkpopoveroccupancy',
-    },
-    KPICard: {
-      storyPath: 'fm-dashboard--kpirow', // individual card used within the KPI row
     },
   },
 

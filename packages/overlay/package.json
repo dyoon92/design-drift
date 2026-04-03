@@ -6,7 +6,7 @@
   "homepage": "https://catchdrift.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dyoon92/design-drift"
+    "url": "git+https://github.com/dyoon92/design-drift.git"
   },
   "author": "Dave Yoon <dave@catchdrift.ai>",
   "bugs": { "url": "https://github.com/dyoon92/design-drift/issues" },
@@ -17,12 +17,17 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
-  "files": ["dist", "LICENSE", "README.md"],
+  "files": ["dist/index.js", "dist/index.cjs", "dist/index.d.ts", "dist/index.d.cts", "LICENSE", "README.md"],
   "scripts": {
     "build": "node build.mjs",
     "prepublishOnly": "npm run build && npx publint ."

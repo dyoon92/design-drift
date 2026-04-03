@@ -25,9 +25,11 @@ interface DiscoveredComponent {
   storyPath: string
 }
 
-// Developer steps: 1=persona, 2=storybook, 3=select, 4=export, 'manual'=manual entry
+// Developer steps: 1=persona, 2=sources (multi-select), 'figma'=figma details,
+//                  'sb'=storybook URL, 3=select from SB, 4=export, 'manual'=manual entry
 // Designer steps:  1=persona, 'd1'=figma, 'd2'=mcp, 'd3'=handoff
-type WizardStep = 1 | 2 | 3 | 4 | 'manual' | 'd1' | 'd2' | 'd3'
+type WizardStep = 1 | 2 | 3 | 4 | 'manual' | 'figma' | 'sb' | 'd1' | 'd2' | 'd3'
+type DSSource = 'figma' | 'storybook' | 'package' | 'fresh'
 type ExportTab = 'config' | 'claude'
 
 // ─── Theme-aware colors ───────────────────────────────────────────────────────
@@ -80,20 +82,23 @@ function buildConfigSnippet(
   jiraBaseUrl: string,
   jiraProjectKey: string,
   selected: DiscoveredComponent[],
+  dsPackage?: string,
 ): string {
-  const compLines = selected.map(c =>
-    `    ${toIdentifier(c.displayName)}: { storyPath: '${c.storyPath}' },`
-  ).join('\n')
   const lines = [`const config: DesignDriftConfig = {`]
-  lines.push(`  storybookUrl: '${storybookUrl || 'http://localhost:6006'}',`)
+  if (dsPackage) lines.push(`  dsPackages: ['${dsPackage}'],  // run: npm run drift-sync  to auto-fill components`)
+  if (storybookUrl) lines.push(`  storybookUrl: '${storybookUrl}',`)
   if (chromaticUrl) lines.push(`  chromaticUrl: '${chromaticUrl}',  // deployed Storybook — public links use this`)
   if (figmaFileKey) lines.push(`  figmaFileKey: '${figmaFileKey}',`)
   if (jiraBaseUrl)  lines.push(`  jiraBaseUrl: '${jiraBaseUrl}',`)
   if (jiraProjectKey) lines.push(`  jiraProjectKey: '${jiraProjectKey}',`)
   lines.push(`  threshold: 80,`)
   lines.push(`  components: {`)
-  lines.push(`    // Discovered from Storybook`)
-  lines.push(compLines)
+  if (dsPackage && selected.length === 0) {
+    lines.push(`    // Auto-populated by drift-sync — run: npm run drift-sync`)
+  } else {
+    lines.push(`    // Discovered from Storybook`)
+    lines.push(...selected.map(c => `    ${toIdentifier(c.displayName)}: { storyPath: '${c.storyPath}' },`))
+  }
   lines.push(`  },`)
   lines.push(`}`)
   lines.push(``)
@@ -212,6 +217,12 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
   const [step, setStep] = useState<WizardStep>(1)
 
   // Developer path state
+  const [sources,      setSources]      = useState<Set<DSSource>>(new Set())
+  const [dsPackage,    setDsPackage]    = useState('')
+  const [figmaToken,   setFigmaToken]   = useState(() => localStorage.getItem('drift-figma-token') ?? '')
+  const [figmaPages,   setFigmaPages]   = useState<string>('')  // freeform page names
+  const [figmaCompletion, setFigmaCompletion] = useState<'full' | 'partial' | 'unsure'>('full')
+  const [sbCompletion, setSbCompletion] = useState<'full' | 'partial' | 'unsure'>('unsure')
   const [sbUrl, setSbUrl]               = useState('http://localhost:6006')
   const [chromaticUrl, setChromaticUrl] = useState('')
   const [fetching, setFetching]         = useState(false)
@@ -354,7 +365,7 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
     </div>
   )
 
-  // ─── Step 1 — Persona split ─────────────────────────────────────────────
+  // ─── Step 1 — Who are you ───────────────────────────────────────────────
 
   const Step1 = () => (
     <div style={panelStyle}>
@@ -365,15 +376,12 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
         </div>
         <CloseBtn />
       </div>
-      <Progress total={4} current={1} />
       <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-        {/* Designer / PM path — FIRST */}
         <button onClick={() => setStep('d1')} style={{
           background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
           padding: '16px 14px', cursor: 'pointer', textAlign: 'center',
-          fontFamily: 'Inter, system-ui, sans-serif',
-          transition: 'border-color 0.15s',
+          fontFamily: 'Inter, system-ui, sans-serif', transition: 'border-color 0.15s',
         }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = C.purple)}
           onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}>
@@ -382,20 +390,20 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
           <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>Connect Figma, set up MCP for AI tools, and loop in your developer.</div>
         </button>
 
-        {/* Developer path */}
         <button onClick={() => setStep(2)} style={{
           background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
           padding: '16px 14px', cursor: 'pointer', textAlign: 'left',
-          fontFamily: 'Inter, system-ui, sans-serif',
-          transition: 'border-color 0.15s',
+          fontFamily: 'Inter, system-ui, sans-serif', transition: 'border-color 0.15s',
         }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = C.blue)}
           onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}>
           <div style={{ fontSize: 22, marginBottom: 6, textAlign: 'center' }}>⚡</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4, textAlign: 'center' }}>I'm a developer</div>
-          <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5, textAlign: 'center', marginBottom: 10 }}>Connect Storybook and register your DS components.</div>
+          <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5, textAlign: 'center', marginBottom: 10 }}>
+            Tell Drift where your components live — it'll set everything up automatically.
+          </div>
           <div style={{ fontSize: 10, color: C.blue, background: `${C.blue}10`, border: `1px solid ${C.blue}25`, borderRadius: 6, padding: '6px 10px', lineHeight: 1.6 }}>
-            💡 <strong>Using Claude Code?</strong> Run <code style={{ fontFamily: 'monospace' }}>/drift-setup</code> instead — it does everything automatically in ~5 minutes.
+            💡 <strong>Using Claude Code?</strong> Run <code style={{ fontFamily: 'monospace' }}>/drift-setup</code> instead — it does everything in ~5 min.
           </div>
         </button>
 
@@ -403,11 +411,19 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
           background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
           fontSize: 11, color: C.muted, fontFamily: 'Inter, system-ui, sans-serif', textAlign: 'center',
         }}>
-          No Storybook yet? Enter component names manually →
+          I'll type my component names in myself →
         </button>
       </div>
     </div>
   )
+
+  // ─── Step 2 — Where is your DS? (multi-source) ──────────────────────────
+
+  const toggleSource = (s: DSSource) => setSources(prev => {
+    const next = new Set(prev)
+    next.has(s) ? next.delete(s) : next.add(s)
+    return next
+  })
 
   // ─── Designer Step D1 — Figma file ──────────────────────────────────────
 
@@ -577,22 +593,190 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
     </div>
   )
 
-  // ─── Developer Step 2 — Storybook URL ──────────────────────────────────
+  // ─── Developer Step 2 — Multi-source selector ───────────────────────────
+
+  const SOURCE_OPTIONS: Array<{ key: DSSource; icon: string; color: string; title: string; sub: string }> = [
+    { key: 'figma',     icon: '◈', color: C.purple, title: 'Figma',          sub: 'My team designs components there — some or all pages' },
+    { key: 'storybook', icon: '📖', color: C.blue,   title: 'Storybook',      sub: 'We have a component catalog (complete, partial, or not sure)' },
+    { key: 'package',   icon: '📦', color: C.green,  title: 'Code package',   sub: 'Components live in an npm package or a local folder' },
+    { key: 'fresh',     icon: '✦', color: C.amber,  title: 'Building it',    sub: 'No formal DS yet — Drift will track what we build and suggest what to standardize' },
+  ]
+
+  const canContinue = sources.size > 0
+  const nextStep = (): WizardStep => {
+    if (sources.has('figma')) return 'figma'
+    if (sources.has('storybook')) return 'sb'
+    if (sources.has('package')) return 4
+    return 4  // fresh: straight to export with empty config
+  }
 
   const Step2 = () => (
     <div style={panelStyle}>
       <div style={headerStyle}>
         <div><BackBtn to={1} />
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>Connect Storybook</div>
-          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>Drift fetches your story index to discover component names automatically.</div>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>Where is your design system?</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>Select everything that applies — Drift works with whatever you have.</div>
         </div>
         <CloseBtn />
       </div>
-      <Progress total={4} current={2} />
+      <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+        {SOURCE_OPTIONS.map(opt => {
+          const active = sources.has(opt.key)
+          return (
+            <button
+              key={opt.key}
+              onClick={() => toggleSource(opt.key)}
+              style={{
+                background: active ? `${opt.color}10` : C.surface,
+                border: `1px solid ${active ? opt.color : C.border}`,
+                borderRadius: 10, padding: '12px 14px', cursor: 'pointer',
+                textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif',
+                transition: 'all 0.15s', display: 'flex', alignItems: 'flex-start', gap: 10,
+              }}
+            >
+              <div style={{
+                width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                background: active ? `${opt.color}20` : C.surface2,
+                border: `1px solid ${active ? opt.color : C.border}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 14, color: active ? opt.color : C.muted,
+                transition: 'all 0.15s',
+              }}>{opt.icon}</div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: active ? opt.color : C.text, marginBottom: 2 }}>{opt.title}</div>
+                <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>{opt.sub}</div>
+              </div>
+              <div style={{
+                marginLeft: 'auto', width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                background: active ? opt.color : 'none',
+                border: `2px solid ${active ? opt.color : C.border}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 9, color: '#fff', transition: 'all 0.15s',
+              }}>{active ? '✓' : ''}</div>
+            </button>
+          )
+        })}
+
+        <div style={{ paddingTop: 4 }}>
+          {primaryBtn('Continue →', () => setStep(nextStep()), !canContinue)}
+        </div>
+
+        <button onClick={() => setStep('manual')} style={{
+          background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0',
+          fontSize: 11, color: C.muted, fontFamily: 'Inter, system-ui, sans-serif', textAlign: 'center',
+        }}>
+          I'll type my component names in myself →
+        </button>
+      </div>
+    </div>
+  )
+
+  // ─── Developer Step Figma — Figma details ───────────────────────────────
+
+  const StepFigma = () => (
+    <div style={panelStyle}>
+      <div style={headerStyle}>
+        <div><BackBtn to={2} />
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>Connect your Figma</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>Drift reads your published components directly — no manual list.</div>
+        </div>
+        <CloseBtn />
+      </div>
+      <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Figma file key or URL
+          </label>
+          <input type="text" value={figmaKey} onChange={e => setFigmaKey(e.target.value)}
+            placeholder="yO7V6x2VhxuIhDyR24fQ2h  or  figma.com/design/..."
+            style={{ width: '100%', boxSizing: 'border-box', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '9px 12px', color: C.text, fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', outline: 'none' }}
+          />
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>
+            In your Figma URL: figma.com/design/<strong style={{ color: C.text }}>THIS_PART</strong>/your-file
+          </div>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Personal access token <span style={{ fontWeight: 400, textTransform: 'none' }}>(stored in your browser only, never shared)</span>
+          </label>
+          <input type="password" value={figmaToken} onChange={e => { setFigmaToken(e.target.value); localStorage.setItem('drift-figma-token', e.target.value) }}
+            placeholder="figd_..."
+            style={{ width: '100%', boxSizing: 'border-box', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '9px 12px', color: C.text, fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', outline: 'none' }}
+          />
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.6 }}>
+            Get one at: figma.com → Profile → Settings → Security → Personal access tokens
+          </div>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Which pages have your components? <span style={{ fontWeight: 400, textTransform: 'none' }}>(optional)</span>
+          </label>
+          <input type="text" value={figmaPages} onChange={e => setFigmaPages(e.target.value)}
+            placeholder="Components, Design System, UI Kit (or leave blank for all pages)"
+            style={{ width: '100%', boxSizing: 'border-box', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '9px 12px', color: C.text, fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', outline: 'none' }}
+          />
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            How complete is your Figma library?
+          </label>
+          {([
+            { val: 'full',    label: 'It\'s our full component library — everything DS is there' },
+            { val: 'partial', label: 'It has most components but not everything' },
+            { val: 'unsure',  label: 'It\'s kind of a mix / I\'m not fully sure what\'s there' },
+          ] as const).map(opt => (
+            <label key={opt.val} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, cursor: 'pointer' }}>
+              <input type="radio" name="figmaCompletion" value={opt.val}
+                checked={figmaCompletion === opt.val}
+                onChange={() => setFigmaCompletion(opt.val)}
+                style={{ accentColor: C.purple }}
+              />
+              <span style={{ fontSize: 12, color: C.text }}>{opt.label}</span>
+            </label>
+          ))}
+        </div>
+
+        {sources.has('package') && (
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Also: your code package
+            </label>
+            <input type="text" value={dsPackage} onChange={e => setDsPackage(e.target.value)}
+              placeholder="@acme/ui  or  ./src/components"
+              style={{ width: '100%', boxSizing: 'border-box', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '9px 12px', color: C.text, fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', outline: 'none' }}
+            />
+          </div>
+        )}
+
+        {primaryBtn(
+          sources.has('storybook') ? 'Next: Storybook →' : 'Generate my config →',
+          () => sources.has('storybook') ? setStep('sb') : setStep(4),
+          !figmaKey.trim()
+        )}
+      </div>
+    </div>
+  )
+
+  // ─── Developer Step SB — Storybook URL (secondary path) ─────────────────
+
+  const StepSB = () => (
+    <div style={panelStyle}>
+      <div style={headerStyle}>
+        <div><BackBtn to={2} />
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>Connect Storybook</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>Drift fetches your story index so you can pick which components are part of your design system.</div>
+        </div>
+        <CloseBtn />
+      </div>
       <div style={{ ...bodyStyle, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
           <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Local Storybook URL
+            Storybook URL
           </label>
           <input
             type="text"
@@ -624,38 +808,17 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
           )}
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Deployed Storybook URL <span style={{ fontWeight: 400, textTransform: 'none' }}>(Chromatic, Netlify, etc.)</span>
-          </label>
-          <input
-            type="text"
-            value={chromaticUrl}
-            onChange={e => setChromaticUrl(e.target.value)}
-            placeholder="https://main--abc123.chromatic.com"
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              background: C.surface, border: `1px solid ${C.border}`,
-              borderRadius: 8, padding: '9px 12px', color: C.text,
-              fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif', outline: 'none',
-            }}
-          />
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.5 }}>
-            Used for public Storybook links in the overlay and PR comments. Optional but recommended.
-          </div>
-        </div>
-
         <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
           <input type="checkbox" checked={hasFigmaMcp} onChange={e => setHasFigmaMcp(e.target.checked)}
             style={{ accentColor: C.purple, width: 14, height: 14, flexShrink: 0 }} />
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>I have Figma MCP connected</div>
-            <div style={{ fontSize: 11, color: C.muted }}>Enables AI to read/write Figma directly. Adds MCP instructions to your CLAUDE.md.</div>
+            <div style={{ fontSize: 11, color: C.muted }}>Enables AI to read/write Figma directly.</div>
           </div>
         </label>
 
         <div style={{ display: 'flex', gap: 8 }}>
-          {primaryBtn(fetching ? 'Discovering…' : 'Discover components', handleDiscover, fetching)}
+          {primaryBtn(fetching ? 'Loading…' : 'Load my components', handleDiscover, fetching)}
         </div>
         {fetching && (
           <div style={{ fontSize: 11, color: C.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -720,7 +883,15 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
     setClaudeCopied(true); setTimeout(() => setClaudeCopied(false), 2000)
   }
 
-  const configSnippet = buildConfigSnippet(sbUrl, chromaticUrl, figmaKey, jiraBaseUrl, jiraProjectKey, selectedComponents)
+  const configSnippet = buildConfigSnippet(
+    chromaticUrl || sbUrl,
+    chromaticUrl,
+    figmaKey,
+    jiraBaseUrl,
+    jiraProjectKey,
+    selectedComponents,
+    dsPackage || undefined,
+  )
   const claudeContent = buildClaudeContent(selectedComponents, sbUrl, chromaticUrl, figmaKey, hasFigmaMcp)
 
   const Step4 = () => (
@@ -732,7 +903,12 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
         </div>
         <CloseBtn />
       </div>
-      <Progress total={4} current={4} />
+      <Progress total={3} current={3} />
+      {dsPackage && (
+        <div style={{ padding: '8px 14px', background: `${C.green}10`, borderBottom: `1px solid ${C.border}`, flexShrink: 0, fontSize: 11, color: C.green, lineHeight: 1.6 }}>
+          After pasting this config, run <code style={{ fontFamily: 'monospace', background: `${C.green}20`, padding: '1px 5px', borderRadius: 4 }}>npm run drift-sync</code> — it scans your code and fills in your components automatically.
+        </div>
+      )}
       <div style={{ padding: '8px 14px', borderBottom: `1px solid ${C.border}`, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div>
           <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: C.muted, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 }}>Figma file key</label>
@@ -804,6 +980,8 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       {step === 1        && <Step1 />}
       {step === 2        && <Step2 />}
+      {step === 'figma'  && <StepFigma />}
+      {step === 'sb'     && <StepSB />}
       {step === 3        && <Step3 />}
       {step === 4        && <Step4 />}
       {step === 'manual' && <ManualStep />}

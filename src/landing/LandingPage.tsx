@@ -70,6 +70,37 @@ function Chip({ color, children }: { color: string; children: React.ReactNode })
   )
 }
 
+// ─── npm install snippet ──────────────────────────────────────────────────────
+function InstallSnippet() {
+  const [copied, setCopied] = useState(false)
+  const cmd = 'npm install @catchdrift/overlay'
+  const copy = () => {
+    navigator.clipboard.writeText(cmd).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    })
+  }
+  return (
+    <div onClick={copy} style={{
+      display: 'inline-flex', alignItems: 'center', gap: 10,
+      marginTop: 18, padding: '9px 16px',
+      background: '#0c0c18', border: `1px solid ${C.border2}`,
+      borderRadius: 8, cursor: 'pointer',
+      transition: 'border-color 0.15s',
+    }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.muted }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border2 }}
+      title="Click to copy"
+    >
+      <span style={{ ...mono, fontSize: 12.5, color: C.sub }}>$</span>
+      <span style={{ ...mono, fontSize: 12.5, color: C.text }}>{cmd}</span>
+      <span style={{ ...sans, fontSize: 11, color: copied ? C.green : C.muted, marginLeft: 4, minWidth: 36 }}>
+        {copied ? 'copied!' : 'copy'}
+      </span>
+    </div>
+  )
+}
+
 // ─── Waitlist counter (Cloudflare Pages Function at /count) ──────────────────
 async function incrementCounter(): Promise<number> {
   const r = await fetch('/count', { method: 'POST' })
@@ -368,6 +399,10 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
             <span style={{ opacity: 0.7 }}>▶</span> Live demo
           </a>
         </div>
+
+        {/* npm install snippet */}
+        <InstallSnippet />
+
         {count !== null && count > 0 && (
           <p style={{ ...sans, fontSize: 13, color: C.muted, marginTop: 14, marginBottom: 0 }}>
             <span style={{ color: C.green, fontWeight: 700 }}>{count.toLocaleString()}</span> builder{count !== 1 ? 's' : ''} already on the waitlist
@@ -609,7 +644,7 @@ const PERSONA_DATA: Record<Persona, { label: string; color: string; icon: string
   developer: {
     label: 'Developer', color: '#4f8ef7', icon: '⚡',
     steps: [
-      { icon: '①', title: 'Set up in 5 minutes with Claude Code', body: 'Run /drift-setup. Claude reads your codebase, asks 6 questions (Storybook URL, Figma key, Jira, threshold), writes config, CLAUDE.md, GitHub Action, and registers the MCP server.' },
+      { icon: '①', title: 'One line of config — Drift does the rest', body: 'Tell Drift where your components live: an npm package, a local folder, or a Figma file. Run npm run drift-sync and it scans your codebase, registers every component, and writes your CLAUDE.md automatically.' },
       { icon: '②', title: 'CLAUDE.md keeps AI in the DS', body: 'Every AI tool — Claude Code, Cursor, Windsurf — reads CLAUDE.md. It knows exactly which components exist. If a component is missing, it outputs ⚠️ Missing component instead of inventing one.' },
       { icon: '③', title: 'Press D — see drift as you build', body: 'npm run dev → press D. Green = DS component. Red = custom gap. Token violations flagged inline. No context switch to a different tool.' },
       { icon: '④', title: 'Fix gaps from the IDE', body: 'The MCP server surfaces drift_gaps, drift_suggest, and drift_analyze directly in Claude Code and Cursor. Ask what\'s drifted, get a replacement suggestion, apply it — without touching the browser.' },
@@ -718,7 +753,7 @@ function ClaudeSection() {
             {/* Commands */}
             <div style={{ padding: '8px 0' }}>
               {[
-                { cmd: '/drift-setup',       desc: 'Full install — config, CLAUDE.md, CI, MCP', color: C.blue },
+                { cmd: '/drift-setup',       desc: 'Full install — connects Figma, Storybook, or package · writes config, CLAUDE.md, CI', color: C.blue },
                 { cmd: '/drift',             desc: 'Coverage report + gap analysis from terminal', color: C.green },
                 { cmd: '/drift-sync figma',  desc: 'Pull all components from Figma (all pages)',  color: C.purple },
                 { cmd: '/drift-push <Name>', desc: 'Push component spec back to Figma',            color: claudeOrange },

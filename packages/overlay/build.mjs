@@ -98,5 +98,6 @@ export interface DriftOverlayProps {
 export declare function DriftOverlay(props: DriftOverlayProps): React.ReactElement | null;
 `
 writeFileSync(resolve(OUT, 'index.d.ts'), dts, 'utf8')
+writeFileSync(resolve(OUT, 'index.d.cts'), dts, 'utf8')
 
 console.log('✓ @catchdrift/overlay built to packages/overlay/dist/')

@@ -78,31 +78,52 @@ design-drift/
 ## Quick start — add Drift to your own React app
 
 ```bash
-# 1. Clone (npm package coming soon)
-git clone https://github.com/dyoon92/design-drift
-
-# 2. Copy src/ds-coverage/ into your project
-
-# 3. Add to your app entry point (dev only)
+npm install @catchdrift/overlay
 ```
+
+Create a config file at `drift.config.ts` in your project root:
+
+```ts
+import type { DesignDriftConfig } from '@catchdrift/overlay'
+
+const config: DesignDriftConfig = {
+  // npm package, path prefix, or both — used to auto-discover DS components
+  dsPackages: ['@acme/ui'],   // or ['./src/components']
+
+  storybookUrl: 'http://localhost:6006',   // optional
+  figmaFileKey: 'your-figma-file-key',     // optional
+  threshold: 80,
+
+  components: {
+    Button: { storyPath: 'primitives-button--primary' },
+    // auto-populated by `npx drift-sync` when dsPackages is set
+  },
+}
+
+export default config
+```
+
+Mount the overlay in your app entry point (dev only):
 
 ```tsx
 // main.tsx or App.tsx
-import { DSCoverageOverlay } from './ds-coverage/DSCoverageOverlay'
+import { DriftOverlay } from '@catchdrift/overlay'
 
 function App() {
   return (
     <>
       <YourApp />
-      {import.meta.env.DEV && <DSCoverageOverlay />}
+      {import.meta.env.DEV && <DriftOverlay />}
     </>
   )
 }
 ```
 
 ```bash
-# 4. Register your components in src/ds-coverage/config.ts
-# 5. Press D in the browser to open the Drift panel
+# Auto-discover DS components from your package or path prefix:
+npx drift-sync
+
+# Press D in the browser to open the Drift panel
 ```
 
 ---
@@ -268,7 +289,7 @@ Extensions require store review and cannot reliably access React internals on ar
 
 ## Roadmap
 
-- [ ] `npm install @drift/overlay` — standalone npm package
+- [x] `npm install @catchdrift/overlay` — standalone npm package (v0.1.0)
 - [ ] VS Code extension — real-time token violation underlines as you type
 - [ ] Pre-commit hook (`npx drift check`) via Husky
 - [ ] Coverage history dashboard (requires backend + DB)

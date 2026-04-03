@@ -28,10 +28,14 @@ export interface ApprovedGapEntry {
 
 /** Metadata for a single design system component. */
 export interface ComponentEntry {
-  /** Storybook story ID — used to build the "Open in Storybook" link.
+  /** Storybook story ID — used to build the "Open in Storybook" link and to
+   *  validate that the component is still published. When provided, it is
+   *  checked against the live Storybook index at runtime — if the story no
+   *  longer exists, the component is automatically dropped from DS_COMPONENTS.
+   *  When omitted, the component is trusted as-is (e.g. discovered via import
+   *  scanning by drift-sync).
    *  Format: '{group}-{component-name}--{story-name}'
-   *  e.g. 'primitives-button--primary'
-   *  Leave undefined to suppress the Storybook badge. */
+   *  e.g. 'primitives-button--primary' */
   storyPath?: string
 
   /** Full Figma node URL for this component.
@@ -73,8 +77,17 @@ export interface DesignDriftConfig {
    *  Used by the drift-check CLI. Default: 80 */
   threshold?: number
 
+  /** npm package names or relative path prefixes that your DS components are
+   *  imported from. Used by `npm run drift-sync` to auto-discover component
+   *  names by scanning import statements — no manual registration needed.
+   *  Examples: ['@acme/ui'] or ['./src/components', './src/stories']
+   *  After adding this, run `npm run drift-sync` to populate `components`. */
+  dsPackages?: string[]
+
   /** Map of React component display name → component metadata.
-   *  Keys must match exactly what fiber.type.name returns at runtime. */
+   *  Keys must match exactly what fiber.type.name returns at runtime.
+   *  You can populate this manually or run `npm run drift-sync` to fill it
+   *  automatically from import statements in your codebase. */
   components: Record<string, ComponentEntry>
 
   /** Components intentionally outside the DS — excluded from coverage calculations.

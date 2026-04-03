@@ -11,6 +11,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "figma-sync": "node scripts/figma-sync.mjs",
+    "drift-sync": "node scripts/drift-sync.mjs",
     "drift-check": "node scripts/drift-check.mjs",
     "drift-mcp": "node scripts/drift-mcp.mjs",
     "drift-fix-server": "node scripts/drift-fix-server.mjs",

@@ -31,12 +31,60 @@ export const APPROVED_GAPS_DESCEND = new Set<string>(
     .map(([name]) => name),
 )
 
-/** Maps component name → Storybook story path (only entries with a storyPath). */
+/** Maps component name → Storybook story path (only entries that have one). */
 export const DS_STORY_PATHS: Record<string, string> = Object.fromEntries(
   Object.entries(config.components)
     .filter(([, entry]) => entry.storyPath)
     .map(([name, entry]) => [name, entry.storyPath!]),
 )
+
+/**
+ * Fetch the live Storybook index and remove any DS_COMPONENTS entry whose
+ * storyPath doesn't exist in it. This is the authoritative "is it really DS?"
+ * check — a component must have a published story to count.
+ *
+ * Supports Storybook v7+ (index.json) and v6 (stories.json).
+ * Falls back gracefully if the index can't be reached (offline, local-only).
+ *
+ * Mutates DS_COMPONENTS and DS_STORY_PATHS in place so the fiber scanner
+ * picks up the result without needing a re-import.
+ */
+export async function refreshDSFromStorybook(): Promise<{ validated: boolean; removedCount: number }> {
+  try {
+    // Try v7 index.json first, fall back to v6 stories.json
+    let data: any = null
+    for (const path of ['/index.json', '/stories.json']) {
+      const res = await fetch(`${STORYBOOK_URL}${path}`)
+      if (res.ok) { data = await res.json(); break }
+    }
+    if (!data) throw new Error('No index found')
+
+    // Both formats expose entries as an object keyed by story ID
+    const entries: Record<string, { id: string }> = data.entries ?? data.stories ?? {}
+    const validIds = new Set(Object.keys(entries))
+
+    const before = DS_COMPONENTS.size
+    DS_COMPONENTS.clear()
+    for (const [name, entry] of Object.entries(config.components)) {
+      if (!entry.storyPath) {
+        // No storyPath — discovered via import scanning (drift-sync). Trust it.
+        DS_COMPONENTS.add(name)
+      } else if (validIds.has(entry.storyPath)) {
+        // storyPath exists in live Storybook index — valid DS component.
+        DS_COMPONENTS.add(name)
+      } else {
+        // storyPath was provided but story doesn't exist in Storybook — drop it.
+        delete DS_STORY_PATHS[name]
+        console.warn(`[Drift] "${name}" dropped from DS registry — story "${entry.storyPath}" not found in Storybook index`)
+      }
+    }
+
+    return { validated: true, removedCount: before - DS_COMPONENTS.size }
+  } catch {
+    // Network failure, CORS, local-only Storybook — fall back to config as-is
+    return { validated: false, removedCount: 0 }
+  }
+}
 
 /** Maps component name → Figma node URL (only entries with a figmaLink). */
 export const DS_FIGMA_LINKS: Record<string, string> = Object.fromEntries(
@@ -50,3 +98,65 @@ export const STORYBOOK_URL = (config.storybookUrl ?? 'http://localhost:6006').re
 
 /** CI coverage threshold (0–100). */
 export const DRIFT_THRESHOLD = config.threshold ?? 80
+
+/** localStorage key for the user's Figma personal access token.
+ *  Never committed — stored client-side only. */
+export const FIGMA_TOKEN_KEY = 'drift-figma-token'
+
+/**
+ * Fetch published components from Figma and add them to DS_COMPONENTS.
+ * Requires figmaFileKey in config and a Figma token in localStorage.
+ * Component names are extracted from the Figma component name, taking the
+ * top-level segment before "/" (e.g. "Button/Primary" → "Button").
+ */
+export async function refreshDSFromFigma(): Promise<{ validated: boolean; count: number }> {
+  const fileKey = config.figmaFileKey
+  const token   = typeof localStorage !== 'undefined' ? localStorage.getItem(FIGMA_TOKEN_KEY) : null
+  if (!fileKey || !token) return { validated: false, count: 0 }
+
+  try {
+    const res = await fetch(`https://api.figma.com/v1/files/${fileKey}/components`, {
+      headers: { 'X-Figma-Token': token },
+    })
+    if (!res.ok) return { validated: false, count: 0 }
+    const data = await res.json()
+
+    const components: Array<{ name: string }> = data.meta?.components ?? []
+    let count = 0
+    for (const comp of components) {
+      // Figma names are often namespaced: "Button/Primary" or "Icons/Arrow" — take the root
+      const name = comp.name.split('/')[0].trim()
+      if (/^[A-Z]/.test(name) && name.length >= 3) {
+        DS_COMPONENTS.add(name)
+        count++
+      }
+    }
+    return { validated: true, count }
+  } catch {
+    return { validated: false, count: 0 }
+  }
+}
+
+/**
+ * Fetch the list of pages in the Figma file — used by PromotePanel and
+ * SetupWizard to let users pick which page a new component should land on.
+ */
+export async function fetchFigmaPages(): Promise<Array<{ id: string; name: string }>> {
+  const fileKey = config.figmaFileKey
+  const token   = typeof localStorage !== 'undefined' ? localStorage.getItem(FIGMA_TOKEN_KEY) : null
+  if (!fileKey || !token) return []
+
+  try {
+    const res = await fetch(`https://api.figma.com/v1/files/${fileKey}?depth=1`, {
+      headers: { 'X-Figma-Token': token },
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return (data.document?.children ?? []).map((p: { id: string; name: string }) => ({
+      id:   p.id,
+      name: p.name,
+    }))
+  } catch {
+    return []
+  }
+}

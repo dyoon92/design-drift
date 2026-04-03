@@ -15,7 +15,7 @@
 import React, { useState, useEffect, useRef, useCallback, useContext, createContext } from 'react'
 import html2canvas from 'html2canvas'
 import { scanFiberTree, hashComponents, type ScannedComponent } from './fiberScanner'
-import { DS_STORY_PATHS, DS_FIGMA_LINKS, DS_COMPONENTS, STORYBOOK_URL, config } from './manifest'
+import { DS_STORY_PATHS, DS_FIGMA_LINKS, DS_COMPONENTS, STORYBOOK_URL, config, refreshDSFromStorybook, refreshDSFromFigma } from './manifest'
 import { scanTokenViolations, getColorViolationsInSubtree, type TokenViolation, type DriftViolation, type DriftViolationType } from './tokenChecker'
 import { SetupWizard } from './SetupWizard'
 import { PromotePanel } from './PromotePanel'
@@ -2406,7 +2406,13 @@ const SummaryPanel = (p: PanelProps) => {
               fontSize: 10, color: C.muted, lineHeight: 1.6,
             }}>
               <strong style={{ color: C.textSub }}>Includes:</strong>{' '}
-              {DS_COMPONENTS.size} registered components · live design tokens from {':root'} · coding rules
+              {DS_COMPONENTS.size} components · live design tokens from {':root'} · coding rules
+              {registryValidated === false && (
+                <span title="Could not reach Storybook index — using config.ts as fallback. Components without published stories may appear as DS."
+                  style={{ marginLeft: 6, color: C.orange }}>
+                  ⚠ registry unvalidated
+                </span>
+              )}
             </div>
 
           </div>
@@ -3449,6 +3455,8 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
   const [driftFixes,     setDriftFixes]     = useState<Record<string, Suggestion>>({})
   const [isCached,       setIsCached]       = useState(false)
   const [ignored,        setIgnored]        = useState<Set<string>>(() => loadIgnored())
+  // null = pending, true = validated against live Storybook index, false = fallback (config only)
+  const [registryValidated, setRegistryValidated] = useState<boolean | null>(null)
 
   const approveGap = useCallback((name: string) => {
     setIgnored(prev => {
@@ -3697,6 +3705,16 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [visible])
+
+  // Validate DS registry on mount — both Storybook and Figma sources.
+  // Storybook: drops storyPaths that no longer exist in the published index.
+  // Figma: adds published Figma components to DS_COMPONENTS automatically.
+  useEffect(() => {
+    Promise.all([
+      refreshDSFromStorybook(),
+      refreshDSFromFigma(),
+    ]).then(([sb]) => setRegistryValidated(sb.validated))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!visible) {
