@@ -169,6 +169,40 @@ const config: DesignDriftConfig = {
       approvedAt: '2026-04-02',
       promoteToDS: false,
     },
+
+    // ─── Page-level view composition wrappers (App.tsx) ───────────────────
+    // These are route-level layout components, not reusable UI — they compose
+    // DS components but are not DS components themselves.
+    TenantDetail: {
+      rationale: 'Page-level view wrapper — composes DS components for the tenant detail route',
+      approvedBy: 'Dave Yoon',
+      approvedAt: '2026-04-03',
+      promoteToDS: false,
+    },
+    DashboardView: {
+      rationale: 'Page-level view wrapper — composes DS components for the dashboard route',
+      approvedBy: 'Dave Yoon',
+      approvedAt: '2026-04-03',
+      promoteToDS: false,
+    },
+    TenantsView: {
+      rationale: 'Page-level view wrapper — composes DS components for the tenants list route',
+      approvedBy: 'Dave Yoon',
+      approvedAt: '2026-04-03',
+      promoteToDS: false,
+    },
+    OccupancySummaryRow: {
+      rationale: 'Local layout wrapper — arranges KPICard instances for the dashboard header',
+      approvedBy: 'Dave Yoon',
+      approvedAt: '2026-04-03',
+      promoteToDS: false,
+    },
+    ChevronDownIcon: {
+      rationale: 'Inline SVG icon — no DS icon system yet; promote once icons are added to DS',
+      approvedBy: 'Dave Yoon',
+      approvedAt: '2026-04-03',
+      promoteToDS: true,
+    },
   },
 }
 

@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { fetchTenants } from './api/tenants'
+import type { TenantRecord } from './api/tenants'
 import './tokens/variables.css'
 import { DSCoverageOverlay } from './ds-coverage/DSCoverageOverlay'
 import { StoryModal } from './landing/StoryModal'
@@ -53,103 +55,6 @@ Placeholder.displayName = 'Placeholder'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ActiveTab = 'overview' | 'billing' | 'documents' | 'access' | 'renewal'
-
-interface TenantRecord {
-  id: string
-  name: string
-  email: string
-  phone: string
-  unit: string
-  balance: string
-  balanceOverdue: boolean
-  paymentStatus: 'balance-due' | 'good-standing' | 'move-out' | 'updated'
-  unitStatus: 'overdue' | 'normal' | 'move-out'
-  moveInDate: string
-  leaseEnd: string
-  autopay: boolean
-  cardBrand?: string
-  cardLast4?: string
-}
-
-// ─── Sample data ──────────────────────────────────────────────────────────────
-// TODO: replace with API call — GET /api/tenants
-
-const TENANTS: TenantRecord[] = [
-  {
-    id: '1',
-    name: 'Stephanie Anderson',
-    email: 's.anderson@email.com',
-    phone: '(555) 248-1190',
-    unit: '147',
-    balance: '$345.00',
-    balanceOverdue: true,
-    paymentStatus: 'balance-due',
-    unitStatus: 'overdue',
-    moveInDate: 'Apr 29, 2023',
-    leaseEnd: 'Jun 30, 2025',
-    autopay: false,
-  },
-  {
-    id: '2',
-    name: 'John Smith',
-    email: 'j.smith@email.com',
-    phone: '(555) 391-2047',
-    unit: '052',
-    balance: '$0.00',
-    balanceOverdue: false,
-    paymentStatus: 'good-standing',
-    unitStatus: 'normal',
-    moveInDate: 'Jan 15, 2023',
-    leaseEnd: 'Jan 14, 2026',
-    autopay: true,
-    cardBrand: 'Visa',
-    cardLast4: '4242',
-  },
-  {
-    id: '3',
-    name: 'Sarah Johnson',
-    email: 's.johnson@email.com',
-    phone: '(555) 774-3301',
-    unit: '281',
-    balance: '$132.00',
-    balanceOverdue: true,
-    paymentStatus: 'move-out',
-    unitStatus: 'move-out',
-    moveInDate: 'Mar 1, 2022',
-    leaseEnd: 'Apr 30, 2025',
-    autopay: false,
-  },
-  {
-    id: '4',
-    name: 'Michael Brown',
-    email: 'm.brown@email.com',
-    phone: '(555) 509-8812',
-    unit: '021',
-    balance: '$89.00',
-    balanceOverdue: true,
-    paymentStatus: 'balance-due',
-    unitStatus: 'overdue',
-    moveInDate: 'Jun 10, 2024',
-    leaseEnd: 'Jun 9, 2025',
-    autopay: false,
-  },
-  {
-    id: '5',
-    name: 'Emily Davis',
-    email: 'e.davis@email.com',
-    phone: '(555) 122-6630',
-    unit: '319',
-    balance: '$0.00',
-    balanceOverdue: false,
-    paymentStatus: 'good-standing',
-    unitStatus: 'normal',
-    moveInDate: 'Aug 22, 2023',
-    leaseEnd: 'Aug 21, 2025',
-    autopay: true,
-    cardBrand: 'Mastercard',
-    cardLast4: '8731',
-  },
-]
 
 // ─── Tenant detail view ───────────────────────────────────────────────────────
 
@@ -397,9 +302,9 @@ function OccupancySummaryRow() {
 
 // ─── Tenants list view ────────────────────────────────────────────────────────
 
-function TenantsView({ onSelectTenant }: { onSelectTenant: (id: string) => void }) {
-  const overdueCount = TENANTS.filter(t => t.balanceOverdue).length
-  const rows = useMemo(() => TENANTS.map(t => ({
+function TenantsView({ tenants, onSelectTenant }: { tenants: TenantRecord[]; onSelectTenant: (id: string) => void }) {
+  const overdueCount = tenants.filter(t => t.balanceOverdue).length
+  const rows = useMemo(() => tenants.map(t => ({
     id: t.id,
     name: t.name,
     unit: t.unit,
@@ -411,7 +316,7 @@ function TenantsView({ onSelectTenant }: { onSelectTenant: (id: string) => void 
     moveInDate: t.moveInDate,
     balance: t.balance,
     recServices: t.autopay,
-  })), [])
+  })), [tenants])
 
   return (
     <div>
@@ -430,6 +335,7 @@ TenantsView.displayName = 'TenantsView'
 // ─── App shell ────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const [tenants, setTenants]             = useState<TenantRecord[]>([])
   const [nav, setNav]                     = useState<NavId>('dashboard')
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null)
   const [darkMode, setDarkMode]           = useState(true)
@@ -439,7 +345,9 @@ export default function App() {
 
   const isMobile = useWindowWidth() < 768
 
-  const selectedTenant = TENANTS.find(t => t.id === selectedTenantId) ?? null
+  useEffect(() => { fetchTenants().then(setTenants) }, [])
+
+  const selectedTenant = tenants.find(t => t.id === selectedTenantId) ?? null
 
   const handleNav = useCallback((id: NavId) => {
     setNav(id)
@@ -460,7 +368,7 @@ export default function App() {
             <TenantDetail tenant={selectedTenant} onBack={() => setSelectedTenantId(null)} isMobile={isMobile} />
           ) : nav === 'tenants' ? (
             <div style={{ padding: '20px 20px 24px' }}>
-              <TenantsView onSelectTenant={setSelectedTenantId} />
+              <TenantsView tenants={tenants} onSelectTenant={setSelectedTenantId} />
             </div>
           ) : nav === 'dashboard' ? (
             <DashboardView isMobile={isMobile} />

@@ -343,7 +343,7 @@ function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           ...sans, fontSize: 17, color: C.sub, lineHeight: 1.8,
           margin: '0 0 36px', fontWeight: 300, maxWidth: 480,
         }}>
-          AI lets you test ideas and ship screens in minutes — that speed is worth keeping. Drift makes sure what ships stays on-spec: live coverage scores, token violation flagging, and one-click fixes so your design library stays the source of truth without slowing anyone down.
+          Every sprint, AI invents components your design system already has. Drift catches it live — coverage scores, token violations, one-click fixes — so your library stays the source of truth without slowing anyone down.
         </p>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -834,7 +834,7 @@ function Features() {
           See every drift. Ship with confidence.
         </h2>
         <p style={{ ...sans, fontSize: 16, color: C.muted, maxWidth: 460, margin: '0 auto', lineHeight: 1.7, fontWeight: 300 }}>
-          Detection, measurement, and enforcement — in one tool that takes 2 minutes to add to any React app.
+          Every DS gap caught before it compounds. Works with Vite, Next.js, Remix — any React app with Storybook.
         </p>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
@@ -979,8 +979,11 @@ function WaitlistSection({ onOpenModal }: { onOpenModal: () => void }) {
         <h2 style={{ ...display, fontSize: 44, fontWeight: 800, color: C.text, margin: '24px 0 16px', letterSpacing: -1, lineHeight: 1.1 }}>
           Stop guessing.<br/>Start catching drift.
         </h2>
-        <p style={{ ...sans, fontSize: 16, color: C.muted, lineHeight: 1.8, margin: '0 0 40px', fontWeight: 300 }}>
-          The overlay is free. PR drift comments are invite-only for the first 200 builders.
+        <p style={{ ...sans, fontSize: 16, color: C.muted, lineHeight: 1.8, margin: '0 0 8px', fontWeight: 300 }}>
+          The first 200 teams get early access + a 1:1 onboarding session.
+        </p>
+        <p style={{ ...sans, fontSize: 14, color: C.muted, lineHeight: 1.8, margin: '0 0 32px', fontWeight: 300 }}>
+          The browser overlay is free and available now. CI integration and team features are invite-only.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={onOpenModal} style={{
@@ -990,7 +993,7 @@ function WaitlistSection({ onOpenModal }: { onOpenModal: () => void }) {
           }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = `0 6px 40px ${C.blue}55` }}
             onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 0 32px ${C.blue}40` }}>
-            Join the waitlist
+            Join the waitlist — it's free
           </button>
           <a href="https://github.com/dyoon92/design-drift" target="_blank" rel="noopener noreferrer" style={{
             ...sans, fontSize: 15, fontWeight: 600, padding: '14px 32px',
@@ -1013,6 +1016,13 @@ function WaitlistSection({ onOpenModal }: { onOpenModal: () => void }) {
             No spam. One email when early access opens.
           </p>
         )}
+        <p style={{ ...sans, fontSize: 12, color: C.muted, marginTop: 8 }}>
+          Already using Claude Code?{' '}
+          <a href="https://github.com/dyoon92/design-drift#claude-code" target="_blank" rel="noopener noreferrer"
+            style={{ color: C.blue, textDecoration: 'none', fontWeight: 600 }}>
+            Try it now with /drift-setup →
+          </a>
+        </p>
       </div>
     </section>
   )
@@ -1076,6 +1086,7 @@ export function LandingPage() {
           .hero-grid  { padding: 0 20px !important; }
         }
       `}</style>
+      {/* drift:ignore reason="Marketing waitlist modal — landing page only, not product UI" approvedBy="Dave Yoon" */}
       {modalOpen && <WaitlistModal onClose={closeModal} />}
       <Nav onOpenModal={openModal} />
       <Hero onOpenModal={openModal} />
