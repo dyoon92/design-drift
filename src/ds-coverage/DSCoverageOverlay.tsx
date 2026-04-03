@@ -1867,11 +1867,11 @@ const MiniBar = ({ pct, width = 36 }: { pct: number; width?: number }) => {
   )
 }
 
-const CoverageBar = ({ pct }: { pct: number }) => {
+const CoverageBar = ({ pct, barColor }: { pct: number; barColor?: string }) => {
   const C = useC()
   return (
     <div style={{ height: 6, borderRadius: 3, background: C.track, overflow: 'hidden', width: '100%' }}>
-      <div style={{ height: '100%', width: `${pct}%`, background: coverageColor(pct, C), borderRadius: 3, transition: 'width 0.3s ease' }} />
+      <div style={{ height: '100%', width: `${pct}%`, background: barColor ?? coverageColor(pct, C), borderRadius: 3, transition: 'width 0.3s ease' }} />
     </div>
   )
 }
@@ -1984,7 +1984,14 @@ const SummaryPanel = (p: PanelProps) => {
   const ignoredCount = p.components.filter(c => !c.inDS && p.ignored.has(c.name)).length
   const total        = p.components.length
   const pct          = total ? Math.round((dsCount / total) * 100) : 0
-  const color        = coverageColor(pct, C)
+  // A 100% adoption score is misleading when most DS components have been
+  // modified — shift the bar/headline to orange when >50% of DS components
+  // have custom styles applied on top.
+  const modifiedRatio = dsCount > 0 ? driftedCount / dsCount : 0
+  const color         = pct < 50 ? C.red
+    : pct < 75     ? C.yellow
+    : modifiedRatio > 0.5 ? C.orange
+    : C.green
 
   const gapMap = new Map<string, number>()
   p.components.filter(c => !c.inDS).forEach(c => gapMap.set(c.name, (gapMap.get(c.name) ?? 0) + 1))
@@ -2706,7 +2713,7 @@ const SummaryPanel = (p: PanelProps) => {
             )}
           </div>
           {/* Bar */}
-          <CoverageBar pct={pct} />
+          <CoverageBar pct={pct} barColor={color} />
           {/* Inline stat row — no pills */}
           <div style={{ display: 'flex', gap: 14, marginTop: 8, alignItems: 'center' }}>
             <span style={{ fontSize: 11, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
@@ -3329,8 +3336,8 @@ const SummaryPanel = (p: PanelProps) => {
 
 // ─── Toggle button ────────────────────────────────────────────────────────────
 
-const ToggleButton = ({ visible, pct, scanned, scanning, inspectMode, driftedCount, gapCount, onClick }: {
-  visible: boolean; pct: number
+const ToggleButton = ({ visible, pct, pctColor, scanned, scanning, inspectMode, driftedCount, gapCount, onClick }: {
+  visible: boolean; pct: number; pctColor: string
   scanned: boolean; scanning: boolean; inspectMode: boolean
   driftedCount: number; gapCount: number
   onClick: () => void
@@ -3361,8 +3368,8 @@ const ToggleButton = ({ visible, pct, scanned, scanning, inspectMode, driftedCou
         <>
           {/* DS coverage — always shown */}
           <span title={`${pct}% of elements on this screen are from your design system`} style={{
-            fontSize: 11, fontWeight: 700, color: C.green,
-            background: `${C.green}18`, padding: '2px 7px', borderRadius: 20,
+            fontSize: 11, fontWeight: 700, color: pctColor,
+            background: `${pctColor}18`, padding: '2px 7px', borderRadius: 20,
             fontVariantNumeric: 'tabular-nums',
           }}>{pct}%</span>
           {/* Drift — only if any */}
@@ -3542,9 +3549,14 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
 
   // Coverage = any DS component (drifted or not) / total — "are you using the DS?"
   // Drift rate is tracked separately — "are you using it correctly?"
-  const dsCount = components.filter(c => c.inDS).length
-  const total   = components.length
-  const pct     = total ? Math.round((dsCount / total) * 100) : 0
+  const dsCount      = components.filter(c => c.inDS).length
+  const driftedTotal = components.filter(c => c.drifted).length
+  const total        = components.length
+  const pct          = total ? Math.round((dsCount / total) * 100) : 0
+  const pctColor     = pct < 50 ? C.red
+    : pct < 75                             ? C.yellow
+    : dsCount > 0 && driftedTotal / dsCount > 0.5 ? C.orange
+    : C.green
 
 
   const scan = useCallback((forceRefresh = false) => {
@@ -3987,9 +3999,9 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
         <div data-dd-toggle style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 99999 }}>
           <div className={visible ? undefined : 'dd-gradient-wrap'}>
             <ToggleButton
-              visible={visible} pct={pct}
+              visible={visible} pct={pct} pctColor={pctColor}
               scanned={scanned} scanning={scanning} inspectMode={inspectMode}
-              driftedCount={components.filter(c => c.drifted).length}
+              driftedCount={driftedTotal}
               gapCount={components.filter(c => !c.inDS && !ignored.has(c.name)).length}
               onClick={() => setVisible(v => !v)}
             />
