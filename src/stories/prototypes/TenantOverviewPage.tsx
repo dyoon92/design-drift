@@ -4,14 +4,19 @@ import { PaymentBanner } from '../PaymentBanner'
 import { TenantInfoCard } from '../TenantInfoCard'
 import { CommunicationsPanel } from '../CommunicationsPanel'
 import { UnitDetailsCard } from '../UnitDetailsCard'
+import { Tabs } from '../Tabs'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const TABS = ['Overview', 'Billing History', 'Documents', 'Access'] as const
-type Tab = typeof TABS[number]
+const TABS = [
+  { key: 'overview',         label: 'Overview'       },
+  { key: 'billing-history',  label: 'Billing History' },
+  { key: 'documents',        label: 'Documents'       },
+  { key: 'access',           label: 'Access'          },
+]
 
 export function TenantOverviewPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('Overview')
+  const [activeTab, setActiveTab] = useState('overview')
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif', background: 'var(--ds-color-surface-subtle)', minHeight: '100vh', width: '100%' }}>
@@ -32,21 +37,8 @@ export function TenantOverviewPage() {
       />
 
       {/* Tab bar */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--ds-color-border)', padding: '0 24px', display: 'flex' }}>
-        {TABS.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} style={{
-            fontFamily: 'Inter, sans-serif',
-            padding: '12px 16px',
-            fontSize: 14,
-            fontWeight: activeTab === tab ? 600 : 400,
-            color: activeTab === tab ? 'var(--ds-color-primary)' : 'var(--ds-color-text-muted)',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === tab ? '2px solid var(--ds-color-primary)' : '2px solid transparent',
-            cursor: 'pointer',
-            marginBottom: -1,
-          }}>{tab}</button>
-        ))}
+      <div style={{ background: 'white', padding: '0 24px' }}>
+        <Tabs tabs={TABS} activeKey={activeTab} onTabChange={setActiveTab} />
       </div>
 
       {/* PaymentBanner — full width above columns */}

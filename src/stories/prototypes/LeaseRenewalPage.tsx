@@ -12,6 +12,8 @@
 import { useState } from 'react'
 import { TenantPageHeader } from '../TenantPageHeader'
 import { PaymentBanner } from '../PaymentBanner'
+import { Tabs } from '../Tabs'
+import { Button } from '../Button'
 
 const renewalTerms: { label: string; value: string }[] = [
   { label: 'Current lease end',  value: 'Jun 30, 2025' },
@@ -143,59 +145,27 @@ function RenewalTab() {
           gap: 12,
           justifyContent: 'flex-end',
         }}>
-          <button
-            onClick={() => setDecision('declined')}
-            style={{
-              padding: '9px 20px',
-              borderRadius: 'var(--ds-border-radius-md)',
-              border: '1px solid var(--ds-color-border)',
-              background: 'white',
-              color: 'var(--ds-color-text-primary)',
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            Decline
-          </button>
-          <button
-            onClick={() => setDecision('accepted')}
-            style={{
-              padding: '9px 20px',
-              borderRadius: 'var(--ds-border-radius-md)',
-              border: 'none',
-              background: 'var(--ds-color-primary)',
-              color: 'white',
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            Accept Renewal
-          </button>
+          <Button label="Decline"        variant="secondary" size="md" onClick={() => setDecision('declined')} />
+          <Button label="Accept Renewal" variant="primary"   size="md" onClick={() => setDecision('accepted')} />
         </div>
       </div>
 
       {/* Notes section */}
+      {/* drift:placeholder reason="No textarea variant in DS Input yet — needs Figma spec" */}
       <div style={{ marginTop: 16 }}>
-        <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--ds-color-text-primary)', display: 'block', marginBottom: 6 }}>
-          Notes
-        </label>
-        <textarea
-          placeholder="Add notes about this renewal offer..."
-          style={{
-            width: '100%',
-            minHeight: 80,
-            padding: '10px 12px',
-            border: '1px solid var(--ds-color-border)',
-            borderRadius: 'var(--ds-border-radius-md)',
-            fontSize: 13,
-            color: 'var(--ds-color-text-primary)',
-            background: 'white',
-            resize: 'vertical',
-            boxSizing: 'border-box',
-          }}
-        />
+        {/* ⚠️  Missing component: TextareaInput
+            This needs to be designed in Figma first before it can be built.
+            Next step: file a design request to add a textarea variant to Input. */}
+        <div style={{
+          padding: '12px 16px',
+          border: '2px dashed var(--ds-color-border)',
+          borderRadius: 'var(--ds-border-radius-md)',
+          background: 'var(--ds-color-surface-subtle)',
+          fontSize: 13,
+          color: 'var(--ds-color-text-muted)',
+        }}>
+          ⚠️ Missing component: TextareaInput — pending Figma spec
+        </div>
       </div>
     </div>
   )
@@ -218,49 +188,19 @@ export function LeaseRenewalPage() {
         onTabChange={(tab) => setActiveTab(tab as typeof activeTab)}
       />
 
-      {/* Custom Renewal tab injected above the standard header tabs */}
-      <div style={{
-        background: 'white',
-        borderBottom: '1px solid var(--ds-color-border)',
-        padding: '0 24px',
-        display: 'flex',
-        gap: 0,
-        marginTop: -1,
-      }}>
-        {(['overview', 'billing', 'documents', 'access', 'renewal'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: '12px 16px',
-              fontSize: 14,
-              fontWeight: activeTab === tab ? 600 : 400,
-              color: activeTab === tab ? 'var(--ds-color-primary)' : 'var(--ds-color-text-muted)',
-              background: 'none',
-              border: 'none',
-              borderBottom: activeTab === tab ? '2px solid var(--ds-color-primary)' : '2px solid transparent',
-              cursor: 'pointer',
-              textTransform: 'capitalize',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            {tab}
-            {tab === 'renewal' && (
-              <span style={{
-                background: 'var(--ds-color-warning)',
-                color: 'white',
-                fontSize: 10,
-                fontWeight: 700,
-                padding: '1px 5px',
-                borderRadius: 'var(--ds-border-radius-full)',
-              }}>
-                NEW
-              </span>
-            )}
-          </button>
-        ))}
+      {/* Tab bar */}
+      <div style={{ background: 'white', padding: '0 24px', marginTop: -1 }}>
+        <Tabs
+          tabs={[
+            { key: 'overview',  label: 'Overview'  },
+            { key: 'billing',   label: 'Billing'   },
+            { key: 'documents', label: 'Documents' },
+            { key: 'access',    label: 'Access'    },
+            { key: 'renewal',   label: 'Renewal', count: 1 },
+          ]}
+          activeKey={activeTab}
+          onTabChange={key => setActiveTab(key as typeof activeTab)}
+        />
       </div>
 
       {/* Page content */}

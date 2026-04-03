@@ -269,17 +269,10 @@ OverdueAlertBanner.displayName = 'OverdueAlertBanner'
 
 function QuickActionsBar() {
   return (
-    <div style={{
-      display: 'flex', gap: 8, marginBottom: 14,
-      fontFamily: 'Inter, system-ui, sans-serif',
-    }}>
-      {['Export CSV', 'Send Notices', 'Bulk Update'].map(label => (
-        <button key={label} style={{
-          padding: '6px 14px', fontSize: 12, fontWeight: 500,
-          background: 'var(--ds-color-surface)', color: 'var(--ds-color-text-primary)',
-          border: '1px solid var(--ds-color-border)', borderRadius: 6, cursor: 'pointer',
-        }}>{label}</button>
-      ))}
+    <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+      <Button label="Export CSV"   variant="white" size="sm" onClick={() => {}} />
+      <Button label="Send Notices" variant="white" size="sm" onClick={() => {}} />
+      <Button label="Bulk Update"  variant="white" size="sm" onClick={() => {}} />
     </div>
   )
 }
