@@ -6,6 +6,9 @@ import { DSCoverageOverlay } from './ds-coverage/DSCoverageOverlay'
 import { StoryModal } from './landing/StoryModal'
 import { WaitlistModal } from './landing/LandingPage'
 import { Tabs } from './stories/Tabs'
+import { Button } from './stories/Button'
+import { Dropdown } from './stories/Dropdown'
+import type { DropdownItem } from './stories/Dropdown'
 import { OccupancyWidget, RevenueWidget, NetMoveInsWidget, LeadsWidget, PastDueWidget, UnitStatusWidget, ProtectionAutopayWidget, ECRIWidget } from './stories/DashboardWidgets'
 import { FMKPIRow, KPICard, PriorityTasksPanel, RecentCommunicationsPanel, GoalTrackerPanel, DelinquenciesPanel, GoogleReviewsPanel, PromotionsPanel } from './stories/FMDashboardWidgets'
 import { TenantsTable } from './stories/TenantsTable'
@@ -157,54 +160,47 @@ TenantDetail.displayName = 'TenantDetail'
 
 // ─── Dashboard view ───────────────────────────────────────────────────────────
 
-const ChevronDownIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-    <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
-ChevronDownIcon.displayName = 'ChevronDownIcon'
-
 type DashMode = 'portfolio' | 'facility'
 
-const DASH_MODES: { value: DashMode; label: string }[] = [
-  { value: 'portfolio', label: 'Portfolio Owner'   },
-  { value: 'facility',  label: 'Facility Manager'  },
+const DASH_TABS = [
+  { key: 'portfolio', label: 'Portfolio Owner'  },
+  { key: 'facility',  label: 'Facility Manager' },
 ]
+
+const DATE_RANGE_OPTIONS = ['Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'Last Year']
 
 function DashboardView({ isMobile }: { isMobile: boolean }) {
   const gap = 20
-  const [mode, setMode] = useState<DashMode>('portfolio')
+  const [mode, setMode]               = useState<DashMode>('portfolio')
+  const [dateRange, setDateRange]     = useState('Last 30 Days')
+  const [showDateMenu, setShowDateMenu] = useState(false)
+
+  const dateItems: DropdownItem[] = DATE_RANGE_OPTIONS.map(label => ({
+    label,
+    onClick: () => setDateRange(label),
+  }))
 
   return (
     <div style={{ padding: isMobile ? '12px 12px 32px' : '20px 20px 40px', fontFamily: 'Inter, system-ui, sans-serif' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--ds-color-text-primary)' }}>Dashboard</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ display: 'flex', gap: 1, background: 'var(--ds-color-border)', borderRadius: 8, padding: 1 }}>
-            {DASH_MODES.map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => setMode(value)}
-                style={{
-                  padding: '5px 16px', border: 'none', borderRadius: 7, cursor: 'pointer',
-                  fontFamily: 'Inter, sans-serif', fontSize: 12,
-                  fontWeight: mode === value ? 600 : 500,
-                  color: mode === value ? 'var(--ds-color-primary)' : 'var(--ds-color-text-muted)',
-                  background: mode === value ? 'var(--ds-color-primary-light)' : 'var(--ds-color-surface)',
-                  whiteSpace: 'nowrap', letterSpacing: 0.24,
-                }}
-              >{label}</button>
-            ))}
+          <Tabs
+            tabs={DASH_TABS}
+            activeKey={mode}
+            onTabChange={key => setMode(key as DashMode)}
+          />
+          <div style={{ position: 'relative' }}>
+            <Button
+              label={dateRange}
+              variant="white"
+              size="sm"
+              onClick={() => setShowDateMenu(m => !m)}
+            />
+            {showDateMenu && (
+              <Dropdown items={dateItems} onClose={() => setShowDateMenu(false)} />
+            )}
           </div>
-          <button style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500,
-            background: 'var(--ds-color-surface)', color: 'var(--ds-color-text-primary)',
-            border: '1px solid var(--ds-color-border)', borderRadius: 8,
-            padding: '7px 14px', cursor: 'pointer',
-          }}>
-            Last 30 Days <ChevronDownIcon />
-          </button>
         </div>
       </div>
 
