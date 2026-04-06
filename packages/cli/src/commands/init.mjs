@@ -102,6 +102,33 @@ export async function init(argv) {
 
   const sources = Array.isArray(dsSources) ? dsSources : []
 
+  // ── Storybook nudge — needed to close the Figma → code loop ─────────────────
+  if (sources.includes('figma') && !sources.includes('storybook') && !storybook.found) {
+    p.log.warn(
+      'Storybook is needed to complete the loop.\n' +
+      '  Without it, the overlay has no way to identify which components are from your DS.\n' +
+      '  Figma tells Drift what exists in design — Storybook tells it what exists in code.'
+    )
+    const setupSB = await p.confirm({
+      message: 'Set up Storybook now? (runs npx storybook@latest init)',
+      initialValue: true,
+    })
+    if (p.isCancel(setupSB)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
+
+    if (setupSB) {
+      spinner.start('Running npx storybook@latest init...')
+      try {
+        execSync('npx storybook@latest init --yes', { cwd, stdio: 'ignore' })
+        spinner.stop('Storybook installed — it will be available at http://localhost:6006')
+        sources.push('storybook')
+      } catch {
+        spinner.stop('Storybook install failed — run `npx storybook@latest init` manually, then re-run `npx catchdrift init`')
+      }
+    } else {
+      p.log.info('Continuing without Storybook. Add it later and re-run `npx catchdrift init` to complete the loop.')
+    }
+  }
+
   // ── Step 3a: Figma ───────────────────────────────────────────────────────────
   let figmaFileKey, figmaToken, figmaWIPPages
   if (sources.includes('figma')) {

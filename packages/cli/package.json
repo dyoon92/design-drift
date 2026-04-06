@@ -1,6 +1,6 @@
 {
   "name": "@catchdrift/cli",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "CLI for Drift — install, check, and manage design system coverage for any React app.",
   "keywords": [
     "design-system",
