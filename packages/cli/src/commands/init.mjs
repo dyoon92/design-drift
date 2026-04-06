@@ -103,7 +103,7 @@ export async function init(argv) {
   const sources = Array.isArray(dsSources) ? dsSources : []
 
   // ── Step 3a: Figma ───────────────────────────────────────────────────────────
-  let figmaFileKey, figmaWIPPage
+  let figmaFileKey, figmaToken, figmaWIPPages
   if (sources.includes('figma')) {
     figmaFileKey = await p.text({
       message: 'Figma file key',
@@ -113,13 +113,30 @@ export async function init(argv) {
     if (p.isCancel(figmaFileKey)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
     figmaFileKey = figmaFileKey?.trim() || undefined
 
-    figmaWIPPage = await p.text({
-      message: 'Which Figma page holds in-progress / not-yet-ready components?',
-      placeholder: '🚧 In Progress  (skip if you don\'t have one)',
-      hint: 'Components on this page will be flagged as drafts, not added to your registry',
+    figmaToken = await p.text({
+      message: 'Figma personal access token',
+      placeholder: 'figd_...  (figma.com → Profile → Settings → Security → Personal access tokens)',
+      hint: 'Used to fetch your real page list. Store in FIGMA_API_TOKEN env var — not committed to git.',
     })
-    if (p.isCancel(figmaWIPPage)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
-    figmaWIPPage = figmaWIPPage?.trim() || undefined
+    if (p.isCancel(figmaToken)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
+    figmaToken = figmaToken?.trim() || undefined
+
+    // Fetch actual pages from Figma so the user picks from real names
+    if (figmaToken && figmaFileKey) {
+      spinner.start('Fetching pages from Figma...')
+      const pages = await fetchFigmaPages(figmaFileKey, figmaToken)
+      spinner.stop(pages ? `Found ${pages.length} pages` : 'Could not reach Figma — skipping page selection')
+
+      if (pages?.length) {
+        const selected = await p.multiselect({
+          message: 'Which pages hold in-progress / not-yet-ready components? (drafts — won\'t be added to registry)',
+          options: pages.map(name => ({ value: name, label: name })),
+          required: false,
+        })
+        if (p.isCancel(selected)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
+        figmaWIPPages = Array.isArray(selected) && selected.length ? selected : undefined
+      }
+    }
   }
 
   // ── Step 3b: Storybook ───────────────────────────────────────────────────────
@@ -202,7 +219,7 @@ export async function init(argv) {
     storybookUrl:  storybookUrl || (storybook.found ? storybook.url : undefined),
     chromaticUrl,
     figmaFileKey,
-    figmaWIPPage,
+    figmaWIPPages,
     dsPackages,
     threshold:     Number(threshold) || 80,
     components,
@@ -290,5 +307,20 @@ ${pc.dim('Docs: https://catchdrift.ai  ·  Issues: https://github.com/dyoon92/de
   if (figmaFileKey) {
     console.log(`${pc.blue('Tip:')} Open the Drift overlay (press D), go to Settings, and paste your Figma personal access token to enable Figma component sync.`)
     console.log('')
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+async function fetchFigmaPages(fileKey, token) {
+  try {
+    const res = await fetch(`https://api.figma.com/v1/files/${fileKey}?depth=1`, {
+      headers: { 'X-Figma-Token': token },
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    return data.document?.children?.map(page => page.name) ?? null
+  } catch {
+    return null
   }
 }

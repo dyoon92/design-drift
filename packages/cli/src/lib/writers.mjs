@@ -10,7 +10,7 @@ import { findAppEntry } from './detect.mjs'
 
 // ── drift.config.ts ───────────────────────────────────────────────────────────
 
-export function writeDriftConfig(cwd, { storybookUrl, chromaticUrl, figmaFileKey, figmaWIPPage, dsPackages, threshold, components }) {
+export function writeDriftConfig(cwd, { storybookUrl, chromaticUrl, figmaFileKey, figmaWIPPages, dsPackages, threshold, components }) {
   const registry = buildComponentRegistry(components)
 
   const dsPackagesLine = dsPackages?.length
@@ -24,7 +24,7 @@ export function writeDriftConfig(cwd, { storybookUrl, chromaticUrl, figmaFileKey
     storybookUrl ? `  storybookUrl: '${storybookUrl}',` : null,
     chromaticUrl ? `  chromaticUrl: '${chromaticUrl}',` : null,
     figmaFileKey ? `  figmaFileKey: '${figmaFileKey}',` : null,
-    figmaWIPPage ? `  figmaWIPPage: '${figmaWIPPage}', // components on this page are drafts — not added to registry` : null,
+    figmaWIPPages?.length ? `  figmaWIPPages: [${figmaWIPPages.map(p => `'${p}'`).join(', ')}], // components on these pages are drafts — not added to registry` : null,
     `  threshold: ${threshold},`,
     dsPackagesLine,
     `  components: {`,
