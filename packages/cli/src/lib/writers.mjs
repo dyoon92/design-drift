@@ -68,15 +68,18 @@ function buildAIRulesContent(components, storybookUrl, figmaFileKey) {
 ${figmaFileKey ? `- Figma: https://figma.com/design/${figmaFileKey}\n` : ''}- Tokens: src/tokens/variables.css — use CSS variables only
 
 ## The #1 rule: never invent UI from scratch
-If a component doesn't exist in the table below:
-  ⚠️  Missing component: [ComponentName]
-  Use <Placeholder> in the meantime.
-  Run /drift-push request [ComponentName] "[description]" to file a design request.
+Only use components from the table below. If a component you need is missing:
+1. Use \`<Placeholder label="ComponentName" />\` as a stand-in
+2. Output this message:
+   ⚠️  Missing component: [ComponentName]
+   This needs to be designed in Figma first.
+3. Run: /drift-push request [ComponentName] "[what it needs to do]"
+   This files a design request directly in Figma for the DS team.
 
 ## Approved exceptions
-To use a non-DS component intentionally:
-  {/* drift:ignore reason="<why no DS component covers this>" */}
-Exceptions are tracked in drift.config.ts and reported separately.
+To use a non-DS component intentionally, wrap it with a rationale comment:
+  {/* drift:ignore reason="<why no DS component covers this>" approvedBy="<name>" */}
+These are tracked in drift.config.ts and excluded from coverage metrics.
 
 ${buildComponentTable(components, storybookUrl)}
 
@@ -86,6 +89,14 @@ ${buildComponentTable(components, storybookUrl)}
 - No CSS files — inline styles only
 - Font: Inter, system-ui, sans-serif
 
+## The full design loop
+1. Vibe code using only the components above
+2. Missing a component? → /drift-push request Name "description" → lands in Figma
+3. Designer builds it in Figma
+4. /drift-sync figma → pulls it into drift.config.ts + updates these rules
+5. Built a custom component and want it in the DS? → /drift-push ComponentName → pushes props, token usage, and examples to Figma
+6. /drift check → verify coverage before a PR
+
 ## Drift commands (Claude Code)
 - /drift-context   — see DS state at a glance (run this first)
 - /drift-prd       — generate component inventory for a PRD
@@ -93,6 +104,8 @@ ${buildComponentTable(components, storybookUrl)}
 - /drift check     — verify coverage before a PR
 - /drift-sync      — re-sync after adding DS components
 - /drift fix <X>   — migrate custom component X to its DS equivalent
+- /drift-push <X>  — push a built component back to Figma
+- /drift-push gaps — push all high-frequency custom components to Figma at once
 `
 }
 

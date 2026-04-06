@@ -96,7 +96,6 @@ export async function init(argv) {
       { value: 'package',   label: 'npm package / path', hint: 'e.g. @acme/ui or ./src/components' },
       { value: 'manual',    label: 'I\'ll type component names myself', hint: 'you can always run /drift-sync later' },
     ],
-    initialValues: storybook.found ? ['storybook'] : [],
     required: false,
   })
   if (p.isCancel(dsSources)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
