@@ -222,9 +222,9 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
   const [figmaToken,   setFigmaToken]   = useState(() => localStorage.getItem('drift-figma-token') ?? '')
   const [figmaPages,   setFigmaPages]   = useState<string>('')  // freeform page names
   const [figmaCompletion, setFigmaCompletion] = useState<'full' | 'partial' | 'unsure'>('full')
-  const [sbCompletion, setSbCompletion] = useState<'full' | 'partial' | 'unsure'>('unsure')
-  const [sbUrl, setSbUrl]               = useState('http://localhost:6006')
-  const [chromaticUrl, setChromaticUrl] = useState('')
+  const [_sbCompletion, _setSbCompletion] = useState<'full' | 'partial' | 'unsure'>('unsure')
+  const [sbUrl, setSbUrl]                = useState('http://localhost:6006')
+  const [chromaticUrl, _setChromaticUrl] = useState('')
   const [fetching, setFetching]         = useState(false)
   const [fetchErr, setFetchErr]         = useState<string | null>(null)
   const [discovered, setDiscovered]     = useState<DiscoveredComponent[]>([])
@@ -599,7 +599,7 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
     { key: 'figma',     icon: '◈', color: C.purple, title: 'Figma',          sub: 'My team designs components there — some or all pages' },
     { key: 'storybook', icon: '📖', color: C.blue,   title: 'Storybook',      sub: 'We have a component catalog (complete, partial, or not sure)' },
     { key: 'package',   icon: '📦', color: C.green,  title: 'Code package',   sub: 'Components live in an npm package or a local folder' },
-    { key: 'fresh',     icon: '✦', color: C.amber,  title: 'Building it',    sub: 'No formal DS yet — Drift will track what we build and suggest what to standardize' },
+    { key: 'fresh',     icon: '✦', color: C.orange, title: 'Building it',    sub: 'No formal DS yet — Drift will track what we build and suggest what to standardize' },
   ]
 
   const canContinue = sources.size > 0
@@ -637,7 +637,7 @@ export function SetupWizard({ onDone, onClose, theme = 'dark' }: SetupWizardProp
             >
               <div style={{
                 width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                background: active ? `${opt.color}20` : C.surface2,
+                background: active ? `${opt.color}20` : C.surface,
                 border: `1px solid ${active ? opt.color : C.border}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 14, color: active ? opt.color : C.muted,

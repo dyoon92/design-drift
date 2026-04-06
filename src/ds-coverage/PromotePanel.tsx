@@ -109,7 +109,7 @@ Run: npm run dev → press D → "${name}" should appear green.`
 }
 
 function buildStoryScaffold(name: string): string {
-  const slug = name.replace(/([A-Z])/g, (m, c, i) => (i > 0 ? '-' : '') + c.toLowerCase())
+  const slug = name.replace(/([A-Z])/g, (_m, c, i) => (i > 0 ? '-' : '') + c.toLowerCase())
   return `import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ${name} } from './${name}'
 
@@ -129,7 +129,7 @@ export const Default: StoryObj<typeof ${name}> = {
 }
 
 function buildConfigSnippet(name: string, storyPath?: string): string {
-  const slug = `components-${name.replace(/([A-Z])/g, (m, c, i) => (i > 0 ? '-' : '') + c.toLowerCase()).toLowerCase()}--default`
+  const slug = `components-${name.replace(/([A-Z])/g, (_m, c, i) => (i > 0 ? '-' : '') + c.toLowerCase()).toLowerCase()}--default`
   const path = storyPath ?? slug
   return `// Add inside the components: {} block in src/ds-coverage/config.ts\n${name}: { storyPath: '${path}' },`
 }

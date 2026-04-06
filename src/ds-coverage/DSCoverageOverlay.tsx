@@ -1947,11 +1947,12 @@ interface PanelProps {
   ignored: Set<string>
   onApproveGap: (name: string) => void
   onUnapproveGap: (name: string) => void
+  registryValidated: boolean | null
 }
 
 const SummaryPanel = (p: PanelProps) => {
   const C                    = useC()
-  const { promotedComponents, onPromote } = p
+  const { promotedComponents, onPromote, registryValidated } = p
   const [tab,        setTab]       = useState<Tab>('overview')
   const [exported,   setExported]  = useState(false)
   const [mdCopied,   setMdCopied]  = useState(false)
@@ -4009,6 +4010,7 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
                 ignored={ignored}
                 onApproveGap={approveGap}
                 onUnapproveGap={unapproveGap}
+                registryValidated={registryValidated}
               />
             )}
           </div>
