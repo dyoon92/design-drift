@@ -59,15 +59,34 @@ const dsPackages = pkgMatch
   : []
 
 if (dsPackages.length === 0) {
-  console.log(`
-[drift-sync] No dsPackages found in config.ts.
+  // Check if the user has a Figma or Storybook setup instead
+  const hasFigma = configSrc.includes('figmaFileKey') || configSrc.includes('figmaFiles')
+  const hasStorybook = configSrc.includes('storybookUrl')
 
-Add this to src/ds-coverage/config.ts:
+  if (hasFigma || hasStorybook) {
+    console.log(`
+[drift-sync] Your DS is connected via ${[hasFigma && 'Figma', hasStorybook && 'Storybook'].filter(Boolean).join(' + ')}, not an npm package.
+
+To populate your component registry:
+${hasFigma   ? '  Figma:     open Claude Code and run /drift-sync figma' : ''}
+${hasStorybook ? '  Storybook: make sure Storybook is running, then re-run npx catchdrift sync --storybook' : ''}
+
+catchdrift sync (this command) is for scanning imports from a DS npm package.
+To use it, add dsPackages to drift.config.ts:
+
+  dsPackages: ['@your/component-library'],
+`.trim())
+  } else {
+    console.log(`
+[drift-sync] No dsPackages found in drift.config.ts.
+
+Add this to drift.config.ts:
 
   dsPackages: ['@your/component-library'],
 
-Then run npm run drift-sync again.
-  `.trim())
+Then run npx catchdrift sync again.
+`.trim())
+  }
   process.exit(0)
 }
 

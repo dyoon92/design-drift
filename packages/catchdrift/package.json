@@ -1,6 +1,6 @@
 {
   "name": "catchdrift",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "Design system compliance for teams shipping with AI — npx catchdrift init",
   "keywords": [
     "design-system",
@@ -30,7 +30,7 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@catchdrift/cli": "^0.1.17"
+    "@catchdrift/cli": "^0.1.18"
   },
   "engines": {
     "node": ">=18.0.0"
