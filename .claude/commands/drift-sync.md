@@ -25,15 +25,15 @@ Works with any product team — property management, SaaS, fintech, consumer, B2
 
 Read `drift.config.ts` (or `src/ds-coverage/config.ts`) to get:
 - **Figma source** — the config may use either shape:
-  - Single file: `figmaFileKey` + optional `figmaWIPPages` (legacy / one-file setup)
-  - Multi-file: `figmaFiles: [{ key: string, wipPages?: string[] }, ...]` (set when the team has components spread across multiple Figma files, e.g. Core DS, Icons, Patterns)
-  - Normalise both into a working array: `const files = config.figmaFiles ?? (config.figmaFileKey ? [{ key: config.figmaFileKey, wipPages: config.figmaWIPPages }] : [])`
+  - Single file: `figmaFileKey` + optional `figmaComponentPages` (one-file setup)
+  - Multi-file: `figmaFiles: [{ key: string, componentPages?: string[] }, ...]` (components spread across multiple Figma files, e.g. Core DS, Icons, Patterns)
+  - Normalise both into a working array: `const files = config.figmaFiles ?? (config.figmaFileKey ? [{ key: config.figmaFileKey, componentPages: config.figmaComponentPages }] : [])`
 - `storybookUrl`
 - `components` — the current registry (component name → storyPath / figmaLink)
 - `threshold`
 - Any `approvedGaps` entries
 
-**WIP pages** are per-file when using `figmaFiles` (`f.wipPages`). For any file where `wipPages` is not set, fall back to matching any page whose name contains "wip", "in progress", "draft", "proposal", or "archive" (case-insensitive).
+**Component pages** are an inclusive filter — only pull components from these pages. If `componentPages` is not set for a file, include all pages (and flag any page whose name contains "wip", "in progress", "draft", "proposal", "graveyard", or "archive" as potentially unready so the team can review them).
 
 ---
 
@@ -161,10 +161,9 @@ Group and display results by file, then by page within each file. If multiple fi
   ❌ DataGrid       → NOT in config  (node: 456:123)
 ```
 
-For components whose page name matches the file's `wipPages` (or the fallback heuristic if not set):
-- Flag them as drafts — do NOT add to config automatically
-- Show them in a separate "Drafts — not ready" section so the team can monitor progress
-- Include the page name next to each so it's clear why they were skipped
+For each file, apply the `componentPages` filter:
+- If `componentPages` is set: only include components from those pages; skip everything else
+- If not set: include all pages, but flag any page matching "wip/draft/graveyard/archive/proposal" in a separate "Unreviewed pages" section so the team can decide whether to add them
 
 For each component NOT in config (excluding draft pages), ask:
 ```

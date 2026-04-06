@@ -130,7 +130,7 @@ export async function init(argv) {
   }
 
   // ── Step 3a: Figma ───────────────────────────────────────────────────────────
-  // figmaFiles: [{ key: string, wipPages?: string[] }]
+  // figmaFiles: [{ key: string, componentPages?: string[] }]
   let figmaToken
   const figmaFiles = []
 
@@ -149,14 +149,28 @@ export async function init(argv) {
   5. Click ${pc.bold('Generate token')} and copy it — ${pc.yellow("you won't be able to see it again")}
 `)
 
-    figmaToken = await p.text({
-      message: 'Paste your Figma token here',
-      placeholder: 'figd_...',
-      hint: 'Stored in your local FIGMA_API_TOKEN env var — never committed to git',
-      validate: v => (!v?.trim() ? 'Required — paste the token you just generated' : undefined),
-    })
-    if (p.isCancel(figmaToken)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
-    figmaToken = figmaToken?.trim() || undefined
+    // Token input + immediate validation
+    let tokenValid = false
+    while (!tokenValid) {
+      figmaToken = await p.text({
+        message: 'Paste your Figma token here',
+        placeholder: 'figd_...',
+        hint: 'Stored in your local FIGMA_API_TOKEN env var — never committed to git',
+        validate: v => (!v?.trim() ? 'Required — paste the token you just generated' : undefined),
+      })
+      if (p.isCancel(figmaToken)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
+      figmaToken = figmaToken?.trim()
+
+      spinner.start('Validating token...')
+      const valid = await validateFigmaToken(figmaToken)
+      if (valid) {
+        spinner.stop(pc.green('Token valid ✓'))
+        tokenValid = true
+      } else {
+        spinner.stop(pc.red('Token invalid — check the scopes and try again'))
+        figmaToken = undefined
+      }
+    }
 
     // Loop: add one file at a time
     let addingFiles = true
@@ -178,28 +192,31 @@ export async function init(argv) {
         fileKey = figmaInput.trim()
       }
 
-      // Fetch pages for this file
-      let wipPages
-      if (figmaToken) {
-        spinner.start('Connecting to Figma...')
-        const pages = await fetchFigmaPages(fileKey, figmaToken)
-        spinner.stop(pages
-          ? pc.green(`Connected ✓  Found ${pages.length} pages`)
-          : pc.yellow('Could not reach Figma — skipping page selection for this file.')
-        )
+      // Fetch pages and ask which ones contain the master/ready components
+      let componentPages
+      spinner.start('Fetching pages...')
+      const pages = await fetchFigmaPages(fileKey, figmaToken)
+      spinner.stop(pages
+        ? pc.green(`Found ${pages.length} pages`)
+        : pc.yellow('Could not reach Figma — skipping page selection for this file.')
+      )
 
-        if (pages?.length) {
-          const selected = await p.multiselect({
-            message: 'Which pages in this file hold in-progress / not-yet-ready components?',
-            options: pages.map(name => ({ value: name, label: name })),
-            required: false,
-          })
-          if (p.isCancel(selected)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
-          wipPages = Array.isArray(selected) && selected.length ? selected : undefined
+      if (pages?.length) {
+        const selected = await p.multiselect({
+          message: 'Which pages contain your published DS components?',
+          hint: 'Only components on these pages will be added to the registry',
+          options: pages.map(name => ({ value: name, label: name })),
+          required: false,
+        })
+        if (p.isCancel(selected)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
+        componentPages = Array.isArray(selected) && selected.length ? selected : undefined
+
+        if (!componentPages) {
+          p.log.info('No pages selected — all pages will be included. You can refine this later in drift.config.ts.')
         }
       }
 
-      figmaFiles.push({ key: fileKey, wipPages })
+      figmaFiles.push({ key: fileKey, componentPages })
 
       // Ask whether to add another
       const another = await p.confirm({
@@ -407,6 +424,20 @@ function extractFigmaFileKey(input) {
   // Matches: figma.com/design/KEY/... or figma.com/file/KEY/...
   const match = input.match(/figma\.com\/(?:design|file)\/([a-zA-Z0-9]+)/)
   return match ? match[1] : null
+}
+
+async function validateFigmaToken(token) {
+  try {
+    // /me requires current_user:read which we don't ask for, so we expect a 403
+    // with a scope error message — that still means the token itself is valid.
+    // A 401 means the token is completely invalid.
+    const res = await fetch('https://api.figma.com/v1/me', {
+      headers: { 'X-Figma-Token': token },
+    })
+    return res.status !== 401
+  } catch {
+    return false
+  }
 }
 
 async function fetchFigmaPages(fileKey, token) {

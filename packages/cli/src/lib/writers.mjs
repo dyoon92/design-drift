@@ -22,15 +22,15 @@ export function writeDriftConfig(cwd, { storybookUrl, chromaticUrl, figmaFiles, 
   if (figmaFiles?.length === 1) {
     const f = figmaFiles[0]
     figmaFilesBlock = `  figmaFileKey: '${f.key}',`
-    if (f.wipPages?.length) {
-      figmaFilesBlock += `\n  figmaWIPPages: [${f.wipPages.map(p => `'${p}'`).join(', ')}], // components on these pages are drafts — not added to registry`
+    if (f.componentPages?.length) {
+      figmaFilesBlock += `\n  figmaComponentPages: [${f.componentPages.map(p => `'${p}'`).join(', ')}], // only components on these pages are added to the registry`
     }
   } else if (figmaFiles?.length > 1) {
     const entries = figmaFiles.map(f => {
-      const wipLine = f.wipPages?.length
-        ? `, wipPages: [${f.wipPages.map(p => `'${p}'`).join(', ')}]`
+      const pagesLine = f.componentPages?.length
+        ? `, componentPages: [${f.componentPages.map(p => `'${p}'`).join(', ')}]`
         : ''
-      return `    { key: '${f.key}'${wipLine} },`
+      return `    { key: '${f.key}'${pagesLine} },`
     }).join('\n')
     figmaFilesBlock = `  figmaFiles: [\n${entries}\n  ],`
   }
