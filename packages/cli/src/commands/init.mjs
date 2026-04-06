@@ -397,67 +397,72 @@ export async function init(argv) {
   console.log('')
   p.outro(pc.green('Drift is set up ✓'))
 
-  // Build next steps dynamically based on what was configured
-  const nextSteps = []
+  // ── What was set up (human-readable) ────────────────────────────────────────
+  const patchedShort = patched ? patched.replace(cwd + '/', '').replace(cwd, '') : null
+  console.log(`
+${pc.bold('What was set up:')}
+  ${pc.green('✓')} Overlay added to your app ${patchedShort ? pc.dim('(' + patchedShort + ')') : pc.yellow('— see manual step below')}
+  ${pc.green('✓')} AI rules written ${pc.dim('— your AI tools will use DS components by default')}
+  ${pc.green('✓')} Claude skills added ${pc.dim('— /drift-sync, /drift-scaffold, /drift-context, ...')}
+  ${addCI ? pc.green('✓') + ' GitHub check added ' + pc.dim('— every PR will show a coverage score') : pc.dim('○  GitHub check skipped')}`)
 
-  if (dsPackages?.length) {
-    nextSteps.push(`  ${pc.cyan('npx catchdrift sync')}   Auto-populate registry from ${dsPackages.join(', ')}`)
-  } else if (!sources.includes('storybook') || Object.keys(components).length === 0) {
-    nextSteps.push(`  ${pc.cyan('npx catchdrift sync')}   Auto-populate registry once you have a DS package`)
+  // ── Immediate next step — specific to what was configured ───────────────────
+  console.log(`\n${pc.bold('Do this now:')}`)
+
+  if (figmaFiles.length > 0 && skillFiles.length > 0) {
+    console.log(`
+  Your components are in Figma. Pull them into the registry now:
+
+  ${pc.cyan('1.')} Open ${pc.bold('Claude Code')} in this project folder
+  ${pc.cyan('2.')} Run: ${pc.blue('/drift-sync figma')}
+       This reads your Figma file and registers all your DS components.
+  ${pc.cyan('3.')} Run: ${pc.bold('npm run dev')}  →  press ${pc.bold('D')}  →  see live coverage
+`)
+  } else if (sources.includes('storybook') && Object.keys(components).length > 0) {
+    console.log(`
+  Your components were imported from Storybook ✓
+
+  ${pc.cyan('1.')} Run: ${pc.bold('npm run dev')}
+  ${pc.cyan('2.')} Press ${pc.bold('D')} to open the Drift overlay — you should see real coverage.
+`)
+  } else if (dsPackages?.length) {
+    console.log(`
+  ${pc.cyan('1.')} Run: ${pc.bold('npx catchdrift sync')}
+       Scans your codebase for imports from ${dsPackages.join(', ')} and registers them.
+  ${pc.cyan('2.')} Run: ${pc.bold('npm run dev')}  →  press ${pc.bold('D')}  →  see live coverage
+`)
+  } else {
+    console.log(`
+  ${pc.cyan('1.')} Run: ${pc.bold('npm run dev')}  →  press ${pc.bold('D')}  →  the overlay opens
+       Coverage will show 0% until you register your DS components.
+  ${pc.cyan('2.')} Add your components to ${pc.bold('drift.config.ts')} or connect a source:
+       • Figma:  re-run ${pc.bold('npx catchdrift init')} and select Figma
+       • npm:    add ${pc.bold('dsPackages')} to drift.config.ts, then run ${pc.bold('npx catchdrift sync')}
+`)
   }
 
-  nextSteps.push(`  ${pc.cyan('npm run dev')}            Start your app, then press ${pc.bold('D')} to open Drift`)
-  nextSteps.push(`  ${pc.cyan('npx catchdrift check')}   Run a coverage scan ${pc.dim('(app must be running)')}`)
-  nextSteps.push(`  ${pc.cyan('git push')}               First PR will show a drift delta comment`)
+  // ── Ongoing daily commands ───────────────────────────────────────────────────
+  console.log(`${pc.bold('Daily workflow (Claude Code):')}
+  ${pc.blue('/drift-context')}     Check DS health — run this before starting work
+  ${pc.blue('/drift-scaffold')}    Build a new screen using only DS components
+  ${pc.blue('/drift-sync')}        Update registry after Figma or Storybook changes
+  ${pc.blue('npx catchdrift check')}   Check coverage before submitting a PR
+`)
 
   if (!sources.includes('storybook') && !storybook.found) {
-    nextSteps.push(`\n  ${pc.yellow('Storybook not set up')} — run ${pc.bold('npx storybook@latest init')} when ready,`)
-    nextSteps.push(`  then re-run ${pc.bold('npx catchdrift init')} to complete the coverage loop.`)
+    console.log(`${pc.yellow('Note:')} Storybook isn't set up yet. Run ${pc.bold('npx storybook@latest init')} when ready,`)
+    console.log(`  then re-run ${pc.bold('npx catchdrift init')} to complete the coverage loop.\n`)
   }
 
-  console.log(`
-${pc.bold('What was created:')}
-  drift.config.ts                    ${pc.dim('DS component registry')}
-  ${rulesFiles.map(f => f.padEnd(34)).join('\n  ')}${pc.dim('AI constraints')}
-  ${skillFiles.length ? `.claude/commands/               ${pc.dim('Claude Code skills (/drift-sync, /drift-scaffold, etc.)')}` : ''}
-  ${addCI ? '.github/workflows/drift-check.yml  ' + pc.dim('CI drift check on every PR') : ''}
-  ${patched ? patched.padEnd(34) + pc.dim('DriftOverlay added (dev-only)') : ''}
-
-${pc.bold('Next steps:')}
-${nextSteps.join('\n')}
-
-${pc.bold('Your team\'s daily commands (Claude Code):')}
-  ${pc.blue('/drift-context')}    ${pc.dim('See DS state at a glance — run this first')}
-  ${pc.blue('/drift-prd')}        ${pc.dim('Generate a component inventory for a PRD')}
-  ${pc.blue('/drift-scaffold')}   ${pc.dim('Scaffold a new screen using only DS components')}
-  ${pc.blue('/drift check')}      ${pc.dim('Verify coverage before submitting a PR')}
-  ${pc.blue('/drift-sync')}       ${pc.dim('Re-sync registry after adding DS components')}
-  ${pc.blue('/drift fix <X>')}    ${pc.dim('Migrate a custom component to its DS equivalent')}
-
-${pc.dim('Docs: https://catchdrift.ai  ·  Issues: https://github.com/dyoon92/design-drift/issues')}
-`)
-
-  if (!patched) {
-    console.log(`${pc.yellow('Manual step needed')} — add DriftOverlay to your app entry point:
-`)
-    console.log(`  ${pc.dim('// src/main.tsx')}`)
+  if (!patchedShort) {
+    console.log(`${pc.yellow('Manual step needed')} — add the overlay to your app entry point:`)
     console.log(`  import { DriftOverlay } from '@catchdrift/overlay'`)
-    console.log(`  import driftConfig from '../drift.config'`)
-    console.log('')
-    console.log(`  ${pc.dim('// Last child in your root render:')}`)
-    console.log(`  {import.meta.env.DEV && <DriftOverlay config={driftConfig} />}`)
-    console.log('')
+    console.log(`  import driftConfig from './drift.config'`)
+    console.log(`  // inside your root render, as the last child:`)
+    console.log(`  {import.meta.env.DEV && <DriftOverlay config={driftConfig} />}\n`)
   }
 
-  if (dsPackages?.length) {
-    console.log(`${pc.blue('Tip:')} Run ${pc.bold('npx catchdrift sync')} to auto-populate your component registry from ${dsPackages.join(', ')}.`)
-    console.log('')
-  }
-
-  if (figmaFiles.length > 0) {
-    console.log(`${pc.blue('Tip:')} Open the Drift overlay (press D), go to Settings, and paste your Figma personal access token to enable Figma component sync.`)
-    console.log('')
-  }
+  console.log(pc.dim('Docs: https://catchdrift.ai  ·  Issues: https://github.com/dyoon92/design-drift/issues'))
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
