@@ -1,0 +1,21 @@
+{
+  "name": "catchdrift",
+  "version": "0.1.0",
+  "description": "Design system compliance for teams shipping with AI — npx catchdrift init",
+  "keywords": ["design-system", "drift", "cli", "coverage", "react", "storybook"],
+  "homepage": "https://catchdrift.ai",
+  "repository": { "type": "git", "url": "git+https://github.com/dyoon92/design-drift.git" },
+  "author": "Dave Yoon <dave@catchdrift.ai>",
+  "bugs": { "url": "https://github.com/dyoon92/design-drift/issues" },
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "catchdrift": "./bin/run.mjs",
+    "drift": "./bin/run.mjs"
+  },
+  "files": ["bin", "LICENSE"],
+  "dependencies": {
+    "@catchdrift/cli": "^0.1.1"
+  },
+  "engines": { "node": ">=18.0.0" }
+}

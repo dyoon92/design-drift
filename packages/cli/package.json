@@ -1,19 +1,39 @@
 {
   "name": "@catchdrift/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI for Drift — install, check, and manage design system coverage for any React app.",
-  "keywords": ["design-system", "drift", "cli", "coverage", "react", "storybook"],
+  "keywords": [
+    "design-system",
+    "drift",
+    "cli",
+    "coverage",
+    "react",
+    "storybook"
+  ],
   "homepage": "https://catchdrift.ai",
-  "repository": { "type": "git", "url": "git+https://github.com/dyoon92/design-drift.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dyoon92/design-drift.git"
+  },
   "author": "Dave Yoon <dave@catchdrift.ai>",
-  "bugs": { "url": "https://github.com/dyoon92/design-drift/issues" },
+  "bugs": {
+    "url": "https://github.com/dyoon92/design-drift/issues"
+  },
   "license": "MIT",
   "type": "module",
   "bin": {
     "catchdrift": "./bin/catchdrift.mjs",
     "drift": "./bin/catchdrift.mjs"
   },
-  "files": ["bin", "src", "scripts", "LICENSE", "README.md"],
+  "exports": "./src/index.mjs",
+  "main": "./src/index.mjs",
+  "files": [
+    "bin",
+    "src",
+    "scripts",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "dev": "node bin/catchdrift.mjs",
     "prepublishOnly": "npx publint ."
@@ -23,5 +43,7 @@
     "picocolors": "^1.1.1",
     "playwright": "^1.50.0"
   },
-  "engines": { "node": ">=18.0.0" }
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
