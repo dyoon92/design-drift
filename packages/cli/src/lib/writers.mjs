@@ -169,7 +169,7 @@ export function patchAppEntry(cwd, framework) {
   // Add overlay before the closing </> or </div> or </body> of the root render
   const overlayJsx = `\n      {${envCheck} && <DriftOverlay config={driftConfig} />}`
   const patched = withImport.replace(
-    /(<\/(?:React\.Fragment|Fragment|>|div|body|main)[^>]*>)/,
+    /(<\/(?:React\.StrictMode|StrictMode|React\.Fragment|Fragment|div|body|main)[^>]*>|<\/>)/,
     `${overlayJsx}\n    $1`
   )
 
