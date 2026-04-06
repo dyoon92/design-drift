@@ -143,10 +143,9 @@ export async function init(argv) {
   2. Go to the ${pc.bold('Security')} tab → click ${pc.bold('Generate new token')}
   3. Give it a name (e.g. "Drift") and set an expiry
   4. Enable these scopes:
-       ${pc.green('✓')} File content       → ${pc.bold('Read only')}
-       ${pc.green('✓')} Library content    → ${pc.bold('Read only')}
-       ${pc.green('✓')} File comments      → ${pc.bold('Write')}
-       ${pc.green('✓')} File variables     → ${pc.bold('Read only')}
+       ${pc.green('✓')} file_content:read       (Files → File content)
+       ${pc.green('✓')} library_content:read    (Design systems → Library content)
+       ${pc.green('✓')} file_comments:write     (Files → File comments)
   5. Click ${pc.bold('Generate token')} and copy it — ${pc.yellow("you won't be able to see it again")}
 `)
 
