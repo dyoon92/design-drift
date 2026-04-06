@@ -24,12 +24,16 @@ Works with any product team — property management, SaaS, fintech, consumer, B2
 ## Step 1 — Read current state
 
 Read `drift.config.ts` (or `src/ds-coverage/config.ts`) to get:
-- `figmaFileKey`
+- **Figma source** — the config may use either shape:
+  - Single file: `figmaFileKey` + optional `figmaWIPPages` (legacy / one-file setup)
+  - Multi-file: `figmaFiles: [{ key: string, wipPages?: string[] }, ...]` (set when the team has components spread across multiple Figma files, e.g. Core DS, Icons, Patterns)
+  - Normalise both into a working array: `const files = config.figmaFiles ?? (config.figmaFileKey ? [{ key: config.figmaFileKey, wipPages: config.figmaWIPPages }] : [])`
 - `storybookUrl`
-- `figmaWIPPages` — array of page names the team designated as staging/draft during `npx catchdrift init` (e.g. `['🚧 In Progress', 'Sandbox']`). Components on any of these pages are treated as drafts. If not set, fall back to matching any page whose name contains "wip", "in progress", "draft", "proposal", or "archive" (case-insensitive).
 - `components` — the current registry (component name → storyPath / figmaLink)
 - `threshold`
 - Any `approvedGaps` entries
+
+**WIP pages** are per-file when using `figmaFiles` (`f.wipPages`). For any file where `wipPages` is not set, fall back to matching any page whose name contains "wip", "in progress", "draft", "proposal", or "archive" (case-insensitive).
 
 ---
 
@@ -46,9 +50,10 @@ Storybook: <storybookUrl>
   Last successful sync: <date if known, else "unknown">
   Reachable: ✅ / ❌
 
-Figma: figma.com/design/<figmaFileKey>
+Figma files: <N> configured
+  figma.com/design/<key1>  Reachable: ✅ / ❌
+  figma.com/design/<key2>  Reachable: ✅ / ❌   (if multi-file)
   FIGMA_API_TOKEN: ✅ set / ❌ missing
-  Reachable: ✅ / ❌
 
 Config: drift.config.ts
   Components registered: N
@@ -122,9 +127,9 @@ ask whether to delete from config or keep with a `deprecated: true` flag.
 `/components` endpoint — it returns ALL published components across ALL pages
 with page metadata included. Do NOT try to walk the file tree page by page.
 
-Make this API call:
+Iterate over every file in the normalised `files` array (see Step 1). For each:
 ```
-GET https://api.figma.com/v1/files/{figmaFileKey}/components
+GET https://api.figma.com/v1/files/{file.key}/components
 Headers: X-Figma-Token: {FIGMA_API_TOKEN}
 ```
 
@@ -135,30 +140,28 @@ Each component in the response has:
 - `containing_frame.pageName` — **the Figma page it's on**
 - `description` — designer's notes (preserve this — use as component description in config)
 
-Group and display results by page:
+Group and display results by file, then by page within each file. If multiple files are configured, prefix each section with the file key/URL so it's clear which file the components come from:
 ```
-## Figma components found (across all pages)
+## Figma components found
 
+### figma.com/design/<key1>  (Core DS)
 📄 Primitives (12 components)
   ✅ Button         → in config
   ✅ Input          → in config
   ❌ Toggle         → NOT in config  (node: 123:456)
   ❌ Checkbox       → NOT in config  (node: 123:789)
 
-📄 Navigation (4 components)
-  ✅ Navbar         → in config
-  ✅ Sidebar        → in config
+📄 🚧 In Progress (3 components)
+  ⚠️  SearchBar     → draft (will not be added)
+  ⚠️  FilterChip    → draft (will not be added)
 
+### figma.com/design/<key2>  (Icons & Patterns)
 📄 Patterns (8 components)
   ✅ TenantsTable   → in config
   ❌ DataGrid       → NOT in config  (node: 456:123)
-
-📄 🚧 In Progress (3 components)
-  ⚠️  SearchBar     → not in config (may not be ready)
-  ⚠️  FilterChip    → not in config (may not be ready)
 ```
 
-For components whose page name matches any entry in `figmaWIPPages` (or the fallback heuristic if not set):
+For components whose page name matches the file's `wipPages` (or the fallback heuristic if not set):
 - Flag them as drafts — do NOT add to config automatically
 - Show them in a separate "Drafts — not ready" section so the team can monitor progress
 - Include the page name next to each so it's clear why they were skipped
@@ -166,17 +169,17 @@ For components whose page name matches any entry in `figmaWIPPages` (or the fall
 For each component NOT in config (excluding draft pages), ask:
 ```
 Add these to drift.config.ts?
-  - Toggle   (Primitives page)
-  - Checkbox (Primitives page)
-  - DataGrid (Patterns page)
+  - Toggle   (key1 / Primitives page)
+  - Checkbox (key1 / Primitives page)
+  - DataGrid (key2 / Patterns page)
 
 For each, I'll also add the figmaLink pointing to that node.
 Reply with which ones to add, or "all" / "none".
 ```
 
-When adding, build the figmaLink URL:
+When adding, build the figmaLink URL using the file key that component came from:
 ```
-https://www.figma.com/design/{figmaFileKey}?node-id={node_id}
+https://www.figma.com/design/{file.key}?node-id={node_id}
 ```
 
 Also report components in the codebase (from static scan of `src/`) that exist

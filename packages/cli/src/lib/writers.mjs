@@ -10,12 +10,30 @@ import { findAppEntry } from './detect.mjs'
 
 // ── drift.config.ts ───────────────────────────────────────────────────────────
 
-export function writeDriftConfig(cwd, { storybookUrl, chromaticUrl, figmaFileKey, figmaWIPPages, dsPackages, threshold, components }) {
+export function writeDriftConfig(cwd, { storybookUrl, chromaticUrl, figmaFiles, dsPackages, threshold, components }) {
   const registry = buildComponentRegistry(components)
 
   const dsPackagesLine = dsPackages?.length
     ? `  dsPackages: [${dsPackages.map(p => `'${p}'`).join(', ')}],`
     : null
+
+  // Build figmaFiles block — single file gets a compact shape, multiple get an array
+  let figmaFilesBlock = null
+  if (figmaFiles?.length === 1) {
+    const f = figmaFiles[0]
+    figmaFilesBlock = `  figmaFileKey: '${f.key}',`
+    if (f.wipPages?.length) {
+      figmaFilesBlock += `\n  figmaWIPPages: [${f.wipPages.map(p => `'${p}'`).join(', ')}], // components on these pages are drafts — not added to registry`
+    }
+  } else if (figmaFiles?.length > 1) {
+    const entries = figmaFiles.map(f => {
+      const wipLine = f.wipPages?.length
+        ? `, wipPages: [${f.wipPages.map(p => `'${p}'`).join(', ')}]`
+        : ''
+      return `    { key: '${f.key}'${wipLine} },`
+    }).join('\n')
+    figmaFilesBlock = `  figmaFiles: [\n${entries}\n  ],`
+  }
 
   const lines = [
     `import type { DesignDriftConfig } from '@catchdrift/overlay'`,
@@ -23,8 +41,7 @@ export function writeDriftConfig(cwd, { storybookUrl, chromaticUrl, figmaFileKey
     `const config: DesignDriftConfig = {`,
     storybookUrl ? `  storybookUrl: '${storybookUrl}',` : null,
     chromaticUrl ? `  chromaticUrl: '${chromaticUrl}',` : null,
-    figmaFileKey ? `  figmaFileKey: '${figmaFileKey}',` : null,
-    figmaWIPPages?.length ? `  figmaWIPPages: [${figmaWIPPages.map(p => `'${p}'`).join(', ')}], // components on these pages are drafts — not added to registry` : null,
+    figmaFilesBlock,
     `  threshold: ${threshold},`,
     dsPackagesLine,
     `  components: {`,
@@ -61,12 +78,15 @@ function buildComponentTable(components, storybookUrl) {
   ].join('\n')
 }
 
-function buildAIRulesContent(components, storybookUrl, figmaFileKey) {
+function buildAIRulesContent(components, storybookUrl, figmaFiles) {
+  const figmaLines = figmaFiles?.length
+    ? figmaFiles.map(f => `- Figma: https://figma.com/design/${f.key}`).join('\n') + '\n'
+    : ''
   return `# Design System Rules
 
 ## Source of truth
 - Storybook: ${storybookUrl}
-${figmaFileKey ? `- Figma: https://figma.com/design/${figmaFileKey}\n` : ''}- Tokens: src/tokens/variables.css — use CSS variables only
+${figmaLines}- Tokens: src/tokens/variables.css — use CSS variables only
 
 ## The #1 rule: never invent UI from scratch
 Only use components from the table below. If a component you need is missing:
@@ -110,8 +130,8 @@ ${buildComponentTable(components, storybookUrl)}
 `
 }
 
-export function writeAIRulesFiles(cwd, { tools, components, storybookUrl, figmaFileKey }) {
-  const content = buildAIRulesContent(components, storybookUrl, figmaFileKey)
+export function writeAIRulesFiles(cwd, { tools, components, storybookUrl, figmaFiles }) {
+  const content = buildAIRulesContent(components, storybookUrl, figmaFiles)
   const written = []
 
   const toolFileMap = {

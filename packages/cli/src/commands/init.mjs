@@ -130,23 +130,12 @@ export async function init(argv) {
   }
 
   // ── Step 3a: Figma ───────────────────────────────────────────────────────────
-  let figmaFileKey, figmaToken, figmaWIPPages
-  if (sources.includes('figma')) {
-    // Accept full URL or raw key
-    const figmaInput = await p.text({
-      message: 'Paste your Figma file URL (or just the file key)',
-      placeholder: 'https://www.figma.com/design/ABC123.../My-Design-File',
-      hint: 'Open your Figma file in a browser and copy the full URL from the address bar',
-      validate: v => (!v?.trim() ? 'Required' : undefined),
-    })
-    if (p.isCancel(figmaInput)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
-    figmaFileKey = extractFigmaFileKey(figmaInput.trim())
-    if (!figmaFileKey) {
-      p.log.warn(`Could not extract a file key from "${figmaInput.trim()}". Using it as-is.`)
-      figmaFileKey = figmaInput.trim()
-    }
+  // figmaFiles: [{ key: string, wipPages?: string[] }]
+  let figmaToken
+  const figmaFiles = []
 
-    // Token — show exact steps + required scopes
+  if (sources.includes('figma')) {
+    // Token — ask once, reused for all files
     console.log('')
     p.log.step('Create a Figma access token — takes about 60 seconds:')
     console.log(`
@@ -169,24 +158,56 @@ export async function init(argv) {
     if (p.isCancel(figmaToken)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
     figmaToken = figmaToken?.trim() || undefined
 
-    // Validate token + fetch pages in one call
-    if (figmaToken && figmaFileKey) {
-      spinner.start('Connecting to Figma...')
-      const pages = await fetchFigmaPages(figmaFileKey, figmaToken)
-      spinner.stop(pages
-        ? pc.green(`Connected ✓  Found ${pages.length} pages`)
-        : pc.yellow('Could not reach Figma — check your token scopes. You can re-run `npx catchdrift init` to retry.')
-      )
+    // Loop: add one file at a time
+    let addingFiles = true
+    while (addingFiles) {
+      const fileLabel = figmaFiles.length === 0 ? 'Paste your Figma file URL (or just the file key)' : 'Add another Figma file URL (or key)'
+      const figmaInput = await p.text({
+        message: fileLabel,
+        placeholder: 'https://www.figma.com/design/ABC123.../My-Design-File',
+        hint: figmaFiles.length === 0
+          ? 'Open your Figma file in a browser and copy the full URL from the address bar'
+          : 'Add files for each area where DS components live (e.g. Core DS, Icons, Patterns)',
+        validate: v => (!v?.trim() ? 'Required' : undefined),
+      })
+      if (p.isCancel(figmaInput)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
 
-      if (pages?.length) {
-        const selected = await p.multiselect({
-          message: 'Which pages hold in-progress / not-yet-ready components? (drafts — won\'t be added to registry)',
-          options: pages.map(name => ({ value: name, label: name })),
-          required: false,
-        })
-        if (p.isCancel(selected)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
-        figmaWIPPages = Array.isArray(selected) && selected.length ? selected : undefined
+      let fileKey = extractFigmaFileKey(figmaInput.trim())
+      if (!fileKey) {
+        p.log.warn(`Could not extract a file key — using as-is.`)
+        fileKey = figmaInput.trim()
       }
+
+      // Fetch pages for this file
+      let wipPages
+      if (figmaToken) {
+        spinner.start('Connecting to Figma...')
+        const pages = await fetchFigmaPages(fileKey, figmaToken)
+        spinner.stop(pages
+          ? pc.green(`Connected ✓  Found ${pages.length} pages`)
+          : pc.yellow('Could not reach Figma — skipping page selection for this file.')
+        )
+
+        if (pages?.length) {
+          const selected = await p.multiselect({
+            message: 'Which pages in this file hold in-progress / not-yet-ready components?',
+            options: pages.map(name => ({ value: name, label: name })),
+            required: false,
+          })
+          if (p.isCancel(selected)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
+          wipPages = Array.isArray(selected) && selected.length ? selected : undefined
+        }
+      }
+
+      figmaFiles.push({ key: fileKey, wipPages })
+
+      // Ask whether to add another
+      const another = await p.confirm({
+        message: `${figmaFiles.length} file${figmaFiles.length > 1 ? 's' : ''} added. Add another Figma file?`,
+        initialValue: false,
+      })
+      if (p.isCancel(another)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
+      addingFiles = another
     }
   }
 
@@ -269,8 +290,7 @@ export async function init(argv) {
   writeDriftConfig(cwd, {
     storybookUrl:  storybookUrl || (storybook.found ? storybook.url : undefined),
     chromaticUrl,
-    figmaFileKey,
-    figmaWIPPages,
+    figmaFiles:    figmaFiles.length ? figmaFiles : undefined,
     dsPackages,
     threshold:     Number(threshold) || 80,
     components,
@@ -283,7 +303,7 @@ export async function init(argv) {
     tools:        Array.isArray(aiToolsSelected) ? aiToolsSelected : [],
     components,
     storybookUrl: storybookUrl || '',
-    figmaFileKey,
+    figmaFiles:   figmaFiles.length ? figmaFiles : undefined,
   })
   spinner.stop(`Written: ${rulesFiles.join(', ')}`)
 
@@ -355,7 +375,7 @@ ${pc.dim('Docs: https://catchdrift.ai  ·  Issues: https://github.com/dyoon92/de
     console.log('')
   }
 
-  if (figmaFileKey) {
+  if (figmaFiles.length > 0) {
     console.log(`${pc.blue('Tip:')} Open the Drift overlay (press D), go to Settings, and paste your Figma personal access token to enable Figma component sync.`)
     console.log('')
   }
