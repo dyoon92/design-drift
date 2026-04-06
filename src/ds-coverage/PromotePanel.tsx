@@ -21,21 +21,40 @@ import { config, fetchFigmaPages, FIGMA_TOKEN_KEY } from './manifest'
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
 
-const C = {
-  bg:      '#09090f',
-  surface: '#0f0f18',
-  surface2:'#13131f',
-  border:  '#1e1e2e',
-  text:    '#eeeef4',
-  muted:   '#6b6b82',
-  sub:     '#9999b0',
-  blue:    '#4f8ef7',
-  green:   '#34d399',
-  purple:  '#a78bfa',
-  orange:  '#fb923c',
-  amber:   '#f59e0b',
-  red:     '#ef4444',
-} as const
+function makeColors(theme: 'dark' | 'light') {
+  if (theme === 'light') {
+    return {
+      bg:      'rgba(253,250,245,0.98)',
+      surface: '#f5f0e8',
+      surface2:'#ede8e0',
+      border:  'rgba(120,90,40,0.13)',
+      text:    '#1a1207',
+      muted:   '#7a6a55',
+      sub:     '#5a4a35',
+      blue:    '#2563eb',
+      green:   '#16a34a',
+      purple:  '#7c3aed',
+      orange:  '#d97706',
+      amber:   '#b45309',
+      red:     '#dc2626',
+    }
+  }
+  return {
+    bg:      '#09090f',
+    surface: '#0f0f18',
+    surface2:'#13131f',
+    border:  '#1e1e2e',
+    text:    '#eeeef4',
+    muted:   '#6b6b82',
+    sub:     '#9999b0',
+    blue:    '#4f8ef7',
+    green:   '#34d399',
+    purple:  '#a78bfa',
+    orange:  '#fb923c',
+    amber:   '#f59e0b',
+    red:     '#ef4444',
+  }
+}
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -44,6 +63,7 @@ export interface PromotePanelProps {
   count: number
   figmaFileKey: string
   storybookUrl: string
+  theme?: 'dark' | 'light'
   onClose: () => void
   onPromoted: (name: string) => void
 }
@@ -144,9 +164,11 @@ export function PromotePanel({
   count,
   figmaFileKey,
   storybookUrl,
+  theme = 'dark',
   onClose,
   onPromoted,
 }: PromotePanelProps) {
+  const C = makeColors(theme)
   const [phase,       setPhase]       = useState<Phase>('plan')
   const [artifact,    setArtifact]    = useState<Artifact>('figma')
   const [description, setDescription] = useState('')

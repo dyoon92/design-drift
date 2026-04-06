@@ -32,6 +32,15 @@ export function DriftOverlay({ config, autoOpen, onOpenWaitlist }: DriftOverlayP
     return () => { delete (window as any).__DRIFT_CONFIG__ }
   }, [config])
 
+  // Seed the Figma token into localStorage so the PromotePanel can use it.
+  // config.figmaToken is read from an env var (VITE_FIGMA_TOKEN / NEXT_PUBLIC_FIGMA_TOKEN)
+  // and is never committed to git — .env.local is gitignored.
+  useEffect(() => {
+    if (config.figmaToken) {
+      localStorage.setItem('drift-figma-token', config.figmaToken)
+    }
+  }, [config.figmaToken])
+
   return (
     <React.Suspense fallback={null}>
       <LazyOverlay autoOpen={autoOpen} onOpenWaitlist={onOpenWaitlist} />

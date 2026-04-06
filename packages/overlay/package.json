@@ -1,6 +1,6 @@
 {
   "name": "@catchdrift/overlay",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Drop-in design system coverage overlay for React apps. Press D to see drift.",
   "keywords": ["design-system", "drift", "coverage", "react", "storybook", "figma"],
   "homepage": "https://catchdrift.ai",

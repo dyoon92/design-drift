@@ -98,6 +98,9 @@ export interface DriftConfig {
   jiraBaseUrl?: string;
   jiraProjectKey?: string;
   threshold?: number;
+  /** Figma personal access token — read from env var (VITE_FIGMA_TOKEN / NEXT_PUBLIC_FIGMA_TOKEN).
+   *  The overlay seeds this into localStorage so the promote flow can use it without re-entry. */
+  figmaToken?: string;
 }
 
 export interface DriftOverlayProps {

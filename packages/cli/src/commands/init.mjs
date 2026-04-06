@@ -31,6 +31,7 @@ import {
 } from '../lib/storybook.mjs'
 import {
   writeDriftConfig,
+  writeEnvLocal,
   writeAIRulesFiles,
   writeClaudeSkills,
   patchAppEntry,
@@ -339,7 +340,9 @@ export async function init(argv) {
     dsPackages,
     threshold:     Number(threshold) || 80,
     components,
+    framework,
   })
+  if (figmaToken) writeEnvLocal(cwd, { figmaToken })
   spinner.stop('drift.config.ts written')
 
   // ── Step 7: Write AI rules files ─────────────────────────────────────────────

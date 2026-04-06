@@ -33,4 +33,8 @@ export interface DriftConfig {
   jiraProjectKey?: string
   /** Coverage threshold 0–100 for CI. Default: 80 */
   threshold?: number
+  /** Figma personal access token — read from env var at runtime so it's never committed.
+   *  e.g. figmaToken: import.meta.env.VITE_FIGMA_TOKEN
+   *  The overlay will seed this into localStorage so the promote flow can use it. */
+  figmaToken?: string
 }

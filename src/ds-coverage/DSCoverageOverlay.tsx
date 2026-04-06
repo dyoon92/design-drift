@@ -3981,6 +3981,7 @@ export function DSCoverageOverlay({ autoOpen, onOpenWaitlist }: { autoOpen?: boo
                 count={promotingComponent.count}
                 figmaFileKey={config.figmaFileKey ?? ''}
                 storybookUrl={config.storybookUrl ?? 'http://localhost:6006'}
+                theme={theme}
                 onClose={() => setPromotingComponent(null)}
                 onPromoted={handlePromoted}
               />
