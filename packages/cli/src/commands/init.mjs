@@ -144,6 +144,7 @@ export async function init(argv) {
   3. Give it a name (e.g. "Drift") and set an expiry
   4. Enable these scopes:
        ${pc.green('✓')} File content       → ${pc.bold('Read only')}
+       ${pc.green('✓')} Library content    → ${pc.bold('Read only')}
        ${pc.green('✓')} File comments      → ${pc.bold('Write')}
        ${pc.green('✓')} File variables     → ${pc.bold('Read only')}
   5. Click ${pc.bold('Generate token')} and copy it — ${pc.yellow("you won't be able to see it again")}
