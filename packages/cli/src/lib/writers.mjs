@@ -248,7 +248,7 @@ jobs:
             const specLine = specOutcome === 'success'
               ? '| Spec validation | ✅ All specs satisfied |'
               : specOutcome === 'failure'
-                ? '| Spec validation | ⚠️ Spec gaps detected — run `catchdrift spec validate` |'
+                ? '| Spec validation | ⚠️ Spec gaps detected — run \`catchdrift spec validate\` |'
                 : ''
             const body = [
               '## ' + status + ' Drift Report',
