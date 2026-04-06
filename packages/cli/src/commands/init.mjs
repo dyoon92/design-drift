@@ -307,14 +307,34 @@ export async function init(argv) {
   })
   spinner.stop(`Written: ${rulesFiles.join(', ')}`)
 
-  // ── Step 8: Patch app entry point ────────────────────────────────────────────
+  // ── Step 8: Install @catchdrift/overlay ──────────────────────────────────────
+  const pkgJson = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8'))
+  const alreadyInstalled = !!(
+    pkgJson.dependencies?.['@catchdrift/overlay'] ||
+    pkgJson.devDependencies?.['@catchdrift/overlay']
+  )
+
+  if (!alreadyInstalled) {
+    spinner.start('Installing @catchdrift/overlay...')
+    const pkgManager =
+      existsSync(join(cwd, 'pnpm-lock.yaml')) ? 'pnpm add' :
+      existsSync(join(cwd, 'yarn.lock'))      ? 'yarn add' : 'npm install'
+    try {
+      execSync(`${pkgManager} @catchdrift/overlay`, { cwd, stdio: 'ignore' })
+      spinner.stop('@catchdrift/overlay installed')
+    } catch {
+      spinner.stop(pc.yellow('@catchdrift/overlay install failed — run manually: npm install @catchdrift/overlay'))
+    }
+  }
+
+  // ── Step 9: Patch app entry point ────────────────────────────────────────────
   spinner.start('Adding DriftOverlay to app entry...')
   const patched = patchAppEntry(cwd, framework)
   spinner.stop(patched
     ? `Patched ${patched}`
     : 'Could not auto-patch — see manual step below')
 
-  // ── Step 9: GitHub Actions ───────────────────────────────────────────────────
+  // ── Step 10: GitHub Actions ──────────────────────────────────────────────────
   const addCI = await p.confirm({
     message: 'Add GitHub Actions drift check (posts coverage delta on every PR)?',
     initialValue: true,
@@ -327,7 +347,7 @@ export async function init(argv) {
     spinner.stop('.github/workflows/drift-check.yml written')
   }
 
-  // ── Step 10: Summary ─────────────────────────────────────────────────────────
+  // ── Step 11: Summary ─────────────────────────────────────────────────────────
   console.log('')
   p.outro(pc.green('Drift is set up ✓'))
 
