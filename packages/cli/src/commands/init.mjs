@@ -102,30 +102,57 @@ export async function init(argv) {
 
   const sources = Array.isArray(dsSources) ? dsSources : []
 
-  // ── Storybook nudge — needed to close the Figma → code loop ─────────────────
-  if (sources.includes('figma') && !sources.includes('storybook') && !storybook.found) {
+  // ── Storybook nudge — fire whenever Storybook isn't in the setup ─────────────
+  const storybookNeeded = !sources.includes('storybook') && !storybook.found
+  if (storybookNeeded && sources.length > 0) {
     p.log.warn(
-      'Storybook is needed to complete the loop.\n' +
-      '  Without it, the overlay has no way to identify which components are from your DS.\n' +
-      '  Figma tells Drift what exists in design — Storybook tells it what exists in code.'
+      'Storybook is needed to close the design → code loop.\n' +
+      '  It lets Drift identify which components are from your DS vs. custom-built.\n' +
+      '  Without it, coverage will show 0% until you manually list components.'
     )
     const setupSB = await p.confirm({
-      message: 'Set up Storybook now? (runs npx storybook@latest init)',
+      message: 'Set up Storybook now?',
       initialValue: true,
     })
     if (p.isCancel(setupSB)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
 
     if (setupSB) {
-      spinner.start('Running npx storybook@latest init...')
+      console.log(pc.dim('\n  Running npx storybook@latest init — follow the prompts:\n'))
       try {
-        execSync('npx storybook@latest init --yes', { cwd, stdio: 'ignore' })
-        spinner.stop('Storybook installed — it will be available at http://localhost:6006')
+        // Use inherit so the user can interact with Storybook's framework prompts
+        execSync('npx storybook@latest init', { cwd, stdio: 'inherit' })
+        p.log.success('Storybook installed — run `npm run storybook` to start it on :6006')
         sources.push('storybook')
       } catch {
-        spinner.stop('Storybook install failed — run `npx storybook@latest init` manually, then re-run `npx catchdrift init`')
+        p.log.warn('Storybook install failed or was cancelled. Run `npx storybook@latest init` manually when ready.')
       }
     } else {
-      p.log.info('Continuing without Storybook. Add it later and re-run `npx catchdrift init` to complete the loop.')
+      p.log.info('Skipping Storybook. Run `npx storybook@latest init` when ready, then re-run `npx catchdrift init`.')
+    }
+  }
+
+  // ── If user selected Storybook but it wasn't detected, offer to install ──────
+  if (sources.includes('storybook') && !storybook.found) {
+    const installNow = await p.confirm({
+      message: 'Storybook wasn\'t detected in this project. Install it now?',
+      initialValue: true,
+    })
+    if (p.isCancel(installNow)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
+
+    if (installNow) {
+      console.log(pc.dim('\n  Running npx storybook@latest init — follow the prompts:\n'))
+      try {
+        execSync('npx storybook@latest init', { cwd, stdio: 'inherit' })
+        p.log.success('Storybook installed — run `npm run storybook` to start it on :6006')
+      } catch {
+        p.log.warn('Storybook install failed or was cancelled. Run `npx storybook@latest init` manually when ready.')
+        // Remove storybook from sources so we don't ask for a URL that doesn't exist yet
+        sources.splice(sources.indexOf('storybook'), 1)
+      }
+    } else {
+      // User declined — remove from sources so the URL step is skipped
+      sources.splice(sources.indexOf('storybook'), 1)
+      p.log.info('Skipping Storybook setup. Re-run `npx catchdrift init` after installing it.')
     }
   }
 
@@ -368,9 +395,23 @@ export async function init(argv) {
   console.log('')
   p.outro(pc.green('Drift is set up ✓'))
 
-  const syncHint = dsPackages?.length
-    ? `\n  ${pc.cyan('npx catchdrift sync')}                 Auto-discover components from ${dsPackages.join(', ')}`
-    : ''
+  // Build next steps dynamically based on what was configured
+  const nextSteps = []
+
+  if (dsPackages?.length) {
+    nextSteps.push(`  ${pc.cyan('npx catchdrift sync')}   Auto-populate registry from ${dsPackages.join(', ')}`)
+  } else if (!sources.includes('storybook') || Object.keys(components).length === 0) {
+    nextSteps.push(`  ${pc.cyan('npx catchdrift sync')}   Auto-populate registry once you have a DS package`)
+  }
+
+  nextSteps.push(`  ${pc.cyan('npm run dev')}            Start your app, then press ${pc.bold('D')} to open Drift`)
+  nextSteps.push(`  ${pc.cyan('npx catchdrift check')}   Run a coverage scan ${pc.dim('(app must be running)')}`)
+  nextSteps.push(`  ${pc.cyan('git push')}               First PR will show a drift delta comment`)
+
+  if (!sources.includes('storybook') && !storybook.found) {
+    nextSteps.push(`\n  ${pc.yellow('Storybook not set up')} — run ${pc.bold('npx storybook@latest init')} when ready,`)
+    nextSteps.push(`  then re-run ${pc.bold('npx catchdrift init')} to complete the coverage loop.`)
+  }
 
   console.log(`
 ${pc.bold('What was created:')}
@@ -380,9 +421,7 @@ ${pc.bold('What was created:')}
   ${patched ? patched.padEnd(34) + pc.dim('DriftOverlay added (dev-only)') : ''}
 
 ${pc.bold('Next steps:')}
-  ${pc.cyan('npm run dev')}                          Open your app, press ${pc.bold('D')} to see Drift${syncHint}
-  ${pc.cyan('npx catchdrift check')}                Run a coverage scan (requires running app)
-  ${pc.cyan('git push')}                            First PR will show a drift delta comment
+${nextSteps.join('\n')}
 
 ${pc.bold('Your team\'s daily commands (Claude Code):')}
   ${pc.blue('/drift-context')}    ${pc.dim('See DS state at a glance — run this first')}

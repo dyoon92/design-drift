@@ -20,7 +20,7 @@
  * will skip the "Open in Storybook" link for that component.
  */
 
-import { readFileSync, writeFileSync, readdirSync } from 'fs'
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs'
 import { join, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -29,13 +29,26 @@ const ROOT  = resolve(__dir, '..')
 
 // ─── Read config ─────────────────────────────────────────────────────────────
 
-const configPath = join(ROOT, 'src/ds-coverage/config.ts')
+// Check drift.config.ts at cwd first (created by npx catchdrift init),
+// then fall back to the legacy monorepo path.
+const cwd = process.cwd()
+const configCandidates = [
+  join(cwd, 'drift.config.ts'),
+  join(cwd, 'src/ds-coverage/config.ts'),
+  join(ROOT, 'src/ds-coverage/config.ts'),
+]
+const configPath = configCandidates.find(p => existsSync(p))
 let configSrc
+
+if (!configPath) {
+  console.error('[drift-sync] No drift.config.ts found. Run `npx catchdrift init` first.')
+  process.exit(1)
+}
 
 try {
   configSrc = readFileSync(configPath, 'utf8')
 } catch {
-  console.error('[drift-sync] Could not read src/ds-coverage/config.ts. Make sure you\'re running this from the project root.')
+  console.error(`[drift-sync] Could not read ${configPath}`)
   process.exit(1)
 }
 
@@ -163,14 +176,14 @@ const updated = configSrc.replace(
 )
 
 if (updated === configSrc) {
-  console.warn('[drift-sync] Could not locate the components block in config.ts. Make sure it ends with `},` on its own line.')
+  console.warn('[drift-sync] Could not locate the components block in drift.config.ts. Make sure it ends with `},` on its own line.')
   process.exit(1)
 }
 
 writeFileSync(configPath, updated, 'utf8')
 
 console.log(`
-[drift-sync] Done. Updated src/ds-coverage/config.ts with ${sortedNames.length} components.
+[drift-sync] Done. Updated ${configPath.replace(cwd + '/', '')} with ${sortedNames.length} components.
 
 Next steps:
   • If you have a Storybook site, add storyPath values to get "Open in Storybook" links

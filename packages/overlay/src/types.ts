@@ -7,6 +7,11 @@ export interface DriftComponentEntry {
   figmaLink?: string
 }
 
+export interface DriftFigmaFile {
+  key: string
+  componentPages?: string[]
+}
+
 export interface DriftConfig {
   /** Your component registry — every component in your design system. */
   components: Record<string, DriftComponentEntry>
@@ -14,8 +19,14 @@ export interface DriftConfig {
   storybookUrl?: string
   /** Deployed Storybook URL (Chromatic, Netlify, etc.) for public links. */
   chromaticUrl?: string
-  /** Figma file key — enables "Open in Figma" links. */
+  /** Figma file key (compact form for single-file setups). */
   figmaFileKey?: string
+  /** Pages in the single Figma file that contain published DS components. */
+  figmaComponentPages?: string[]
+  /** Multi-file Figma setup — components spread across multiple files. */
+  figmaFiles?: DriftFigmaFile[]
+  /** npm package names / path prefixes that contain your DS components. */
+  dsPackages?: string[]
   /** Jira base URL for one-click ticket creation. */
   jiraBaseUrl?: string
   /** Jira project key to pre-fill tickets. */

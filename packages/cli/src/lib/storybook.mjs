@@ -41,6 +41,9 @@ export async function fetchStorybookComponents(storybookUrl) {
 
 export function buildComponentRegistry(components) {
   return Object.entries(components)
-    .map(([name, meta]) => `    ${name}: { storyPath: '${meta.storyPath}' },`)
+    .map(([name, meta]) => {
+      const entry = meta.storyPath ? `{ storyPath: '${meta.storyPath}' }` : '{}'
+      return `    ${name}: ${entry},`
+    })
     .join('\n')
 }

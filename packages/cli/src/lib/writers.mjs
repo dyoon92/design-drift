@@ -36,9 +36,9 @@ export function writeDriftConfig(cwd, { storybookUrl, chromaticUrl, figmaFiles, 
   }
 
   const lines = [
-    `import type { DesignDriftConfig } from '@catchdrift/overlay'`,
+    `import type { DriftConfig } from '@catchdrift/overlay'`,
     ``,
-    `const config: DesignDriftConfig = {`,
+    `const config: DriftConfig = {`,
     storybookUrl ? `  storybookUrl: '${storybookUrl}',` : null,
     chromaticUrl ? `  chromaticUrl: '${chromaticUrl}',` : null,
     figmaFilesBlock,

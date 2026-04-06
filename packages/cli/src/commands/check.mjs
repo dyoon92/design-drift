@@ -24,13 +24,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const CHECKER = resolve(__dirname, '../../scripts/drift-check.mjs')
 
 export async function check(argv) {
+  console.log(pc.dim('Scanning running app for DS coverage...'))
+  console.log(pc.dim('Make sure your dev server is running (npm run dev) before this completes.\n'))
+
   // Warn if running via npx (ephemeral cache) — Playwright browser reinstalls on every npx clear
   const isNpx = process.env.npm_execpath?.includes('_npx') || process.argv[1]?.includes('_npx')
   if (isNpx) {
     console.log(pc.dim(
       'Tip: install locally for faster runs and persistent Playwright cache:\n' +
-      '  npm install -D catchdrift\n' +
-      '  npx catchdrift check  (uses local install)\n'
+      '  npm install -D catchdrift\n'
     ))
   }
 

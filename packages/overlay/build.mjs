@@ -79,11 +79,22 @@ export interface DriftComponentEntry {
   figmaLink?: string;
 }
 
+export interface DriftFigmaFile {
+  key: string;
+  componentPages?: string[];
+}
+
 export interface DriftConfig {
   components: Record<string, DriftComponentEntry>;
   storybookUrl?: string;
   chromaticUrl?: string;
+  /** Single Figma file key (compact form for one-file setups). */
   figmaFileKey?: string;
+  /** Pages in the single Figma file that contain published DS components. */
+  figmaComponentPages?: string[];
+  /** Multi-file Figma setup — used when components span multiple files. */
+  figmaFiles?: DriftFigmaFile[];
+  dsPackages?: string[];
   jiraBaseUrl?: string;
   jiraProjectKey?: string;
   threshold?: number;
