@@ -3,10 +3,13 @@
  * All writers are idempotent — safe to re-run.
  */
 
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs'
+import { writeFileSync, readFileSync, existsSync, mkdirSync, readdirSync } from 'fs'
 import { resolve, join, dirname, relative, posix } from 'path'
+import { fileURLToPath } from 'url'
 import { buildComponentRegistry } from './storybook.mjs'
 import { findAppEntry } from './detect.mjs'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // ── drift.config.ts ───────────────────────────────────────────────────────────
 
@@ -326,4 +329,27 @@ jobs:
 `
 
   writeFileSync(filepath, yaml, 'utf8')
+}
+
+// ── Claude Code skill files ───────────────────────────────────────────────────
+
+export function writeClaudeSkills(cwd) {
+  // Skills ship with the CLI package under commands/
+  const skillsSource = resolve(__dirname, '../../commands')
+  if (!existsSync(skillsSource)) return []
+
+  const destDir = join(cwd, '.claude', 'commands')
+  mkdirSync(destDir, { recursive: true })
+
+  const written = []
+  for (const file of readdirSync(skillsSource)) {
+    if (!file.endsWith('.md')) continue
+    const dest = join(destDir, file)
+    // Don't overwrite files the user may have customised
+    if (!existsSync(dest)) {
+      writeFileSync(dest, readFileSync(join(skillsSource, file), 'utf8'), 'utf8')
+      written.push(file)
+    }
+  }
+  return written
 }

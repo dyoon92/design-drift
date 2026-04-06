@@ -32,6 +32,7 @@ import {
 import {
   writeDriftConfig,
   writeAIRulesFiles,
+  writeClaudeSkills,
   patchAppEntry,
   writeGithubAction,
 } from '../lib/writers.mjs'
@@ -349,7 +350,8 @@ export async function init(argv) {
     storybookUrl: storybookUrl || '',
     figmaFiles:   figmaFiles.length ? figmaFiles : undefined,
   })
-  spinner.stop(`Written: ${rulesFiles.join(', ')}`)
+  const skillFiles = writeClaudeSkills(cwd)
+  spinner.stop(`Written: ${rulesFiles.join(', ')}${skillFiles.length ? ` + ${skillFiles.length} Claude skills` : ''}`)
 
   // ── Step 8: Install @catchdrift/overlay ──────────────────────────────────────
   const pkgJson = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8'))
@@ -417,6 +419,7 @@ export async function init(argv) {
 ${pc.bold('What was created:')}
   drift.config.ts                    ${pc.dim('DS component registry')}
   ${rulesFiles.map(f => f.padEnd(34)).join('\n  ')}${pc.dim('AI constraints')}
+  ${skillFiles.length ? `.claude/commands/               ${pc.dim('Claude Code skills (/drift-sync, /drift-scaffold, etc.)')}` : ''}
   ${addCI ? '.github/workflows/drift-check.yml  ' + pc.dim('CI drift check on every PR') : ''}
   ${patched ? patched.padEnd(34) + pc.dim('DriftOverlay added (dev-only)') : ''}
 
