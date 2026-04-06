@@ -103,7 +103,7 @@ export async function init(argv) {
   const sources = Array.isArray(dsSources) ? dsSources : []
 
   // ── Step 3a: Figma ───────────────────────────────────────────────────────────
-  let figmaFileKey
+  let figmaFileKey, figmaWIPPage
   if (sources.includes('figma')) {
     figmaFileKey = await p.text({
       message: 'Figma file key',
@@ -112,6 +112,14 @@ export async function init(argv) {
     })
     if (p.isCancel(figmaFileKey)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
     figmaFileKey = figmaFileKey?.trim() || undefined
+
+    figmaWIPPage = await p.text({
+      message: 'Which Figma page holds in-progress / not-yet-ready components?',
+      placeholder: '🚧 In Progress  (skip if you don\'t have one)',
+      hint: 'Components on this page will be flagged as drafts, not added to your registry',
+    })
+    if (p.isCancel(figmaWIPPage)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
+    figmaWIPPage = figmaWIPPage?.trim() || undefined
   }
 
   // ── Step 3b: Storybook ───────────────────────────────────────────────────────
@@ -194,6 +202,7 @@ export async function init(argv) {
     storybookUrl:  storybookUrl || (storybook.found ? storybook.url : undefined),
     chromaticUrl,
     figmaFileKey,
+    figmaWIPPage,
     dsPackages,
     threshold:     Number(threshold) || 80,
     components,

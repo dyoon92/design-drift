@@ -26,6 +26,7 @@ Works with any product team — property management, SaaS, fintech, consumer, B2
 Read `drift.config.ts` (or `src/ds-coverage/config.ts`) to get:
 - `figmaFileKey`
 - `storybookUrl`
+- `figmaWIPPage` — the page name that holds in-progress/not-ready components (e.g. `'🚧 In Progress'`). If not set, fall back to matching any page whose name contains "wip", "in progress", "draft", "proposal", or "archive" (case-insensitive).
 - `components` — the current registry (component name → storyPath / figmaLink)
 - `threshold`
 - Any `approvedGaps` entries
@@ -157,11 +158,12 @@ Group and display results by page:
   ⚠️  FilterChip    → not in config (may not be ready)
 ```
 
-For components in "In Progress" / "WIP" / "Proposals" / "Archive" pages:
-- Flag them as not ready — don't add automatically
-- Show them separately so the team can monitor progress
+For components whose page name matches `figmaWIPPage` (or the fallback heuristic if not set):
+- Flag them as drafts — do NOT add to config automatically
+- Show them in a separate "Drafts — not ready" section so the team can monitor progress
+- Include the page name next to each so it's clear why they were skipped
 
-For each component NOT in config (excluding WIP/Archive pages), ask:
+For each component NOT in config (excluding draft pages), ask:
 ```
 Add these to drift.config.ts?
   - Toggle   (Primitives page)
