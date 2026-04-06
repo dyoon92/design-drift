@@ -51,11 +51,6 @@ const OVERDUE_TENANTS = [
   { id: '5', name: 'Priya Sharma',  unit: 'D-112', balance: 1320, daysOverdue: 18 },
 ]
 
-const PAYMENT_METHODS = [
-  { value: 'ach',  label: 'ACH / Bank Transfer' },
-  { value: 'card', label: 'Credit / Debit Card'  },
-  { value: 'cash', label: 'Cash'                 },
-]
 
 const TABS = [
   { key: 'all',     label: 'All Tenants',  count: 48 },
