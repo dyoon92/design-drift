@@ -26,6 +26,7 @@ import { chromium } from 'playwright'
 import { readFileSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { execSync } from 'child_process'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -63,17 +64,39 @@ const JSON_OUT  = has('--json')
 
 let DS_COMPONENTS_LIST = []
 
-// Try to load from built manifest (ts-node free approach: read config.ts as text)
-const configPath = resolve(ROOT, 'src/ds-coverage/config.ts')
-if (existsSync(configPath)) {
+// Check drift.config.ts (created by npx catchdrift init) first,
+// then fall back to the legacy src/ds-coverage/config.ts path.
+const cwd = process.cwd()
+const configCandidates = [
+  resolve(cwd, 'drift.config.ts'),
+  resolve(cwd, 'src/ds-coverage/config.ts'),
+  resolve(ROOT, 'src/ds-coverage/config.ts'),
+]
+const configPath = configCandidates.find(p => existsSync(p))
+
+if (configPath) {
   const src = readFileSync(configPath, 'utf8')
-  // Extract component names from the object keys — simple regex, no AST needed
-  const matches = src.match(/^\s{4}(\w+):\s*\{/gm) ?? []
-  DS_COMPONENTS_LIST = matches.map(m => m.trim().replace(/:\s*\{.*/, ''))
+  // Find the components: { ... } block by tracking brace depth
+  const compStart = src.indexOf('components:')
+  if (compStart !== -1) {
+    const braceOpen = src.indexOf('{', compStart)
+    let depth = 0
+    let end = braceOpen
+    for (let i = braceOpen; i < src.length; i++) {
+      if (src[i] === '{') depth++
+      else if (src[i] === '}') { depth--; if (depth === 0) { end = i; break } }
+    }
+    const block = src.slice(braceOpen + 1, end)
+    // Match PascalCase keys at any indent level: "  Button:" or "    Button:"
+    const matches = block.match(/^\s+([A-Z]\w*)\s*:/gm) ?? []
+    DS_COMPONENTS_LIST = matches.map(m => m.trim().replace(/\s*:.*/, ''))
+  }
 }
 
 if (DS_COMPONENTS_LIST.length === 0) {
-  console.warn('⚠  Could not read component list from src/ds-coverage/config.ts — using empty set')
+  console.warn('⚠  No components found in drift.config.ts — coverage will show 0%.')
+  console.warn('   Run: npx catchdrift sync  to auto-populate from your DS package.')
+  console.warn()
 }
 
 // ─── Serialisable scanner (injected into the page via page.evaluate) ──────────
@@ -237,8 +260,26 @@ function formatReport(route, result) {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function run() {
-  const browser = await chromium.launch({ headless: true })
-  const page    = await browser.newPage()
+  // Auto-install Playwright's chromium browser if not present
+  let browser
+  try {
+    browser = await chromium.launch({ headless: true })
+  } catch (err) {
+    if (err.message.includes("Executable doesn't exist") || err.message.includes('browserType.launch')) {
+      console.log('Installing Playwright browser (one-time setup)...')
+      try {
+        execSync('npx playwright install chromium', { stdio: 'inherit' })
+        browser = await chromium.launch({ headless: true })
+      } catch {
+        console.error('Failed to install Playwright browser.')
+        console.error('Run manually: npx playwright install chromium')
+        process.exit(1)
+      }
+    } else {
+      throw err
+    }
+  }
+  const page = await browser.newPage()
 
   const allResults = []
   let passed = true
