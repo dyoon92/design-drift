@@ -132,27 +132,51 @@ export async function init(argv) {
   // ── Step 3a: Figma ───────────────────────────────────────────────────────────
   let figmaFileKey, figmaToken, figmaWIPPages
   if (sources.includes('figma')) {
-    figmaFileKey = await p.text({
-      message: 'Figma file key',
-      placeholder: 'Found in figma.com/design/THIS_KEY/...  (paste just the key)',
-      validate: v => (!v?.trim() ? 'Required — paste the key from your Figma URL' : undefined),
+    // Accept full URL or raw key
+    const figmaInput = await p.text({
+      message: 'Paste your Figma file URL (or just the file key)',
+      placeholder: 'https://www.figma.com/design/ABC123.../My-Design-File',
+      hint: 'Open your Figma file in a browser and copy the full URL from the address bar',
+      validate: v => (!v?.trim() ? 'Required' : undefined),
     })
-    if (p.isCancel(figmaFileKey)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
-    figmaFileKey = figmaFileKey?.trim() || undefined
+    if (p.isCancel(figmaInput)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
+    figmaFileKey = extractFigmaFileKey(figmaInput.trim())
+    if (!figmaFileKey) {
+      p.log.warn(`Could not extract a file key from "${figmaInput.trim()}". Using it as-is.`)
+      figmaFileKey = figmaInput.trim()
+    }
+
+    // Token — show exact steps + required scopes
+    console.log('')
+    p.log.step('Create a Figma access token — takes about 60 seconds:')
+    console.log(`
+  1. Open ${pc.cyan('figma.com')} → click your avatar (top-left) → ${pc.bold('Settings')}
+  2. Go to the ${pc.bold('Security')} tab → click ${pc.bold('Generate new token')}
+  3. Give it a name (e.g. "Drift") and set an expiry
+  4. Enable these scopes:
+       ${pc.green('✓')} File content       → ${pc.bold('Read only')}
+       ${pc.green('✓')} File comments      → ${pc.bold('Write')}
+       ${pc.green('✓')} File variables     → ${pc.bold('Read only')}
+  5. Click ${pc.bold('Generate token')} and copy it — ${pc.yellow("you won't be able to see it again")}
+`)
 
     figmaToken = await p.text({
-      message: 'Figma personal access token',
-      placeholder: 'figd_...  (figma.com → Profile → Settings → Security → Personal access tokens)',
-      hint: 'Used to fetch your real page list. Store in FIGMA_API_TOKEN env var — not committed to git.',
+      message: 'Paste your Figma token here',
+      placeholder: 'figd_...',
+      hint: 'Stored in your local FIGMA_API_TOKEN env var — never committed to git',
+      validate: v => (!v?.trim() ? 'Required — paste the token you just generated' : undefined),
     })
     if (p.isCancel(figmaToken)) { p.cancel('Setup cancelled.'); process.exit(EXIT_CANCELED) }
     figmaToken = figmaToken?.trim() || undefined
 
-    // Fetch actual pages from Figma so the user picks from real names
+    // Validate token + fetch pages in one call
     if (figmaToken && figmaFileKey) {
-      spinner.start('Fetching pages from Figma...')
+      spinner.start('Connecting to Figma...')
       const pages = await fetchFigmaPages(figmaFileKey, figmaToken)
-      spinner.stop(pages ? `Found ${pages.length} pages` : 'Could not reach Figma — skipping page selection')
+      spinner.stop(pages
+        ? pc.green(`Connected ✓  Found ${pages.length} pages`)
+        : pc.yellow('Could not reach Figma — check your token scopes. You can re-run `npx catchdrift init` to retry.')
+      )
 
       if (pages?.length) {
         const selected = await p.multiselect({
@@ -338,6 +362,12 @@ ${pc.dim('Docs: https://catchdrift.ai  ·  Issues: https://github.com/dyoon92/de
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+function extractFigmaFileKey(input) {
+  // Matches: figma.com/design/KEY/... or figma.com/file/KEY/...
+  const match = input.match(/figma\.com\/(?:design|file)\/([a-zA-Z0-9]+)/)
+  return match ? match[1] : null
+}
 
 async function fetchFigmaPages(fileKey, token) {
   try {
