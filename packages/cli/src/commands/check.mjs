@@ -21,7 +21,7 @@ import pc from 'picocolors'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // drift-check.mjs ships in the CLI package under scripts/
-const CHECKER = resolve(__dirname, '../../../scripts/drift-check.mjs')
+const CHECKER = resolve(__dirname, '../../scripts/drift-check.mjs')
 
 export async function check(argv) {
   // Read threshold from drift.config.ts if not passed as flag

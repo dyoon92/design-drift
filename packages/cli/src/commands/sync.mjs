@@ -15,7 +15,7 @@ import { spawn } from 'child_process'
 import pc from 'picocolors'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const SYNCER = resolve(__dirname, '../../../scripts/drift-sync.mjs')
+const SYNCER = resolve(__dirname, '../../scripts/drift-sync.mjs')
 
 export async function sync(_argv) {
   if (!existsSync(SYNCER)) {
