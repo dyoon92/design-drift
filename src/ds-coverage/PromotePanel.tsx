@@ -76,7 +76,7 @@ After creating it, tell me:
 - Any variants you created`
 }
 
-function buildCodePrompt(name: string, count: number, description: string, figmaFileKey: string, storybookUrl: string): string {
+function buildCodePrompt(name: string, count: number, description: string, figmaFileKey: string, _storybookUrl: string): string {
   const desc = description.trim() || `used ${count} times in the app`
   const hasFigma = figmaFileKey.trim().length > 0
   const storyIdSlug = `components-${name.toLowerCase().replace(/([A-Z])/g, '-$1').replace(/^-/, '').toLowerCase()}--default`

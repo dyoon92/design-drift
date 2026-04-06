@@ -9,18 +9,9 @@
 
 import { useState } from 'react'
 import { Navbar, Sidebar } from '../AppNav'
-import { TenantsTable } from '../TenantsTable'
-import { TenantPageHeader } from '../TenantPageHeader'
-import { PaymentBanner } from '../PaymentBanner'
-import { TenantInfoCard } from '../TenantInfoCard'
-import { UnitDetailsCard } from '../UnitDetailsCard'
-import { CommunicationsPanel } from '../CommunicationsPanel'
-import { PinnedNotes } from '../PinnedNotes'
 import { Modal } from '../Modal'
 import { Toast } from '../Toast'
 import { Tabs } from '../Tabs'
-import { Input } from '../Input'
-import { Dropdown } from '../Dropdown'
 import { Button } from '../Button'
 import { Badge } from '../Badge'
 import { KPICard } from '../FMDashboardWidgets'
@@ -67,9 +58,9 @@ const PAYMENT_METHODS = [
 ]
 
 const TABS = [
-  { id: 'all',     label: 'All Tenants',  count: 48 },
-  { id: 'overdue', label: 'Overdue',      count: 5  },
-  { id: 'pending', label: 'Pending',      count: 3  },
+  { key: 'all',     label: 'All Tenants',  count: 48 },
+  { key: 'overdue', label: 'Overdue',      count: 5  },
+  { key: 'pending', label: 'Pending',      count: 3  },
 ]
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -79,8 +70,6 @@ export function BulkPaymentScreen() {
   const [selected, setSelected]         = useState<Set<string>>(new Set())
   const [showConfirm, setShowConfirm]   = useState(false)
   const [showSuccess, setShowSuccess]   = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState('ach')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const selectedTenants = OVERDUE_TENANTS.filter(t => selected.has(t.id))
   const totalSelected   = selectedTenants.reduce((s, t) => s + t.balance, 0)
@@ -102,11 +91,7 @@ export function BulkPaymentScreen() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(c => !c)}
-        activeItem="tenants"
-      />
+      <Sidebar activeNav="tenants" />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <Navbar
@@ -129,7 +114,7 @@ export function BulkPaymentScreen() {
           {/* Tab filter — DS Tabs ✅ */}
           <Tabs
             tabs={TABS}
-            activeTab={activeTab}
+            activeKey={activeTab}
             onTabChange={setActiveTab}
           />
 
@@ -198,7 +183,7 @@ export function BulkPaymentScreen() {
                     </div>
                     <Badge
                       label={`$${tenant.balance.toLocaleString()} overdue`}
-                      variant="danger"
+                      status="error"
                       size="sm"
                     />
                     <div style={{ fontSize: 12, color: 'var(--ds-color-text-muted)', minWidth: 80, textAlign: 'right' }}>
@@ -213,17 +198,10 @@ export function BulkPaymentScreen() {
       </div>
 
       {/* Confirm payment modal — DS Modal ✅ */}
-      {showConfirm && (
-        <Modal
-          title={`Process ${selectedTenants.length} Payments`}
-          onClose={() => setShowConfirm(false)}
-          footer={
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <Button label="Cancel"  variant="white"   size="md" onClick={() => setShowConfirm(false)} />
-              <Button label="Confirm" variant="primary" size="md" onClick={handleProcessPayments} />
-            </div>
-          }
-        >
+      <Modal
+        open={showConfirm}
+        title={`Process ${selectedTenants.length} Payments`}
+        message={
           <div style={{ fontSize: 14, color: 'var(--ds-color-text-primary)', lineHeight: 1.6 }}>
             <p style={{ marginBottom: 16 }}>
               You are about to process payments for <strong>{selectedTenants.length} tenants</strong>:
@@ -242,26 +220,23 @@ export function BulkPaymentScreen() {
               <span>Total</span>
               <span>${totalSelected.toLocaleString()}</span>
             </div>
-            <div style={{ marginTop: 16 }}>
-              <Dropdown
-                label="Payment method"
-                options={PAYMENT_METHODS}
-                value={paymentMethod}
-                onChange={setPaymentMethod}
-              />
-            </div>
+            {/* ⚠️ Missing component: SelectInput — no DS select component yet */}
+            {/* Run: /drift-push request SelectInput "Form select / dropdown for controlled inputs" */}
           </div>
-        </Modal>
-      )}
+        }
+        confirmLabel="Confirm Payment"
+        cancelLabel="Cancel"
+        onConfirm={handleProcessPayments}
+        onCancel={() => setShowConfirm(false)}
+      />
 
       {/* Success toast — DS Toast ✅ */}
-      {showSuccess && (
-        <Toast
-          variant="success"
-          message={`$${totalSelected.toLocaleString()} collected from ${selectedTenants.length} tenants`}
-          onDismiss={() => setShowSuccess(false)}
-        />
-      )}
+      <Toast
+        open={showSuccess}
+        type="success"
+        message={`$${totalSelected.toLocaleString()} collected from ${selectedTenants.length} tenants`}
+        onClose={() => setShowSuccess(false)}
+      />
     </div>
   )
 }
