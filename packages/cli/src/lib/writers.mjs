@@ -39,13 +39,14 @@ export function writeDriftConfig(cwd, { storybookUrl, chromaticUrl, figmaFiles, 
     figmaFilesBlock = `  figmaFiles: [\n${entries}\n  ],`
   }
 
-  // Figma token — read from env var at runtime so it's never committed to git
+  // Figma token — read from env at runtime via a Record cast to avoid TS errors
+  // for undeclared env vars. The actual value comes from .env.local (gitignored).
   let figmaTokenLine = null
   if (hasFigma) {
     const envExpr = framework === 'nextjs'
-      ? `process.env.NEXT_PUBLIC_FIGMA_TOKEN`
-      : `import.meta.env.VITE_FIGMA_TOKEN`
-    figmaTokenLine = `  figmaToken: ${envExpr}, // set in .env.local — never commit your token`
+      ? `(process.env as Record<string,string|undefined>)['NEXT_PUBLIC_FIGMA_TOKEN']`
+      : `(import.meta.env as Record<string,string|undefined>)['VITE_FIGMA_TOKEN']`
+    figmaTokenLine = `  figmaToken: ${envExpr}, // set VITE_FIGMA_TOKEN in .env.local — never commit your token`
   }
 
   const lines = [
